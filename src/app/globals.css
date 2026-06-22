@@ -1,26 +1,114 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700&display=swap');
+
+@font-face {
+  font-family: 'PowerGrotesk';
+  src: url('/fonts/PowerGroteskTrial-UltraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PowerGrotesk';
+  src: url('/fonts/PowerGroteskTrial-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PowerGrotesk';
+  src: url('/fonts/PowerGroteskTrial-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PowerGrotesk';
+  src: url('/fonts/PowerGroteskTrial-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PowerGrotesk';
+  src: url('/fonts/PowerGroteskTrial-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PowerGrotesk';
+  src: url('/fonts/PowerGroteskTrial-UltraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PowerGrotesk';
+  src: url('/fonts/PowerGroteskTrial-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-power: 'PowerGrotesk', system-ui, sans-serif;
+  --font-outfit: 'Outfit', system-ui, sans-serif;
+
+  --bg: #FFFFFF;
+  --bg-secondary: #F7F7F5;
+  --bg-tertiary: #EEEEEC;
+  --text-primary: #0A0A0A;
+  --text-secondary: #555550;
+  --text-tertiary: #999990;
+  --border: rgba(0,0,0,0.07);
+  --border-strong: rgba(0,0,0,0.14);
+  --accent: #534AB7;
+  --accent-light: #7F77DD;
+  --accent-faint: #EEEDFE;
+  --accent-mid: #AFA9EC;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --bg: #0A0A0A;
+  --bg-secondary: #121212;
+  --bg-tertiary: #1C1C1C;
+  --text-primary: #F5F5F0;
+  --text-secondary: #9A9A92;
+  --text-tertiary: #5A5A54;
+  --border: rgba(255,255,255,0.06);
+  --border-strong: rgba(255,255,255,0.12);
+  --accent: #7F77DD;
+  --accent-light: #AFA9EC;
+  --accent-faint: #16143A;
+  --accent-mid: #534AB7;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-power);
+  background: var(--bg);
+  color: var(--text-primary);
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100dvh;
+  transition: background 0.25s ease, color 0.25s ease;
 }
+
+::selection {
+  background: var(--accent-faint);
+  color: var(--accent);
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
