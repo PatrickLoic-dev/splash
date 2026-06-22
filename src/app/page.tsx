@@ -2,6 +2,7 @@ import { Navbar } from '@/components/Navbar'
 import { Hero } from '@/components/Hero'
 import { VariantsGrid } from '@/components/VariantsGrid'
 import { AdvancedShowcase } from '@/components/AdvancedShowcase'
+import { MorphingShowcase } from '@/components/animations/MorphingShowcase'
 import { ScrollProgressBar } from '@/components/animations/ScrollProgress'
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
         <Hero />
         <VariantsGrid />
         <AdvancedShowcase />
+        <MorphingShowcase />
       </main>
 
       <footer
