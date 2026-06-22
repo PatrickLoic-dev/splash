@@ -29,8 +29,10 @@ interface MorphingShapeProps {
 export function MorphingShape({ autoplay = true, interval = 1800 }: MorphingShapeProps) {
   const [index, setIndex] = useState(0)
   const [colorIndex, setColorIndex] = useState(0)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     if (!autoplay) return
     const t = setInterval(() => {
       setIndex(i => (i + 1) % SHAPE_KEYS.length)
@@ -39,7 +41,7 @@ export function MorphingShape({ autoplay = true, interval = 1800 }: MorphingShap
     return () => clearInterval(t)
   }, [autoplay, interval])
 
-  const currentShape = SHAPES[SHAPE_KEYS[index]]
+  const currentShape = SHAPES[SHAPE_KEYS[mounted ? index : 0]]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
@@ -96,8 +98,10 @@ const LOGO_PATHS = [
 
 export function LogoMorph() {
   const [i, setI] = useState(0)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     const t = setInterval(() => setI(v => (v + 1) % LOGO_PATHS.length), 2200)
     return () => clearInterval(t)
   }, [])
@@ -105,7 +109,7 @@ export function LogoMorph() {
   return (
     <svg viewBox="0 0 220 220" width={140} height={140}>
       <motion.path
-        d={LOGO_PATHS[i]}
+        d={LOGO_PATHS[mounted ? i : 0]}
         fill="none"
         stroke="var(--accent)"
         strokeWidth={8}
@@ -151,14 +155,18 @@ function generateBlob(seed: number, cx: number, cy: number, r: number, points: n
 
 export function FluidBlob() {
   const [tick, setTick] = useState(0)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     const t = setInterval(() => setTick(v => v + 0.04), 40)
     return () => clearInterval(t)
   }, [])
 
+  // Static circle on server — no hydration mismatch
+  const staticPath = 'M 170 100 A 70 70 0 1 1 169.999 100 Z'
   const points = generateBlob(tick, 100, 100, 70, 10)
-  const path = blobPath(points)
+  const path = mounted ? blobPath(points) : staticPath
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>

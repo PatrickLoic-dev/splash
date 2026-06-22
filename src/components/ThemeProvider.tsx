@@ -10,15 +10,17 @@ const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({
 })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark')
+  // Read the class already applied by the inline script — no second DOM update needed
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'dark'
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  })
 
   useEffect(() => {
-    const stored = localStorage.getItem('splash-theme') as Theme | null
-    const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    const initial = stored ?? preferred
-    setTheme(initial)
-    document.documentElement.classList.toggle('dark', initial === 'dark')
-  }, [])
+    // Sync in case state drifted (e.g. SSR default doesn't match script result)
+    const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    if (current !== theme) setTheme(current)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = () => {
     setTheme(prev => {

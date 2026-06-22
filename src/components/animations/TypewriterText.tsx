@@ -19,8 +19,20 @@ interface TypewriterProps {
 
 export function TypewriterText({ speed = 55, deleteSpeed = 28, pauseMs = 1600 }: TypewriterProps) {
   const [phraseIndex, setPhraseIndex] = useState(0)
-  const [displayed, setDisplayed] = useState('')
+  const [displayed, setDisplayed] = useState(PHRASES[0].slice(0, 0))
   const [phase, setPhase] = useState<'typing' | 'pause' | 'deleting'>('typing')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  if (!mounted) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0 8px' }}>
+        <span style={{ fontFamily: 'var(--font-power)', fontSize: 28, fontWeight: 300, color: 'var(--text-secondary)', letterSpacing: '-0.02em' }}>Built for</span>
+        <span style={{ fontFamily: 'var(--font-power)', fontSize: 28, fontWeight: 400, color: 'var(--accent-light)', letterSpacing: '-0.02em' }}>motion.</span>
+      </div>
+    )
+  }
 
   useEffect(() => {
     const target = PHRASES[phraseIndex]
