@@ -4,6 +4,7 @@ import { VariantsGrid } from '@/components/VariantsGrid'
 import { AdvancedShowcase } from '@/components/AdvancedShowcase'
 import { MorphingShowcase } from '@/components/animations/MorphingShowcase'
 import { ScrollTriggeredShowcase } from '@/components/animations/ScrollTriggered'
+import { PageTransitionsShowcase } from '@/components/animations/PageTransitionsShowcase'
 import { ScrollProgressBar } from '@/components/animations/ScrollProgress'
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
         <AdvancedShowcase />
         <MorphingShowcase />
         <ScrollTriggeredShowcase />
+        <PageTransitionsShowcase />
       </main>
 
       <footer
