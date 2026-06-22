@@ -14,18 +14,14 @@ export const metadata: Metadata = {
   },
 }
 
+const themeScript = `(function(){try{var t=localStorage.getItem('splash-theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if((t||p)==='dark')document.documentElement.classList.add('dark')}catch(e){}})();`
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Apply theme class before first paint — prevents flash & hydration mismatch */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('splash-theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if((t||p)==='dark')document.documentElement.classList.add('dark')}catch(e){}})()`,
-          }}
-        />
-      </head>
       <body>
+        {/* Must be before children — runs synchronously before React hydrates */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} suppressHydrationWarning />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

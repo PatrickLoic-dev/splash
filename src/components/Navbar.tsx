@@ -1,10 +1,13 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useTheme } from './ThemeProvider'
 import { Logo } from './Logo'
 
 export function Navbar() {
   const { theme, toggle } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   return (
     <header
@@ -41,6 +44,7 @@ export function Navbar() {
           <button
             onClick={toggle}
             aria-label="Toggle theme"
+            suppressHydrationWarning
             style={{
               width: 36,
               height: 36,
@@ -56,7 +60,8 @@ export function Navbar() {
               fontSize: 16,
             }}
           >
-            {theme === 'dark' ? '☀' : '☾'}
+            {/* Only render icon after mount — avoids server/client mismatch */}
+            {mounted ? (theme === 'dark' ? '☀' : '☾') : null}
           </button>
 
           <a
