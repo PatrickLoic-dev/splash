@@ -126,7 +126,7 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 
 
 const CYCLING_WORDS_EN = ['ship.', 'scale.', 'delight.', 'convert.']
-const CYCLING_WORDS_FR = ['livrer.', 'scaler.', 'ravir.', 'convertir.']
+const CYCLING_WORDS_FR = ['livrent.', 'scalent.', 'ravissent.', 'convertissent.']
 
 function CyclingWord({ lang }: { lang: 'en' | 'fr' }) {
   const words = lang === 'fr' ? CYCLING_WORDS_FR : CYCLING_WORDS_EN
