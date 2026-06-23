@@ -4,13 +4,17 @@ import { ThemeProvider } from '@/components/ThemeProvider'
 import { I18nProvider } from '@/lib/i18n'
 
 export const metadata: Metadata = {
-  title: 'Splash — Framer Motion Variants',
-  description: 'Collection de variants Framer Motion prêts à l\'emploi. Fade, slide, stagger, spring, morphing. Import en une ligne.',
-  keywords: ['framer-motion', 'react', 'animation', 'variants', 'nextjs'],
+  title: 'Splash — Learn animations that ship',
+  description: 'Ten fundamental animation patterns explained in depth and implemented for React, Next.js, Vue, React Native, and Flutter. Production-grade code, no fluff.',
+  keywords: ['framer-motion', 'react', 'animation', 'nextjs', 'vue', 'flutter', 'react-native'],
   authors: [{ name: 'Splash' }],
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
   openGraph: {
-    title: 'Splash — Framer Motion Variants',
-    description: 'Reusable, composable Framer Motion variants for React.',
+    title: 'Splash — Learn animations that ship',
+    description: 'Ten fundamental animation patterns for every major platform. Production-grade code.',
     type: 'website',
   },
 }

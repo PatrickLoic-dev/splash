@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Splash
 
-## Getting Started
+**Learn the animations every app needs — implemented for every major platform.**
 
-First, run the development server:
+Splash is an interactive learning platform covering ten fundamental animation patterns, each explained in depth with production-ready code for React, Next.js, Vue, React Native, and Flutter.
+
+## What's inside
+
+| Pattern | Category | Difficulty |
+|---|---|---|
+| Fade In | Entrance | Beginner |
+| Slide Up | Entrance | Beginner |
+| Stagger List | List | Beginner |
+| Spring Card | Feedback | Intermediate |
+| Skeleton Loader | Loading | Beginner |
+| Shared Element | Navigation | Advanced |
+| Collapsing Header | Scroll | Intermediate |
+| Page Transition | Navigation | Intermediate |
+| Infinite Carousel | Carousel | Intermediate |
+| Pull to Refresh | Feedback | Advanced |
+
+Each pattern includes:
+- A live interactive preview (browser frame or mobile phone frame)
+- Step-by-step implementation walkthrough
+- Platform-specific code for all 5 stacks
+- Real-world use cases and production tips
+
+## Tech stack
+
+- **Framework** — Next.js 14+ (App Router, static export)
+- **Animations** — Framer Motion
+- **Styling** — CSS custom properties, no UI library
+- **i18n** — Built-in EN/FR toggle, no external dependency
+- **Fonts** — PowerGrotesk (headings), Outfit (body)
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build   # static export → out/
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project structure
 
-## Learn More
+```
+src/
+├── app/
+│   ├── page.tsx           # Home
+│   └── learn/page.tsx     # Learn (selector → filtered → detail)
+├── components/
+│   ├── HomePage.tsx
+│   ├── LearnPage.tsx
+│   ├── Navbar.tsx
+│   ├── AnimationPreview.tsx
+│   ├── GridBackground.tsx
+│   ├── BrowserFrame.tsx
+│   └── PhoneFrame.tsx
+└── lib/
+    ├── learnContent.ts    # Animation metadata, use cases, tips
+    ├── steps.ts           # Per-platform step-by-step code walkthroughs
+    └── i18n.tsx           # EN/FR translations + useI18n hook
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Contributing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Adding a new animation pattern requires three things:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **`learnContent.ts`** — add an entry to `ANIMATIONS` with title, tagline, concept, howItWorks steps, useCases, tips, and per-platform implementations.
+2. **`steps.ts`** — add a `StepMap` entry keyed by slug with 4-step progressions for each platform.
+3. **`AnimationPreview.tsx`** — add a case for the new slug returning the live preview component.
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
