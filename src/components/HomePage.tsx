@@ -202,7 +202,7 @@ export function HomePage() {
             }}>
               {t('home_h1_line1')}
               <br />
-              <CyclingWord lang={lang} />
+              <span style={{ color: 'var(--text-primary)' }}>{t('home_h1_that')}</span><CyclingWord lang={lang} />
             </h1>
 
             <p style={{

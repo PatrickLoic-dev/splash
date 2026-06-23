@@ -13,6 +13,7 @@ const T = {
     /* ── Home hero ── */
     home_badge:         'React · Next.js · Vue · React Native · Flutter',
     home_h1_line1:      'Learn animations',
+    home_h1_that:       'that ',
     home_h1_line2:      'that ship.',
     home_sub:           'Ten fundamental animation patterns — each explained in depth and implemented for every major platform. No fluff. Production-grade code.',
     home_cta:           'Start learning',
@@ -60,6 +61,7 @@ const T = {
     /* ── Home hero ── */
     home_badge:         'React · Next.js · Vue · React Native · Flutter',
     home_h1_line1:      'Apprenez les animations',
+    home_h1_that:       'qui ',
     home_h1_line2:      'qui passent en prod.',
     home_sub:           "Dix patterns d'animation fondamentaux — expliqués en profondeur et implémentés pour chaque plateforme majeure. Pas de bla-bla. Du code prêt pour la production.",
     home_cta:           'Commencer',
