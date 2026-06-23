@@ -160,15 +160,22 @@ html.theme-transitioning *::after {
 .btn-border-anim {
   position: relative;
   z-index: 0;
-  isolation: isolate;
 }
 .btn-border-anim::before {
   content: '';
   position: absolute;
   inset: -2px;
-  border-radius: inherit;
+  border-radius: 12px;
   background: linear-gradient(90deg, #534AB7, #7C3AED, #61DAFB, #41B883, #534AB7);
   background-size: 300% 100%;
-  animation: border-shimmer 2.5s linear infinite;
+  animation: border-shimmer 3s linear infinite;
+  z-index: -1;
+}
+.btn-border-anim::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: var(--accent);
   z-index: -1;
 }
