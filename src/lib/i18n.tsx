@@ -1,0 +1,128 @@
+'use client'
+
+import { createContext, useContext, useState, type ReactNode } from 'react'
+
+export type Lang = 'en' | 'fr'
+
+const T = {
+  en: {
+    /* ── Navbar ── */
+    nav_learn:          'Learn',
+    nav_start:          'Start learning',
+    nav_beta:           'Beta',
+    /* ── Home hero ── */
+    home_badge:         'React · Next.js · Vue · React Native · Flutter',
+    home_h1_line1:      'Learn animations',
+    home_h1_line2:      'that ship.',
+    home_sub:           'Ten fundamental animation patterns — each explained in depth and implemented for every major platform. No fluff. Production-grade code.',
+    home_cta:           'Start learning',
+    home_github:        'GitHub',
+    /* ── Home patterns section ── */
+    home_count_label:   '10 patterns',
+    home_section_h2:    'The animations every app needs',
+    /* ── Home footer ── */
+    home_license:       'Open source — MIT License',
+    home_star:          'Star on GitHub',
+    /* ── Learn selector ── */
+    sel_eyebrow:        'Choose your platform',
+    sel_h1:             'What are you building?',
+    sel_sub:            "Pick a platform and we'll show you exactly how to implement each animation pattern.",
+    sel_web:            'Web',
+    sel_mobile:         'Mobile',
+    /* ── Learn filtered ── */
+    filt_back:          '← All platforms',
+    filt_patterns:      'patterns',
+    filt_cta:           'View pattern →',
+    /* ── Detail top bar ── */
+    det_back:           '← Patterns',
+    det_web:            'Web',
+    det_mobile:         'Mobile',
+    /* ── Detail sections ── */
+    det_how:            'How it works',
+    det_impl:           'Implementation',
+    det_cases:          'Real-world examples',
+    det_tips:           'Tips',
+    det_deps:           'DEPS',
+    det_replay:         '↺ Replay',
+    det_copy:           'copy',
+    det_copied:         '✓ copied',
+    det_no_impl:        'No implementation for this platform yet.',
+    /* ── Difficulty ── */
+    diff_Beginner:      'Beginner',
+    diff_Intermediate:  'Intermediate',
+    diff_Advanced:      'Advanced',
+  },
+  fr: {
+    /* ── Navbar ── */
+    nav_learn:          'Apprendre',
+    nav_start:          'Commencer',
+    nav_beta:           'Bêta',
+    /* ── Home hero ── */
+    home_badge:         'React · Next.js · Vue · React Native · Flutter',
+    home_h1_line1:      'Apprenez les animations',
+    home_h1_line2:      'qui passent en prod.',
+    home_sub:           "Dix patterns d'animation fondamentaux — expliqués en profondeur et implémentés pour chaque plateforme majeure. Pas de bla-bla. Du code prêt pour la production.",
+    home_cta:           'Commencer',
+    home_github:        'GitHub',
+    /* ── Home patterns section ── */
+    home_count_label:   '10 patterns',
+    home_section_h2:    'Les animations que chaque app doit avoir',
+    /* ── Home footer ── */
+    home_license:       'Open source — Licence MIT',
+    home_star:          'Étoiler sur GitHub',
+    /* ── Learn selector ── */
+    sel_eyebrow:        'Choisissez votre plateforme',
+    sel_h1:             'Qu\'est-ce que vous construisez ?',
+    sel_sub:            "Choisissez une plateforme et nous vous montrerons exactement comment implémenter chaque pattern d'animation.",
+    sel_web:            'Web',
+    sel_mobile:         'Mobile',
+    /* ── Learn filtered ── */
+    filt_back:          '← Toutes les plateformes',
+    filt_patterns:      'patterns',
+    filt_cta:           'Voir le pattern →',
+    /* ── Detail top bar ── */
+    det_back:           '← Patterns',
+    det_web:            'Web',
+    det_mobile:         'Mobile',
+    /* ── Detail sections ── */
+    det_how:            'Comment ça fonctionne',
+    det_impl:           'Implémentation',
+    det_cases:          'Exemples réels',
+    det_tips:           'Conseils',
+    det_deps:           'DÉPENDANCES',
+    det_replay:         '↺ Rejouer',
+    det_copy:           'copier',
+    det_copied:         '✓ copié',
+    det_no_impl:        "Pas encore d'implémentation pour cette plateforme.",
+    /* ── Difficulty ── */
+    diff_Beginner:      'Débutant',
+    diff_Intermediate:  'Intermédiaire',
+    diff_Advanced:      'Avancé',
+  },
+} as const
+
+type TranslationKey = keyof typeof T.en
+
+const I18nContext = createContext<{
+  lang: Lang
+  setLang: (l: Lang) => void
+  t: (key: TranslationKey) => string
+}>({
+  lang:    'en',
+  setLang: () => {},
+  t:       (k) => T.en[k],
+})
+
+export function I18nProvider({ children }: { children: ReactNode }) {
+  const [lang, setLang] = useState<Lang>('en')
+  const t = (key: TranslationKey): string => T[lang][key]
+  return (
+    <I18nContext.Provider value={{ lang, setLang, t }}>
+      {children}
+    </I18nContext.Provider>
+  )
+}
+
+export function useI18n() {
+  return useContext(I18nContext)
+}

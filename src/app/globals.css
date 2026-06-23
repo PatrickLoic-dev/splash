@@ -56,6 +56,7 @@
   --font-outfit: 'Outfit', system-ui, sans-serif;
 
   --bg: #FFFFFF;
+  --bg-nav: rgba(255,255,255,0.85);
   --bg-secondary: #F7F7F5;
   --bg-tertiary: #EEEEEC;
   --text-primary: #0A0A0A;
@@ -71,6 +72,7 @@
 
 .dark {
   --bg: #0A0A0A;
+  --bg-nav: rgba(10,10,10,0.85);
   --bg-secondary: #121212;
   --bg-tertiary: #1C1C1C;
   --text-primary: #F5F5F0;
@@ -101,7 +103,20 @@ html {
 
 body {
   min-height: 100dvh;
-  transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* Gentle theme transition — applied only while toggling */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    fill 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 ::selection {
@@ -112,3 +127,48 @@ body {
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+
+:root {
+  --grid-dot:        rgba(0,0,0,0.08);
+  --grid-dot-bright: rgba(83,74,183,0.55);
+}
+.dark {
+  --grid-dot:        rgba(255,255,255,0.06);
+  --grid-dot-bright: rgba(127,119,221,0.65);
+}
+
+.grid-cursor-glow {
+  --cx: -9999px;
+  --cy: -9999px;
+  -webkit-mask-image: radial-gradient(
+    circle 220px at var(--cx) var(--cy),
+    black 0%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle 220px at var(--cx) var(--cy),
+    black 0%,
+    transparent 100%
+  );
+}
+
+@keyframes border-shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.btn-border-anim {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+.btn-border-anim::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #534AB7, #7C3AED, #61DAFB, #41B883, #534AB7);
+  background-size: 300% 100%;
+  animation: border-shimmer 2.5s linear infinite;
+  z-index: -1;
+}

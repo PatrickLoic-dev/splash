@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { I18nProvider } from '@/lib/i18n'
 
 export const metadata: Metadata = {
   title: 'Splash — Framer Motion Variants',
@@ -14,15 +15,13 @@ export const metadata: Metadata = {
   },
 }
 
-const themeScript = `(function(){try{var t=localStorage.getItem('splash-theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if((t||p)==='dark')document.documentElement.classList.add('dark')}catch(e){}})();`
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body>
-        {/* Must be before children — runs synchronously before React hydrates */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} suppressHydrationWarning />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <I18nProvider>{children}</I18nProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

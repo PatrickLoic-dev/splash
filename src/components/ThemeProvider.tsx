@@ -10,25 +10,25 @@ const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({
 })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Read the class already applied by the inline script — no second DOM update needed
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return 'dark'
-    return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-  })
+  const [theme, setTheme] = useState<Theme>('dark')
 
   useEffect(() => {
-    // Sync in case state drifted (e.g. SSR default doesn't match script result)
-    const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-    if (current !== theme) setTheme(current)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    const saved = localStorage.getItem('splash-theme') as Theme | null
+    const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    setTheme(saved ?? system)
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+    localStorage.setItem('splash-theme', theme)
+  }, [theme])
 
   const toggle = () => {
-    setTheme(prev => {
-      const next = prev === 'dark' ? 'light' : 'dark'
-      localStorage.setItem('splash-theme', next)
-      document.documentElement.classList.toggle('dark', next === 'dark')
-      return next
-    })
+    document.documentElement.classList.add('theme-transitioning')
+    setTheme(t => (t === 'dark' ? 'light' : 'dark'))
+    window.setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning')
+    }, 450)
   }
 
   return (
