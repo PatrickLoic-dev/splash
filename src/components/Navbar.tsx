@@ -95,7 +95,7 @@ export function Navbar() {
 
           {/* GitHub icon */}
           <a
-            href="https://github.com/your-repo/splash"
+            href="https://github.com/PatrickLoic-dev/splash"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"

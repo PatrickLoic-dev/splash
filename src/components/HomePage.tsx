@@ -233,7 +233,7 @@ export function HomePage() {
                 {t('home_cta')}
               </a>
               <a
-                href="https://github.com/your-repo/splash"
+                href="https://github.com/PatrickLoic-dev/splash"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -421,7 +421,7 @@ export function HomePage() {
             {t('home_license')}
           </span>
           <a
-            href="https://github.com/your-repo/splash"
+            href="https://github.com/PatrickLoic-dev/splash"
             target="_blank"
             rel="noopener noreferrer"
             style={{
