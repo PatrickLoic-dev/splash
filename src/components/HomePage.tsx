@@ -5,6 +5,7 @@ import { useRef, useState, useEffect } from 'react'
 import { ANIMATIONS, PLATFORMS } from '@/lib/learnContent'
 import { GridBackground } from './GridBackground'
 import { useI18n } from '@/lib/i18n'
+import { useBreakpoint } from '@/lib/useBreakpoint'
 
 const CATEGORY_COLORS: Record<string, string> = {
   Entrance:   '#534AB7',
@@ -157,6 +158,7 @@ function CyclingWord({ lang }: { lang: 'en' | 'fr' }) {
 
 export function HomePage() {
   const { t, lang } = useI18n()
+  const { isMobile, isTablet } = useBreakpoint()
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100dvh', position: 'relative' }}>
       <GridBackground />
@@ -167,7 +169,7 @@ export function HomePage() {
         <section style={{
           maxWidth: 1100,
           margin: '0 auto',
-          padding: '120px 40px 96px',
+          padding: isMobile ? '88px 20px 56px' : isTablet ? '100px 32px 72px' : '120px 40px 96px',
           textAlign: 'center',
         }}>
           <motion.div
@@ -262,13 +264,13 @@ export function HomePage() {
         <section style={{
           borderTop: '1px solid var(--border)',
           borderBottom: '1px solid var(--border)',
-          padding: '28px 40px',
+          padding: isMobile ? '20px 20px' : '28px 40px',
           background: 'var(--bg-secondary)',
         }}>
           <div style={{
             maxWidth: 1100, margin: '0 auto',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 48, flexWrap: 'wrap',
+            gap: isMobile ? 16 : isTablet ? 28 : 48, flexWrap: 'wrap',
           }}>
             {PLATFORMS.map((p, i) => {
               const LogoComp = PLATFORM_LOGOS[p.id]
@@ -302,7 +304,7 @@ export function HomePage() {
         </section>
 
         {/* ── Animation pattern grid ── */}
-        <section style={{ maxWidth: 1100, margin: '0 auto', padding: '80px 40px' }}>
+        <section style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '48px 20px' : isTablet ? '64px 32px' : '80px 40px' }}>
           <Reveal>
             <div style={{ marginBottom: 48 }}>
               <p style={{
@@ -324,8 +326,8 @@ export function HomePage() {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: 16,
+            gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: isMobile ? 12 : 16,
           }}>
             {ANIMATIONS.map((anim, i) => (
               <Reveal key={anim.slug} delay={i * 0.04}>
@@ -405,9 +407,10 @@ export function HomePage() {
         {/* ── Footer ── */}
         <footer style={{
           borderTop: '1px solid var(--border)',
-          padding: '36px 40px',
+          padding: isMobile ? '28px 20px' : '36px 40px',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
           maxWidth: 1100,
           margin: '0 auto',

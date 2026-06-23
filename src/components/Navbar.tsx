@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTheme } from './ThemeProvider'
 import { useI18n } from '@/lib/i18n'
+import { useBreakpoint } from '@/lib/useBreakpoint'
 import { Logo } from './Logo'
 
 function useScrollDirection() {
   const [visible, setVisible] = useState(true)
-  const lastY    = useRef(0)
-  const ticking  = useRef(false)
+  const lastY   = useRef(0)
+  const ticking = useRef(false)
 
   useEffect(() => {
     const onScroll = () => {
@@ -36,6 +37,7 @@ export function Navbar() {
   const { theme, toggle } = useTheme()
   const { lang, setLang, t } = useI18n()
   const visible = useScrollDirection()
+  const { isMobile } = useBreakpoint()
 
   return (
     <motion.header
@@ -54,12 +56,12 @@ export function Navbar() {
       <nav style={{
         maxWidth: 1200,
         margin: '0 auto',
-        padding: '0 28px',
+        padding: isMobile ? '0 16px' : '0 28px',
         height: 58,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 16,
+        gap: 12,
       }}>
 
         {/* ── Left: logo ── */}
@@ -82,42 +84,46 @@ export function Navbar() {
           </span>
         </a>
 
-        {/* ── Center: nav link ── */}
-        <div style={{
-          position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', alignItems: 'center', gap: 4,
-        }}>
-          <NavLink href="/learn">{t('nav_learn')}</NavLink>
-        </div>
+        {/* ── Center: nav link — hidden on mobile ── */}
+        {!isMobile && (
+          <div style={{
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            <NavLink href="/learn">{t('nav_learn')}</NavLink>
+          </div>
+        )}
 
-        {/* ── Right: lang + theme + CTA ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        {/* ── Right: controls ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
 
-          {/* GitHub icon */}
-          <a
-            href="https://github.com/PatrickLoic-dev/splash"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="GitHub"
-            style={{
-              width: 34, height: 34, borderRadius: 8,
-              border: '1px solid var(--border-strong)',
-              background: 'transparent',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--text-secondary)', textDecoration: 'none',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'var(--text-secondary)'
-              e.currentTarget.style.color = 'var(--text-primary)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'var(--border-strong)'
-              e.currentTarget.style.color = 'var(--text-secondary)'
-            }}
-          >
-            <GitHubIcon size={15} />
-          </a>
+          {/* GitHub icon — hidden on mobile */}
+          {!isMobile && (
+            <a
+              href="https://github.com/PatrickLoic-dev/splash"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              style={{
+                width: 34, height: 34, borderRadius: 8,
+                border: '1px solid var(--border-strong)',
+                background: 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-secondary)', textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--text-secondary)'
+                e.currentTarget.style.color = 'var(--text-primary)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--border-strong)'
+                e.currentTarget.style.color = 'var(--text-secondary)'
+              }}
+            >
+              <GitHubIcon size={15} />
+            </a>
+          )}
 
           {/* Language toggle — EN / FR */}
           <button
@@ -174,21 +180,23 @@ export function Navbar() {
             ))}
           </button>
 
-          {/* CTA */}
-          <a
-            href="/learn"
-            className="btn-border-anim"
-            style={{
-              padding: '0 20px', height: 34, borderRadius: 20,
-              background: 'var(--accent)', color: '#fff',
-              fontSize: 13, fontWeight: 600,
-              textDecoration: 'none', fontFamily: 'var(--font-outfit)',
-              letterSpacing: '0.01em',
-              display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap',
-            }}
-          >
-            {t('nav_start')}
-          </a>
+          {/* CTA — hidden on mobile */}
+          {!isMobile && (
+            <a
+              href="/learn"
+              className="btn-border-anim"
+              style={{
+                padding: '0 20px', height: 34, borderRadius: 20,
+                background: 'var(--accent)', color: '#fff',
+                fontSize: 13, fontWeight: 600,
+                textDecoration: 'none', fontFamily: 'var(--font-outfit)',
+                letterSpacing: '0.01em',
+                display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap',
+              }}
+            >
+              {t('nav_start')}
+            </a>
+          )}
         </div>
       </nav>
     </motion.header>

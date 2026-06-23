@@ -14,6 +14,7 @@ import { BrowserFrame } from './BrowserFrame'
 import { PhoneFrame } from './PhoneFrame'
 import { GridBackground } from './GridBackground'
 import { useI18n } from '@/lib/i18n'
+import { useBreakpoint } from '@/lib/useBreakpoint'
 
 const CAT_COLORS: Record<string, string> = {
   Entrance:   '#534AB7',
@@ -256,8 +257,9 @@ function SelectorView({
   clickedPlatform: PlatformId | null
 }) {
   const { t } = useI18n()
+  const { isMobile, isTablet } = useBreakpoint()
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '64px 40px 96px' }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '40px 20px 72px' : isTablet ? '48px 28px 80px' : '64px 40px 96px' }}>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -288,8 +290,8 @@ function SelectorView({
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-        gap: 16,
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(160px, 1fr))',
+        gap: isMobile ? 10 : 16,
       }}>
         {PLATFORMS.map((p, i) => {
           const LogoComp = PLATFORM_LOGOS[p.id]
@@ -382,13 +384,14 @@ function FilteredView({
   onSwitchPlatform: (p: PlatformId) => void
 }) {
   const { t } = useI18n()
+  const { isMobile, isTablet } = useBreakpoint()
   const platformInfo = PLATFORMS.find(p => p.id === platform)!
   const context      = PLATFORM_CONTEXT[platform] ?? 'web'
   const available    = ANIMATIONS.filter(a => a.implementations.some(i => i.platform === platform))
   const LogoComp     = PLATFORM_LOGOS[platform]
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '48px 40px 96px' }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '32px 16px 72px' : isTablet ? '40px 28px 80px' : '48px 40px 96px' }}>
 
       {/* Header — icon morphs from the selected platform card via layoutId */}
       <div style={{ marginBottom: 40 }}>
@@ -466,8 +469,8 @@ function FilteredView({
       {/* Animation cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-        gap: 14,
+        gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: isMobile ? 10 : 14,
       }}>
         {available.map((anim, i) => (
           <motion.button
@@ -552,6 +555,7 @@ function DetailView({
   onNavigate: (slug: string, ctx: Context) => void; onReplay: () => void; onStepChange: (i: number) => void
 }) {
   const { t } = useI18n()
+  const { isMobile, isTablet } = useBreakpoint()
   const anim        = ANIMATIONS.find(a => a.slug === slug)!
   const accentColor = CAT_COLORS[anim.category] ?? '#534AB7'
   const pool        = context === 'web' ? WEB_PLATFORMS : MOBILE_PLATFORMS
@@ -566,9 +570,10 @@ function DetailView({
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Top bar */}
       <div style={{
-        height: 50, padding: '0 20px', flexShrink: 0,
-        display: 'flex', alignItems: 'center', gap: 12,
+        height: 50, padding: isMobile ? '0 12px' : '0 20px', flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 12,
         borderBottom: '1px solid var(--border)', background: 'var(--bg)',
+        overflowX: isMobile ? 'auto' : 'visible',
       }}>
         <button onClick={onBack} style={{
           fontSize: 12, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)',
@@ -578,21 +583,27 @@ function DetailView({
           onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
         >{t('det_back')}</button>
 
-        <span style={{ color: 'var(--border-strong)', fontSize: 16 }}>|</span>
+        {!isMobile && <span style={{ color: 'var(--border-strong)', fontSize: 16 }}>|</span>}
 
-        <span style={{ fontFamily: 'var(--font-power)', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-          {anim.title}
-        </span>
-        <span style={{
-          padding: '2px 8px', borderRadius: 5,
-          background: accentColor + '18', color: accentColor,
-          fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-        }}>{anim.category}</span>
-        <span style={{
-          padding: '2px 8px', borderRadius: 5,
-          background: 'var(--bg-tertiary)', color: DIFF_COLORS[anim.difficulty],
-          fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 500, letterSpacing: '0.04em',
-        }}>{anim.difficulty}</span>
+        {!isMobile && (
+          <span style={{ fontFamily: 'var(--font-power)', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            {anim.title}
+          </span>
+        )}
+        {!isMobile && (
+          <span style={{
+            padding: '2px 8px', borderRadius: 5,
+            background: accentColor + '18', color: accentColor,
+            fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+          }}>{anim.category}</span>
+        )}
+        {!isMobile && (
+          <span style={{
+            padding: '2px 8px', borderRadius: 5,
+            background: 'var(--bg-tertiary)', color: DIFF_COLORS[anim.difficulty],
+            fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 500, letterSpacing: '0.04em',
+          }}>{t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}</span>
+        )}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
           {(['web', 'mobile'] as Context[]).map(ctx => (
@@ -605,7 +616,7 @@ function DetailView({
             }}>{ctx === 'web' ? t('det_web') : t('det_mobile')}</button>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 2 }}>
+        {!isMobile && <div style={{ display: 'flex', gap: 2 }}>
           <button onClick={() => prev && onNavigate(prev.slug, context)} disabled={!prev} style={{
             padding: '4px 10px', borderRadius: 6, fontSize: 11,
             border: '1px solid var(--border)', background: 'var(--bg-secondary)',
@@ -618,17 +629,21 @@ function DetailView({
             color: next ? 'var(--text-secondary)' : 'var(--border-strong)',
             cursor: next ? 'pointer' : 'default', fontFamily: 'var(--font-outfit)',
           }}>→</button>
-        </div>
+        </div>}
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left preview panel */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: (isMobile || isTablet) ? 'column' : 'row', overflow: (isMobile || isTablet) ? 'auto' : 'hidden' }}>
+        {/* Preview panel */}
         <div style={{
-          width: 380, flexShrink: 0, borderRight: '1px solid var(--border)',
+          width: (isMobile || isTablet) ? '100%' : 380,
+          flexShrink: 0,
+          borderRight: (isMobile || isTablet) ? 'none' : '1px solid var(--border)',
+          borderBottom: (isMobile || isTablet) ? '1px solid var(--border)' : 'none',
           background: 'var(--bg-secondary)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: 24, gap: 16, overflowY: 'auto',
+          padding: isMobile ? 16 : 24, gap: 16, overflowY: 'auto',
+          minHeight: (isMobile || isTablet) ? 300 : undefined,
         }}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -698,7 +713,7 @@ function DetailView({
         </div>
 
         {/* Right content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '36px 48px 80px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '24px 16px 60px' : isTablet ? '28px 28px 60px' : '36px 48px 80px' }}>
           <Section title={t('det_how')} color={accentColor}>
             <ol style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
               {anim.howItWorks.map((step, i) => (
@@ -722,6 +737,7 @@ function DetailView({
               display: 'flex', gap: 2, background: 'var(--bg-secondary)',
               borderRadius: '10px 10px 0 0', border: '1px solid var(--border)',
               borderBottom: 'none', padding: '8px 8px 0',
+              overflowX: 'auto',
             }}>
               {PLATFORMS.filter(p => pool.includes(p.id)).map(p => {
                 const hasImpl  = anim.implementations.some(i => i.platform === p.id)
