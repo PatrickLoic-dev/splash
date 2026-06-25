@@ -204,6 +204,7 @@ export function RevealOnScroll({ children, delay = 0 }: {
     {
       title: 'Plain template div',
       description: 'Render the content without any animation. In Vue 3, the `<template>` tag holds the markup. Establish the correct layout before touching transitions.',
+      fr: { title: 'Div template simple', description: 'Afficher le contenu sans animation. En Vue 3, la balise `<template>` contient le balisage. Établir la mise en page correcte avant de toucher aux transitions.' },
       code: `<template>
   <div class="section">
     <slot />
@@ -217,6 +218,7 @@ export function RevealOnScroll({ children, delay = 0 }: {
     {
       title: 'Bind opacity to a reactive flag',
       description: 'Introduce a `isVisible` ref and bind `opacity` to it via `:style`. Set `isVisible` to true in `onMounted` so it animates on mount. Add a CSS `transition` for the actual motion.',
+      fr: { title: 'Lier l\'opacité à un flag réactif', description: 'Introduire un ref `isVisible` et lier `opacity` via `:style`. Mettre `isVisible` à true dans `onMounted` pour animer au montage. Ajouter une CSS `transition` pour le mouvement réel.' },
       code: `<template>
   <div :style="{ opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease' }">
     <slot />
@@ -232,6 +234,7 @@ onMounted(() => { isVisible.value = true })
     {
       title: 'Add translateY',
       description: 'Add `transform: translateY` to the bound style object. Use the same cubic-bezier easing string you\'d use in Framer Motion — CSS `transition` accepts it natively.',
+      fr: { title: 'Ajouter translateY', description: 'Ajouter `transform: translateY` à l\'objet de style lié. Utiliser la même chaîne cubic-bezier qu\'avec Framer Motion — CSS `transition` l\'accepte nativement.' },
       code: `<template>
   <div :style="style">
     <slot />
@@ -255,6 +258,7 @@ const style = computed(() => ({
     {
       title: 'Trigger on scroll with VueUse',
       description: '`useIntersectionObserver` from VueUse replaces the manual `onMounted` trigger. The observer fires once when the element enters the viewport, then disconnects (`{ once: true }` equivalent via `stop()`).',
+      fr: { title: 'Déclenchement au scroll avec VueUse', description: '`useIntersectionObserver` de VueUse remplace le déclencheur `onMounted` manuel. L\'observateur se déclenche une fois quand l\'élément entre dans le viewport, puis se déconnecte (équivalent `{ once: true }` via `stop()`).' },
       code: `<template>
   <div ref="el" :style="style"><slot /></div>
 </template>
@@ -290,6 +294,7 @@ const style = computed(() => ({
     {
       title: 'Plain View',
       description: 'Start with a standard `View`. In React Native there is no DOM, so no IntersectionObserver — the animation will trigger on layout (when the element is measured) rather than on scroll.',
+      fr: { title: 'View simple', description: 'Commencer avec un `View` standard. Dans React Native il n\'y a pas de DOM, donc pas d\'IntersectionObserver — l\'animation se déclenchera au layout (quand l\'élément est mesuré) plutôt qu\'au scroll.' },
       code: `import { View } from 'react-native'
 
 function RevealOnMount({ children }) {
@@ -303,6 +308,7 @@ function RevealOnMount({ children }) {
     {
       title: 'Create shared values',
       description: '`useSharedValue` creates values that live on the UI thread — animations driven by them never pass through the JS bridge. Declare one for opacity and one for translateY.',
+      fr: { title: 'Créer des valeurs partagées', description: '`useSharedValue` crée des valeurs qui vivent sur le thread UI — les animations pilotées par elles ne passent jamais par le pont JS. Déclarer une valeur pour opacity et une pour translateY.' },
       code: `import Animated, { useSharedValue } from 'react-native-reanimated'
 
 function RevealOnMount({ children }) {
@@ -319,6 +325,7 @@ function RevealOnMount({ children }) {
     {
       title: 'Animate on layout',
       description: '`onLayout` fires once when the element is first measured and added to the layout tree. Trigger `withTiming` there — no setTimeout needed. `useAnimatedStyle` subscribes to shared value changes on the UI thread.',
+      fr: { title: 'Animer au layout', description: '`onLayout` se déclenche une fois quand l\'élément est mesuré et ajouté à l\'arbre de layout. Déclencher `withTiming` là — pas de setTimeout nécessaire. `useAnimatedStyle` s\'abonne aux changements de valeurs partagées sur le thread UI.' },
       code: `import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated'
@@ -350,6 +357,7 @@ function RevealOnMount({ children }) {
     {
       title: 'Add delay prop for stagger',
       description: '`withDelay` wraps any animation and defers it by the given milliseconds. Pass a `delay` prop to each instance and the parent controls the cascade — no separate stagger hook needed.',
+      fr: { title: 'Ajouter une prop delay pour la cascade', description: '`withDelay` enveloppe n\'importe quelle animation et la diffère du nombre de millisecondes donné. Passer une prop `delay` à chaque instance et le parent contrôle la cascade — pas de hook stagger séparé nécessaire.' },
       code: `import Animated, {
   useSharedValue, useAnimatedStyle,
   withDelay, withTiming, Easing,
@@ -389,6 +397,7 @@ function RevealOnMount({ children, delay = 0 }: {
     {
       title: 'StatefulWidget scaffold',
       description: 'Flutter animations require a `StatefulWidget` so the `AnimationController` can be initialized and disposed with the widget lifecycle. Start with the scaffold — no animation logic yet.',
+      fr: { title: 'Structure StatefulWidget', description: 'Les animations Flutter nécessitent un `StatefulWidget` pour que l\'`AnimationController` puisse être initialisé et libéré avec le cycle de vie du widget. Commencer par la structure — pas encore de logique d\'animation.' },
       code: `import 'package:flutter/material.dart';
 
 class RevealOnMount extends StatefulWidget {
@@ -407,6 +416,7 @@ class _RevealOnMountState extends State<RevealOnMount> {
     {
       title: 'Add AnimationController + FadeTransition',
       description: '`AnimationController` drives all animations in Flutter — think of it as the `useMotionValue(0)` → animate to 1 equivalent. `FadeTransition` subscribes to the animation and handles opacity.',
+      fr: { title: 'Ajouter AnimationController + FadeTransition', description: '`AnimationController` pilote toutes les animations en Flutter — pensez-y comme l\'équivalent de `useMotionValue(0)` → animer vers 1. `FadeTransition` s\'abonne à l\'animation et gère l\'opacité.' },
       code: `class _RevealOnMountState extends State<RevealOnMount>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
@@ -436,6 +446,7 @@ class _RevealOnMountState extends State<RevealOnMount> {
     {
       title: 'Add SlideTransition',
       description: '`SlideTransition` animates position as a fractional offset of the widget\'s own size. `Offset(0, 0.1)` starts 10% below — equivalent to `translateY: 32px` on a 320px element.',
+      fr: { title: 'Ajouter SlideTransition', description: '`SlideTransition` anime la position comme un décalage fractionnaire de la taille propre du widget. `Offset(0, 0.1)` commence 10% en dessous — équivalent à `translateY: 32px` sur un élément de 320px.' },
       code: `// Add to initState:
 _slide = Tween<Offset>(
   begin: const Offset(0, 0.1),
@@ -455,6 +466,7 @@ Widget build(BuildContext context) => FadeTransition(
     {
       title: 'Add delay for stagger',
       description: '`Future.delayed` defers the controller\'s `forward()` call. The `mounted` check prevents calling `forward()` if the widget was disposed before the delay elapsed — important for fast navigation.',
+      fr: { title: 'Ajouter un délai pour la cascade', description: '`Future.delayed` diffère l\'appel `forward()` du contrôleur. La vérification `mounted` empêche d\'appeler `forward()` si le widget a été libéré avant la fin du délai — important pour la navigation rapide.' },
       code: `import 'package:flutter/material.dart';
 
 class RevealOnMount extends StatefulWidget {
@@ -710,6 +722,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     {
       title: 'Instant RouterView',
       description: '`<RouterView>` renders the current route\'s component. By default, switching routes is instant — the old component unmounts and the new one mounts in the same tick.',
+      fr: { title: 'RouterView instantané', description: '`<RouterView>` affiche le composant de la route actuelle. Par défaut, le changement de route est instantané — l\'ancien composant est démonté et le nouveau est monté dans le même tick.' },
       code: `<!-- App.vue -->
 <template>
   <nav>
@@ -722,6 +735,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     {
       title: 'Wrap RouterView in Transition',
       description: 'Vue\'s `<Transition>` component wraps the entering/leaving element and applies CSS classes at each phase. The `name` prop prefixes all class names: `page-enter-from`, `page-leave-to`, etc.',
+      fr: { title: 'Envelopper RouterView dans Transition', description: 'Le composant `<Transition>` de Vue enveloppe l\'élément entrant/sortant et applique des classes CSS à chaque phase. La prop `name` préfixe tous les noms de classe : `page-enter-from`, `page-leave-to`, etc.' },
       code: `<template>
   <RouterView v-slot="{ Component }">
     <Transition name="page">
@@ -735,6 +749,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     {
       title: 'Add CSS transition classes',
       description: 'Apply `transition` in the `-active` classes and the start/end states in `-from` / `-to`. Vue applies these classes during the enter/leave phases, and CSS does the actual animation.',
+      fr: { title: 'Ajouter les classes de transition CSS', description: 'Appliquer `transition` dans les classes `-active` et les états de début/fin dans `-from` / `-to`. Vue applique ces classes pendant les phases d\'entrée/sortie, et CSS réalise l\'animation réelle.' },
       code: `<template>
   <RouterView v-slot="{ Component }">
     <Transition name="page">
@@ -755,6 +770,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     {
       title: 'Add mode="out-in" to prevent overlap',
       description: '`mode="out-in"` tells Vue to wait for the leaving component to finish its exit before mounting the entering one — preventing two pages from overlapping mid-transition. Pass the route path as `:key` so Vue detects same-component route changes.',
+      fr: { title: 'Ajouter mode="out-in" pour éviter le chevauchement', description: '`mode="out-in"` indique à Vue d\'attendre que le composant sortant termine son exit avant de monter celui qui entre — empêchant deux pages de se chevaucher en pleine transition. Passer le chemin de route comme `:key` pour que Vue détecte les changements de route avec le même composant.' },
       code: `<template>
   <RouterView v-slot="{ Component, route }">
     <Transition name="page" mode="out-in">
@@ -781,6 +797,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     {
       title: 'Default Stack navigator',
       description: 'React Navigation\'s Stack navigator already provides platform-native transitions (slide on iOS, fade-up on Android). Understanding the default is important before customising.',
+      fr: { title: 'Navigateur Stack par défaut', description: 'Le navigateur Stack de React Navigation fournit déjà des transitions natives à la plateforme (glissement sur iOS, fondu vers le haut sur Android). Comprendre le comportement par défaut est important avant de personnaliser.' },
       code: `import { createStackNavigator } from '@react-navigation/stack'
 const Stack = createStackNavigator()
 
@@ -797,6 +814,7 @@ export function AppNavigator() {
     {
       title: 'Use a built-in interpolator',
       description: '`CardStyleInterpolators` ships preset animation curves. `forFadeFromCenter` gives a cross-fade, `forHorizontalIOS` gives the native iOS push slide. No custom math needed.',
+      fr: { title: 'Utiliser un interpolateur intégré', description: '`CardStyleInterpolators` fournit des courbes d\'animation prédéfinies. `forFadeFromCenter` donne un fondu enchaîné, `forHorizontalIOS` donne le glissement iOS natif. Pas de calcul personnalisé nécessaire.' },
       code: `import { CardStyleInterpolators } from '@react-navigation/stack'
 
 <Stack.Navigator
@@ -816,6 +834,7 @@ export function AppNavigator() {
     {
       title: 'Write a custom interpolator',
       description: 'A `cardStyleInterpolator` receives `current.progress` (0 → 1 on enter, 1 → 0 on exit) and the screen dimensions. Return an animated style object.',
+      fr: { title: 'Écrire un interpolateur personnalisé', description: 'Un `cardStyleInterpolator` reçoit `current.progress` (0 → 1 à l\'entrée, 1 → 0 à la sortie) et les dimensions de l\'écran. Retourner un objet de style animé.' },
       code: `const forFadeSlide = ({ current, layouts }) => ({
   cardStyle: {
     opacity: current.progress,
@@ -836,6 +855,7 @@ export function AppNavigator() {
     {
       title: 'Configure timing per transition',
       description: '`transitionSpec` lets you set different speeds for push (open) vs pop (close). Closing slightly faster than opening feels more responsive — the user already knows where they\'re going.',
+      fr: { title: 'Configurer le timing par transition', description: '`transitionSpec` permet de définir des vitesses différentes pour push (ouverture) et pop (fermeture). Fermer légèrement plus vite qu\'ouvrir paraît plus réactif — l\'utilisateur sait déjà où il va.' },
       code: `import { createStackNavigator } from '@react-navigation/stack'
 const Stack = createStackNavigator()
 
@@ -872,6 +892,7 @@ export function AppNavigator() {
     {
       title: 'Navigator.push with default route',
       description: 'Flutter\'s default `MaterialPageRoute` slides up from the bottom on Android and slides from the right on iOS. This is the baseline — we\'ll replace it with a custom route.',
+      fr: { title: 'Navigator.push avec la route par défaut', description: 'La `MaterialPageRoute` par défaut de Flutter glisse depuis le bas sur Android et depuis la droite sur iOS. C\'est la base — nous la remplacerons par une route personnalisée.' },
       code: `// Navigate with the default transition
 Navigator.push(
   context,
@@ -881,6 +902,7 @@ Navigator.push(
     {
       title: 'Replace with PageRouteBuilder',
       description: '`PageRouteBuilder` lets you define `transitionsBuilder`. The `animation` parameter is the controller (0 → 1 on enter). Returning `child` unchanged gives an instant transition — the hook is in place.',
+      fr: { title: 'Remplacer par PageRouteBuilder', description: '`PageRouteBuilder` permet de définir `transitionsBuilder`. Le paramètre `animation` est le contrôleur (0 → 1 à l\'entrée). Retourner `child` inchangé donne une transition instantanée — le crochet est en place.' },
       code: `Navigator.push(
   context,
   PageRouteBuilder(
@@ -896,6 +918,7 @@ Navigator.push(
     {
       title: 'Add FadeTransition',
       description: '`FadeTransition` subscribes to the `animation` and sets the widget\'s opacity. `CurveTween` maps the linear 0–1 controller value through a curve for more natural motion.',
+      fr: { title: 'Ajouter FadeTransition', description: '`FadeTransition` s\'abonne à l\'`animation` et définit l\'opacité du widget. `CurveTween` mappe la valeur linéaire 0–1 du contrôleur à travers une courbe pour un mouvement plus naturel.' },
       code: `transitionsBuilder: (context, animation, secondary, child) {
   final fade = Tween<double>(begin: 0.0, end: 1.0)
       .chain(CurveTween(curve: Curves.easeOut))
@@ -907,6 +930,7 @@ Navigator.push(
     {
       title: 'Combine fade + slide as a reusable route',
       description: 'Extract into a `FadeSlideRoute` class so you can use it anywhere in the app with `Navigator.push(context, FadeSlideRoute(page: ...))` — no boilerplate at the call site.',
+      fr: { title: 'Combiner fondu + glissement en route réutilisable', description: 'Extraire dans une classe `FadeSlideRoute` pour l\'utiliser partout dans l\'app avec `Navigator.push(context, FadeSlideRoute(page: ...))` — pas de code répétitif au site d\'appel.' },
       code: `import 'package:flutter/material.dart';
 
 class FadeSlideRoute<T> extends PageRouteBuilder<T> {
@@ -1054,6 +1078,7 @@ export function SwipeCard({ onDismiss, children }) {
     {
       title: 'Pressable with no animation',
       description: '`Pressable` is the modern RN touch element — unlike `TouchableOpacity`, it doesn\'t animate by default. This gives us full control over the feedback.',
+      fr: { title: 'Pressable sans animation', description: '`Pressable` est l\'élément tactile moderne de RN — contrairement à `TouchableOpacity`, il n\'anime pas par défaut. Cela nous donne un contrôle total sur le retour visuel.' },
       code: `import { Pressable, Text, StyleSheet } from 'react-native'
 
 export function ActionButton({ children, onPress }) {
@@ -1072,6 +1097,7 @@ const styles = StyleSheet.create({
     {
       title: 'Add scale with useSharedValue',
       description: '`useSharedValue(1)` creates a scale value on the UI thread. `Gesture.Tap().onBegin()` scales it down; `.onFinalize()` springs it back. This runs at 60fps without touching the JS thread.',
+      fr: { title: 'Ajouter la mise à l\'échelle avec useSharedValue', description: '`useSharedValue(1)` crée une valeur d\'échelle sur le thread UI. `Gesture.Tap().onBegin()` la réduit ; `.onFinalize()` la ramène par ressort. Cela s\'exécute à 60fps sans toucher au thread JS.' },
       code: `import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 
@@ -1098,6 +1124,7 @@ export function ActionButton({ children, onPress }) {
     {
       title: 'Call onPress from the UI thread',
       description: '`runOnJS` bridges a JS function call back from the UI thread. Without it, calling `onPress()` inside a Reanimated gesture handler would crash — JS callbacks must be invoked with `runOnJS`.',
+      fr: { title: 'Appeler onPress depuis le thread UI', description: '`runOnJS` relie un appel de fonction JS depuis le thread UI. Sans lui, appeler `onPress()` dans un gestionnaire de geste Reanimated planterait — les callbacks JS doivent être invoqués avec `runOnJS`.' },
       code: `import { runOnJS } from 'react-native-reanimated'
 
 const tap = Gesture.Tap()
@@ -1110,6 +1137,7 @@ const tap = Gesture.Tap()
     {
       title: 'Add swipe-to-dismiss with Pan gesture',
       description: '`Gesture.Pan()` tracks drag movement. `onChange` updates `translateX` in real time; `onEnd` checks velocity and offset to decide whether to dismiss or snap back with `withSpring(0)`.',
+      fr: { title: 'Ajouter le glissement pour ignorer avec geste Pan', description: '`Gesture.Pan()` suit le mouvement de glissement. `onChange` met à jour `translateX` en temps réel ; `onEnd` vérifie la vitesse et le décalage pour décider d\'ignorer ou de revenir avec `withSpring(0)`.' },
       code: `import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, runOnJS,
 } from 'react-native-reanimated'
@@ -1146,6 +1174,7 @@ export function SwipeCard({ onDismiss, children }) {
     {
       title: 'Plain ElevatedButton',
       description: 'Flutter\'s `ElevatedButton` has a built-in ink ripple. That\'s fine for Material apps, but we want precise spring physics — so we\'ll replace it with a custom gesture widget.',
+      fr: { title: 'ElevatedButton simple', description: 'L\'`ElevatedButton` de Flutter a un effet ripple intégré. C\'est bien pour les apps Material, mais nous voulons une physique de ressort précise — nous le remplacerons par un widget de geste personnalisé.' },
       code: `ElevatedButton(
   onPressed: () {},
   child: const Text('Press me'),
@@ -1154,6 +1183,7 @@ export function SwipeCard({ onDismiss, children }) {
     {
       title: 'GestureDetector + press state',
       description: '`GestureDetector` catches `onTapDown`, `onTapUp`, and `onTapCancel`. The `AnimationController` drives the scale — `forward()` on press, `reverse()` on release.',
+      fr: { title: 'GestureDetector + état d\'appui', description: '`GestureDetector` capte `onTapDown`, `onTapUp` et `onTapCancel`. L\'`AnimationController` pilote l\'échelle — `forward()` à l\'appui, `reverse()` au relâchement.' },
       code: `class SpringButton extends StatefulWidget {
   final Widget child;
   final VoidCallback? onPressed;
@@ -1189,6 +1219,7 @@ class _SpringButtonState extends State<SpringButton>
     {
       title: 'Add ScaleTransition',
       description: '`ScaleTransition` drives `Transform.scale` from the animation. A `Tween(begin: 1.0, end: 0.94)` maps the 0–1 controller value to the 1–0.94 scale range. `Curves.elasticOut` on reverse gives the spring-back feel.',
+      fr: { title: 'Ajouter ScaleTransition', description: '`ScaleTransition` pilote `Transform.scale` depuis l\'animation. Un `Tween(begin: 1.0, end: 0.94)` mappe la valeur 0–1 du contrôleur à la plage d\'échelle 1–0.94. `Curves.elasticOut` à l\'envers donne la sensation de ressort.' },
       code: `@override
 void initState() {
   super.initState();
@@ -1212,6 +1243,7 @@ ScaleTransition(scale: _scale, child: widget.child)`,
     {
       title: 'Add Dismissible for swipe',
       description: '`Dismissible` is a first-party Flutter widget that handles swipe-to-dismiss. Use `SpringButton` for tap feedback and `Dismissible` for swipe — compose them rather than re-implementing.',
+      fr: { title: 'Ajouter Dismissible pour le glissement', description: '`Dismissible` est un widget Flutter natif qui gère le glissement pour ignorer. Utiliser `SpringButton` pour le retour tactile et `Dismissible` pour le glissement — les composer plutôt que de les réimplémenter.' },
       code: `// Compose SpringButton + Dismissible
 
 // 1. Spring tap feedback (full component from step 3)
@@ -1361,6 +1393,7 @@ export function ParallaxSection({ image, children }) {
     {
       title: 'ScrollView with a header image',
       description: 'Place the hero image above the scrollable content inside a `ScrollView`. No parallax yet — just the structure. Use `overflow: hidden` on the image container to clip motion later.',
+      fr: { title: 'ScrollView avec une image d\'en-tête', description: 'Placer l\'image hero au-dessus du contenu défilable dans un `ScrollView`. Pas encore de parallax — juste la structure. Utiliser `overflow: hidden` sur le conteneur d\'image pour rogner le mouvement ensuite.' },
       code: `import { ScrollView, View, Image, StyleSheet } from 'react-native'
 
 const HEADER_HEIGHT = 280
@@ -1381,6 +1414,7 @@ export function ParallaxScrollView({ imageSource, children }) {
     {
       title: 'Track scroll with Animated.event',
       description: '`Animated.event` maps `nativeEvent.contentOffset.y` directly to an `Animated.Value` — no JS bridge for every scroll frame. `scrollEventThrottle={16}` syncs at ~60fps.',
+      fr: { title: 'Suivre le scroll avec Animated.event', description: '`Animated.event` mappe `nativeEvent.contentOffset.y` directement vers un `Animated.Value` — pas de pont JS pour chaque frame de scroll. `scrollEventThrottle={16}` se synchronise à ~60fps.' },
       code: `import { useRef } from 'react'
 import { ScrollView, Animated } from 'react-native'
 
@@ -1405,6 +1439,7 @@ export function ParallaxScrollView({ imageSource, children }) {
     {
       title: 'Interpolate scrollY to translateY',
       description: '`.interpolate()` maps the scroll position to a translateY for the image. As the user scrolls down (positive Y), the image moves up at only 0.3× speed — creating the lag that reads as depth.',
+      fr: { title: 'Interpoler scrollY vers translateY', description: '`.interpolate()` mappe la position de scroll vers un translateY pour l\'image. Quand l\'utilisateur défile vers le bas (Y positif), l\'image remonte à seulement 0.3× de la vitesse — créant le décalage qui donne l\'impression de profondeur.' },
       code: `const imageTranslate = scrollY.interpolate({
   inputRange:  [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
   outputRange: [ HEADER_HEIGHT * 0.5, 0, -HEADER_HEIGHT * 0.3],
@@ -1415,6 +1450,7 @@ export function ParallaxScrollView({ imageSource, children }) {
     {
       title: 'Apply to Animated.Image',
       description: 'Swap the plain `Image` for `Animated.Image` and apply the interpolated transform. The header fades out as content scrolls up — combine with `headerOpacity` interpolation for the full effect.',
+      fr: { title: 'Appliquer à Animated.Image', description: 'Remplacer l\'`Image` simple par `Animated.Image` et appliquer la transformation interpolée. L\'en-tête s\'estompe quand le contenu défile vers le haut — combiner avec l\'interpolation `headerOpacity` pour l\'effet complet.' },
       code: `import { useRef } from 'react'
 import { ScrollView, Animated, View, StyleSheet } from 'react-native'
 
@@ -1463,6 +1499,7 @@ export function ParallaxScrollView({ imageSource, children }) {
     {
       title: 'CustomScrollView scaffold',
       description: '`CustomScrollView` with `SliverAppBar` and `SliverToBoxAdapter` is Flutter\'s native approach to parallax headers. The `SliverAppBar` handles the collapsing behaviour.',
+      fr: { title: 'Structure CustomScrollView', description: '`CustomScrollView` avec `SliverAppBar` et `SliverToBoxAdapter` est l\'approche native de Flutter pour les en-têtes parallax. `SliverAppBar` gère le comportement de réduction.' },
       code: `import 'package:flutter/material.dart';
 
 class ParallaxScreen extends StatelessWidget {
@@ -1483,6 +1520,7 @@ class ParallaxScreen extends StatelessWidget {
     {
       title: 'Enable built-in parallax',
       description: '`collapseMode: CollapseMode.parallax` is all you need for Flutter\'s built-in parallax on `FlexibleSpaceBar`. The framework handles the offset math automatically.',
+      fr: { title: 'Activer le parallax intégré', description: '`collapseMode: CollapseMode.parallax` est tout ce dont vous avez besoin pour le parallax intégré de Flutter sur `FlexibleSpaceBar`. Le framework gère automatiquement le calcul des décalages.' },
       code: `SliverAppBar(
   expandedHeight: 300,
   pinned: true,
@@ -1497,6 +1535,7 @@ class ParallaxScreen extends StatelessWidget {
     {
       title: 'Manual parallax with ScrollController',
       description: 'For custom parallax on non-SliverAppBar content, attach a `ScrollController` and rebuild on scroll. Multiply the offset by a factor < 1 to slow the background layer down.',
+      fr: { title: 'Parallax manuel avec ScrollController', description: 'Pour un parallax personnalisé sur du contenu non-SliverAppBar, attacher un `ScrollController` et reconstruire au scroll. Multiplier le décalage par un facteur < 1 pour ralentir la couche d\'arrière-plan.' },
       code: `class ManualParallax extends StatefulWidget {
   final Widget child;
   const ManualParallax({required this.child, super.key});
@@ -1528,6 +1567,7 @@ class _ManualParallaxState extends State<ManualParallax> {
     {
       title: 'Wrap in a reusable widget',
       description: 'Extract into a `ParallaxImage` widget that takes `imageUrl` and `factor` props. A `factor` of 0 means the image is fixed; 1 means it scrolls at full speed (no parallax); 0.3 is a good default.',
+      fr: { title: 'Encapsuler dans un widget réutilisable', description: 'Extraire dans un widget `ParallaxImage` qui prend les props `imageUrl` et `factor`. Un `factor` de 0 signifie que l\'image est fixe ; 1 signifie qu\'elle défile à pleine vitesse (pas de parallax) ; 0.3 est un bon défaut.' },
       code: `import 'package:flutter/material.dart';
 
 class ParallaxImage extends StatefulWidget {
@@ -1695,6 +1735,7 @@ export function UserCard({ userId }) {
     {
       title: 'Gray View placeholder',
       description: 'A plain `View` with a gray `backgroundColor` and the same dimensions as the real content. Already better than nothing — the user sees where content will appear.',
+      fr: { title: 'Placeholder View gris', description: 'Un `View` simple avec un `backgroundColor` gris et les mêmes dimensions que le vrai contenu. Déjà mieux que rien — l\'utilisateur voit où le contenu apparaîtra.' },
       code: `import { View } from 'react-native'
 
 export function Skeleton({ width, height = 16, borderRadius = 4 }) {
@@ -1711,6 +1752,7 @@ export function Skeleton({ width, height = 16, borderRadius = 4 }) {
     {
       title: 'Add shimmer with useSharedValue',
       description: '`withRepeat(withTiming(...), -1)` loops the animation indefinitely. `-1` means infinite repeats. The value animates from -1 to 1, mapping to a translateX offset.',
+      fr: { title: 'Ajouter le shimmer avec useSharedValue', description: '`withRepeat(withTiming(...), -1)` boucle l\'animation indéfiniment. `-1` signifie des répétitions infinies. La valeur anime de -1 à 1, correspondant à un décalage translateX.' },
       code: `import Animated, { useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated'
 import { useEffect } from 'react'
 
@@ -1731,6 +1773,7 @@ export function Skeleton({ width, height = 16, borderRadius = 4 }) {
     {
       title: 'Apply gradient overlay',
       description: '`useAnimatedStyle` maps the shimmer value to `translateX`. A `LinearGradient` overlay moves across the surface, creating the light sweep effect.',
+      fr: { title: 'Appliquer le dégradé de surimpression', description: '`useAnimatedStyle` mappe la valeur shimmer vers `translateX`. Une surimpression `LinearGradient` se déplace sur la surface, créant l\'effet de balayage lumineux.' },
       code: `import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
 import { View, StyleSheet } from 'react-native'
@@ -1764,6 +1807,7 @@ export function Skeleton({ width, height = 16, borderRadius = 4 }: {
     {
       title: 'Compose and swap to real content',
       description: 'Build a `CardSkeleton` using `Skeleton` primitives, then conditionally swap to the real `UserCard` when data arrives. Use Reanimated\'s `FadeIn` / `FadeOut` for the swap.',
+      fr: { title: 'Composer et basculer vers le contenu réel', description: 'Construire un `CardSkeleton` avec des primitives `Skeleton`, puis basculer conditionnellement vers le vrai `UserCard` quand les données arrivent. Utiliser `FadeIn` / `FadeOut` de Reanimated pour le basculement.' },
       code: `import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
 
 export function CardSkeleton() {
@@ -1800,6 +1844,7 @@ export function UserCard({ user }: { user: User | null }) {
     {
       title: 'Container placeholder',
       description: 'A `Container` with a gray `decoration` and the target dimensions. Wrap in a `ClipRRect` for rounded corners — this clips the shimmer gradient we\'ll add next.',
+      fr: { title: 'Placeholder Container', description: 'Un `Container` avec une `decoration` grise et les dimensions cibles. Envelopper dans un `ClipRRect` pour les coins arrondis — cela rognera le dégradé shimmer que nous ajouterons ensuite.' },
       code: `import 'package:flutter/material.dart';
 
 class Skeleton extends StatelessWidget {
@@ -1827,6 +1872,7 @@ class Skeleton extends StatelessWidget {
     {
       title: 'Add AnimationController for shimmer',
       description: 'A looping `AnimationController` drives the shimmer position from -1.5 to 2.5 (extending beyond the widget edges so the gradient enters and exits smoothly).',
+      fr: { title: 'Ajouter AnimationController pour le shimmer', description: 'Un `AnimationController` en boucle pilote la position du shimmer de -1.5 à 2.5 (s\'étendant au-delà des bords du widget pour que le dégradé entre et sorte en douceur).' },
       code: `class _SkeletonState extends State<Skeleton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
@@ -1850,6 +1896,7 @@ class Skeleton extends StatelessWidget {
     {
       title: 'Paint the gradient with AnimatedBuilder',
       description: '`AnimatedBuilder` rebuilds only the decorated box on each frame. The `LinearGradient`\'s `begin` and `end` alignments shift with `_shimmer.value`, moving the highlight across the surface.',
+      fr: { title: 'Peindre le dégradé avec AnimatedBuilder', description: '`AnimatedBuilder` reconstruit uniquement la boîte décorée à chaque frame. Les alignements `begin` et `end` du `LinearGradient` se déplacent avec `_shimmer.value`, faisant bouger le reflet sur la surface.' },
       code: `@override
 Widget build(BuildContext context) => ClipRRect(
   borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -1875,6 +1922,7 @@ Widget build(BuildContext context) => ClipRRect(
     {
       title: 'Compose and swap with AnimatedSwitcher',
       description: '`AnimatedSwitcher` handles the skeleton → real content swap with a cross-fade. The key change on the child triggers the transition. No manual `AnimationController` needed.',
+      fr: { title: 'Composer et basculer avec AnimatedSwitcher', description: '`AnimatedSwitcher` gère le basculement squelette → contenu réel avec un fondu enchaîné. Le changement de clé sur l\'enfant déclenche la transition. Pas d\'`AnimationController` manuel nécessaire.' },
       code: `import 'package:flutter/material.dart';
 
 class CardSkeleton extends StatelessWidget {
@@ -2036,6 +2084,7 @@ export function NavList({ items }: { items: string[] }) {
     {
       title: 'FlatList with no animation',
       description: '`FlatList` virtualizes long lists — only renders what\'s visible. Always use it for lists longer than 20 items. Short lists can use a plain `View` + `map`.',
+      fr: { title: 'FlatList sans animation', description: '`FlatList` virtualise les longues listes — affiche uniquement ce qui est visible. Toujours l\'utiliser pour les listes de plus de 20 éléments. Les listes courtes peuvent utiliser un `View` + `map` simple.' },
       code: `import { FlatList, Text, View, StyleSheet } from 'react-native'
 
 const items = ['Dashboard', 'Analytics', 'Users', 'Settings', 'Billing']
@@ -2062,6 +2111,7 @@ const styles = StyleSheet.create({
     {
       title: 'Fade in each item on mount',
       description: 'Replace the inner `View` with `Animated.View`. Use `withTiming` in `onLayout` — it fires once when each item is first rendered. All items animate simultaneously.',
+      fr: { title: 'Fondre chaque élément au montage', description: 'Remplacer le `View` interne par `Animated.View`. Utiliser `withTiming` dans `onLayout` — il se déclenche une fois quand chaque élément est rendu pour la première fois. Tous les éléments animent simultanément.' },
       code: `import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 
 function NavItem({ label }: { label: string }) {
@@ -2079,6 +2129,7 @@ function NavItem({ label }: { label: string }) {
     {
       title: 'Add slide + stagger with withDelay',
       description: '`withDelay(index * 70, ...)` staggers each item by 70ms × its index. The `index` comes from `FlatList`\'s `renderItem` callback. Both opacity and translateY run in parallel.',
+      fr: { title: 'Ajouter le glissement + cascade avec withDelay', description: '`withDelay(index * 70, ...)` décale chaque élément de 70ms × son index. L\'`index` vient du callback `renderItem` de `FlatList`. opacity et translateY s\'exécutent en parallèle.' },
       code: `import Animated, {
   useSharedValue, useAnimatedStyle, withDelay, withTiming, Easing,
 } from 'react-native-reanimated'
@@ -2113,6 +2164,7 @@ renderItem={({ item, index }) => <NavItem label={item} index={index} />}`,
     {
       title: 'Cap delay for long lists',
       description: 'For lists with many items, an uncapped stagger makes the last item wait too long. Cap the delay at 400ms so the animation feels energetic regardless of list length.',
+      fr: { title: 'Limiter le délai pour les longues listes', description: 'Pour les listes avec beaucoup d\'éléments, une cascade sans limite fait attendre le dernier élément trop longtemps. Limiter le délai à 400ms pour que l\'animation paraisse énergique quelle que soit la longueur de la liste.' },
       code: `function NavItem({ label, index }: { label: string; index: number }) {
   const opacity    = useSharedValue(0)
   const translateY = useSharedValue(16)
@@ -2145,6 +2197,7 @@ renderItem={({ item, index }) => <NavItem label={item} index={index} />}`,
     {
       title: 'Column of plain widgets',
       description: 'A `Column` renders all children simultaneously. Each item is a plain `Container`. This is the baseline — no animation, no cascade.',
+      fr: { title: 'Colonne de widgets simples', description: 'Une `Column` affiche tous les enfants simultanément. Chaque élément est un `Container` simple. C\'est la base — pas d\'animation, pas de cascade.' },
       code: `import 'package:flutter/material.dart';
 
 class NavList extends StatelessWidget {
@@ -2168,6 +2221,7 @@ class NavList extends StatelessWidget {
     {
       title: 'Add AnimationController for a single item',
       description: 'Convert one list item to a `StatefulWidget`. A `SingleTickerProviderStateMixin` gives it access to `vsync`. The controller drives a `FadeTransition` + `SlideTransition`.',
+      fr: { title: 'Ajouter AnimationController pour un seul élément', description: 'Convertir un élément de liste en `StatefulWidget`. Un `SingleTickerProviderStateMixin` lui donne accès à `vsync`. Le contrôleur pilote un `FadeTransition` + `SlideTransition`.' },
       code: `class _NavItemState extends State<NavItem>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
@@ -2197,6 +2251,7 @@ class NavList extends StatelessWidget {
     {
       title: 'Stagger with a single controller + Interval',
       description: 'Move the `AnimationController` to the parent list widget. Each item uses an `Interval` to define its window within the parent\'s 0–1 timeline — this is Flutter\'s stagger pattern.',
+      fr: { title: 'Cascade avec un seul contrôleur + Interval', description: 'Déplacer l\'`AnimationController` vers le widget de liste parent. Chaque élément utilise un `Interval` pour définir sa fenêtre dans la timeline 0–1 du parent — c\'est le pattern de cascade de Flutter.' },
       code: `class StaggerList extends StatefulWidget {
   final List<String> items;
   const StaggerList({required this.items, super.key});
@@ -2238,6 +2293,7 @@ class _StaggerListState extends State<StaggerList>
     {
       title: 'Add slide + cap delay for long lists',
       description: 'Add a `SlideTransition` per item using the same `Interval`. Cap the start offset so items beyond index ~5 don\'t wait too long. Remove the raw `AnimationController` from each item — one controller rules them all.',
+      fr: { title: 'Ajouter le glissement + limiter le délai pour les longues listes', description: 'Ajouter un `SlideTransition` par élément en utilisant le même `Interval`. Limiter le décalage de départ pour que les éléments au-delà de l\'index ~5 n\'attendent pas trop longtemps. Supprimer l\'`AnimationController` brut de chaque élément — un seul contrôleur les dirige tous.' },
       code: `class _StaggerListState extends State<StaggerList>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
@@ -2503,6 +2559,7 @@ const imageCarouselNextjs: Step[] = [
   {
     title: 'Static slides',
     description: "Add 'use client' at the top — drag events and useState are browser APIs. Everything else is identical to the React implementation.",
+    fr: { title: 'Slides statiques', description: "Ajouter `'use client'` en haut — les événements de drag et `useState` sont des APIs navigateur. Tout le reste est identique à l'implémentation React." },
     code: `'use client'
 import { useState } from 'react'
 
@@ -2536,6 +2593,7 @@ export function ImageCarousel() {
   {
     title: 'AnimatePresence + slide',
     description: 'Import framer-motion (already client-safe). The custom prop passes direction through AnimatePresence to the variant functions.',
+    fr: { title: 'AnimatePresence + glissement', description: 'Importer framer-motion (déjà client-safe). La prop `custom` passe la direction à travers `AnimatePresence` vers les fonctions de variantes.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -2584,6 +2642,7 @@ export function ImageCarousel() {
   {
     title: 'Scale depth + dark overlay',
     description: 'Add scale: 0.92 on enter and the dark overlay motion.div. Export from components/ImageCarousel.tsx so any Server Component page can import it.',
+    fr: { title: 'Profondeur de scale + overlay sombre', description: 'Ajouter `scale: 0.92` à l\'entrée et le `motion.div` d\'overlay sombre. Exporter depuis `components/ImageCarousel.tsx` pour que n\'importe quelle page Server Component puisse l\'importer.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -2643,6 +2702,7 @@ export function ImageCarousel() {
   {
     title: 'Drag-to-swipe + spring dots',
     description: 'Add drag="x" with velocity threshold. In Next.js App Router, place this in app/components/ — no special config needed; the "use client" boundary is self-contained.',
+    fr: { title: 'Glisser pour swiper + pastilles spring', description: 'Ajouter `drag="x"` avec un threshold de vélocité. Dans Next.js App Router, placer dans `app/components/` — aucune configuration spéciale ; la frontière `"use client"` est auto-suffisante.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -2713,6 +2773,7 @@ const imageCarouselVue: Step[] = [
   {
     title: 'Static slides',
     description: 'Render slides with reactive page state. A basic click handler on the dots updates the page index. No transition yet — just establish the data and template structure.',
+    fr: { title: 'Diapositives statiques', description: 'Afficher les diapositives avec un état de page réactif. Un gestionnaire de clic basique sur les points met à jour l\'index de page. Pas encore de transition — juste établir la structure des données et du template.' },
     code: `<template>
   <div class="carousel">
     <div class="slide" :style="{ background: slides[page].color }">
@@ -2752,6 +2813,7 @@ const page = ref(0)
   {
     title: 'Direction-aware TransitionGroup',
     description: 'Use a computed transition name ("slide-left" or "slide-right") so the incoming slide enters from the correct edge. TransitionGroup with absolute positioning lets enter and exit overlap.',
+    fr: { title: 'TransitionGroup sensible à la direction', description: 'Utiliser un nom de transition calculé ("slide-left" ou "slide-right") pour que la diapositive entrante arrive du bon bord. TransitionGroup avec positionnement absolu permet à l\'entrée et à la sortie de se chevaucher.' },
     code: `<template>
   <div class="carousel">
     <TransitionGroup :name="dir > 0 ? 'slide-left' : 'slide-right'">
@@ -2808,6 +2870,7 @@ function go(d: number) {
   {
     title: 'Dark overlay via keyframe',
     description: 'Add an .overlay div inside each slide. A CSS @keyframes animation fades it from 0.4 opacity to 0 as the slide settles — the same cinematic reveal as the React version.',
+    fr: { title: 'Surimpression sombre via keyframe', description: 'Ajouter un div .overlay dans chaque diapositive. Une animation CSS @keyframes le fait passer de 0.4 à 0 d\'opacité pendant que la diapositive se stabilise — la même révélation cinématographique que la version React.' },
     code: `<template>
   <div class="carousel">
     <TransitionGroup :name="dir > 0 ? 'slide-left' : 'slide-right'">
@@ -2869,6 +2932,7 @@ function go(d: number) {
   {
     title: 'Touch swipe + animated dots',
     description: 'Listen for touchstart / touchend on the slide div. When the horizontal delta exceeds 50px, call go(). Animate dot width with a CSS cubic-bezier spring for the expanding pill effect.',
+    fr: { title: 'Glissement tactile + points animés', description: 'Écouter touchstart / touchend sur le div de diapositive. Quand le delta horizontal dépasse 50px, appeler go(). Animer la largeur des points avec un ressort CSS cubic-bezier pour l\'effet de pilule expansible.' },
     code: `<template>
   <div class="carousel">
     <TransitionGroup :name="dir > 0 ? 'slide-left' : 'slide-right'">
@@ -2943,6 +3007,7 @@ const imageCarouselRN: Step[] = [
   {
     title: 'Static slides',
     description: 'Use a FlatList with horizontal scroll and pagingEnabled for free snap-to-slide behaviour. No animation yet — just the layout foundation.',
+    fr: { title: 'Diapositives statiques', description: 'Utiliser un FlatList avec défilement horizontal et pagingEnabled pour un comportement de capture de diapositive gratuit. Pas encore d\'animation — juste la fondation de layout.' },
     code: `import { View, FlatList, Text, StyleSheet, Dimensions } from 'react-native'
 
 const { width: W } = Dimensions.get('window')
@@ -2980,6 +3045,7 @@ const s = StyleSheet.create({
   {
     title: 'Track scrollX with Animated.event',
     description: 'Swap to Animated.FlatList and pass scrollX to onScroll via Animated.event. useNativeDriver: true keeps everything on the UI thread — no JS bridge bottleneck.',
+    fr: { title: 'Suivre scrollX avec Animated.event', description: 'Passer à Animated.FlatList et transmettre scrollX à onScroll via Animated.event. useNativeDriver: true garde tout sur le thread UI — pas de goulot d\'étranglement du pont JS.' },
     code: `import { useRef } from 'react'
 import { Animated, View, Dimensions, StyleSheet, Text } from 'react-native'
 
@@ -3025,6 +3091,7 @@ const s = StyleSheet.create({
   {
     title: 'Scale depth via interpolate',
     description: 'For each slide, interpolate scrollX over [prev, current, next] page positions → scale [0.92, 1, 0.92]. The Animated.View wraps the slide content and receives the transform.',
+    fr: { title: 'Profondeur d\'échelle via interpolate', description: 'Pour chaque diapositive, interpoler scrollX sur les positions de page [précédente, actuelle, suivante] → échelle [0.92, 1, 0.92]. Animated.View enveloppe le contenu de la diapositive et reçoit la transformation.' },
     code: `import { useRef } from 'react'
 import { Animated, View, Dimensions, StyleSheet, Text } from 'react-native'
 
@@ -3077,6 +3144,7 @@ const s = StyleSheet.create({
   {
     title: 'Dark overlay + animated dot indicators',
     description: 'Add an overlay View whose opacity is also interpolated from scrollX — 0.5 on neighbours, 0 on the active slide. Drive the dot width the same way for the expanding pill effect.',
+    fr: { title: 'Surimpression sombre + indicateurs de points animés', description: 'Ajouter un View de surimpression dont l\'opacité est également interpolée depuis scrollX — 0.5 sur les voisins, 0 sur la diapositive active. Piloter la largeur des points de la même façon pour l\'effet de pilule expansible.' },
     code: `import { useRef } from 'react'
 import { Animated, View, StyleSheet, Dimensions, Text } from 'react-native'
 
@@ -3144,6 +3212,7 @@ const imageCarouselFlutter: Step[] = [
   {
     title: 'Static slides',
     description: 'Use PageView.builder as the foundation. A simple StatefulWidget tracks the current page via a listener on PageController so dots can reflect position.',
+    fr: { title: 'Diapositives statiques', description: 'Utiliser PageView.builder comme fondation. Un StatefulWidget simple suit la page actuelle via un listener sur PageController pour que les points reflètent la position.' },
     code: `import 'package:flutter/material.dart';
 
 class ImageCarousel extends StatefulWidget {
@@ -3189,6 +3258,7 @@ class _State extends State<ImageCarousel> {
   {
     title: 'Dot indicators',
     description: 'Add a Stack to overlay dot indicators. Use AnimatedContainer so each dot\'s width animates between 6 and 20 as _page changes.',
+    fr: { title: 'Indicateurs de points', description: 'Ajouter un Stack pour superposer les indicateurs de points. Utiliser AnimatedContainer pour que la largeur de chaque point anime entre 6 et 20 quand _page change.' },
     code: `import 'package:flutter/material.dart';
 
 class ImageCarousel extends StatefulWidget {
@@ -3252,6 +3322,7 @@ class _State extends State<ImageCarousel> {
   {
     title: 'Scale depth via PageController.page',
     description: 'Use a fractional PageController listener to get the continuous page value. Compute dist = (page - index).abs() and map it to scale = 1.0 - dist * 0.08 inside itemBuilder.',
+    fr: { title: 'Profondeur d\'échelle via PageController.page', description: 'Utiliser un listener PageController fractionnel pour obtenir la valeur de page continue. Calculer dist = (page - index).abs() et la mapper sur scale = 1.0 - dist * 0.08 dans itemBuilder.' },
     code: `import 'package:flutter/material.dart';
 
 class ImageCarousel extends StatefulWidget {
@@ -3324,6 +3395,7 @@ class _State extends State<ImageCarousel> {
   {
     title: 'Dark overlay fading out',
     description: 'Add a second layer inside each slide — a Container with Colors.black.withOpacity(dist * 0.5). As dist approaches 0 (active slide), the overlay becomes transparent. No extra packages needed.',
+    fr: { title: 'Surimpression sombre qui disparaît', description: 'Ajouter une deuxième couche dans chaque diapositive — un Container avec Colors.black.withOpacity(dist * 0.5). Quand dist approche 0 (diapositive active), la surimpression devient transparente. Pas de packages supplémentaires nécessaires.' },
     code: `import 'package:flutter/material.dart';
 
 class ImageCarousel extends StatefulWidget {
@@ -3630,6 +3702,7 @@ const onboardingFlowNextjs: Step[] = [
   {
     title: "Static screens",
     description: "Add 'use client' — useState requires the browser. Export from a dedicated component file so it can be imported into any Server Component page.",
+    fr: { title: 'Écrans statiques', description: "Ajouter `'use client'` — `useState` nécessite le navigateur. Exporter depuis un fichier de composant dédié pour pouvoir l'importer dans n'importe quelle page Server Component." },
     code: `'use client'
 import { useState } from 'react'
 
@@ -3672,6 +3745,7 @@ export function OnboardingFlow() {
   {
     title: 'AnimatePresence crossfade',
     description: 'AnimatePresence mode="wait" works identically in Next.js — framer-motion is client-safe once the use client boundary is declared.',
+    fr: { title: 'Fondu enchaîné AnimatePresence', description: '`AnimatePresence mode="wait"` fonctionne de manière identique dans Next.js — framer-motion est client-safe une fois la frontière `use client` déclarée.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -3719,6 +3793,7 @@ export function OnboardingFlow() {
   {
     title: 'Slide + icon pop',
     description: 'Add x-axis slide and the delayed icon scale animation. The cubiz-bezier ease ([0.22,1,0.36,1]) is the same deceleration curve used across the rest of the UI for visual coherence.',
+    fr: { title: 'Glissement + pop d\'icône', description: 'Ajouter le glissement sur l\'axe x et l\'animation de scale retardée de l\'icône. Le cubic-bezier `[0.22,1,0.36,1]` est la même courbe de décélération utilisée dans toute l\'interface pour la cohérence visuelle.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -3771,6 +3846,7 @@ export function OnboardingFlow() {
   {
     title: 'Spring dots + Back button',
     description: 'Add motion.div spring-animated dots and the Back button. TypeScript generics work normally inside "use client" components.',
+    fr: { title: 'Pastilles spring + bouton Retour', description: 'Ajouter les pastilles animées en spring `motion.div` et le bouton Retour. Les generics TypeScript fonctionnent normalement dans les composants `"use client"`.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -3839,6 +3915,7 @@ const onboardingFlowVue: Step[] = [
   {
     title: 'Static screens',
     description: 'Render one screen at a time using v-if or computed properties. Use reactive step state and a basic button to advance.',
+    fr: { title: 'Écrans statiques', description: 'Afficher un écran à la fois en utilisant v-if ou des propriétés calculées. Utiliser un état d\'étape réactif et un bouton basique pour avancer.' },
     code: `<template>
   <div class="ob">
     <div class="content">
@@ -3890,6 +3967,7 @@ p        { margin: 0; font-size: 13px; color: #666; text-align: center; max-widt
   {
     title: 'Transition mode="out-in" crossfade',
     description: 'Wrap the screen content in <Transition mode="out-in"> and key it by step. Vue unmounts the old screen completely before mounting the new one — identical to AnimatePresence mode="wait".',
+    fr: { title: 'Transition mode="out-in" fondu enchaîné', description: 'Envelopper le contenu de l\'écran dans <Transition mode="out-in"> et le clé par étape. Vue démonte complètement l\'ancien écran avant de monter le nouveau — identique à AnimatePresence mode="wait".' },
     code: `<template>
   <div class="ob">
     <div class="content-wrap">
@@ -3943,6 +4021,7 @@ p             { margin: 0; font-size: 13px; color: #666; text-align: center; max
   {
     title: 'Slide direction + icon pop',
     description: 'Switch from fade to a slide transition. Track the direction in a ref and update it before changing step so the transition name picks the correct CSS class.',
+    fr: { title: 'Direction de glissement + explosion d\'icône', description: 'Passer du fondu à une transition par glissement. Suivre la direction dans un ref et la mettre à jour avant de changer d\'étape pour que le nom de transition sélectionne la bonne classe CSS.' },
     code: `<template>
   <div class="ob">
     <div class="content-wrap">
@@ -4021,6 +4100,7 @@ p             { margin: 0; font-size: 13px; color: #666; text-align: center; max
   {
     title: 'Animated pill dots',
     description: 'The active dot already transitions width via CSS. Match the dot color to the active screen color reactively — bind :style with the current color when active.',
+    fr: { title: 'Points pilule animés', description: 'Le point actif passe déjà à une largeur via CSS. Faire correspondre la couleur du point à la couleur de l\'écran actif de façon réactive — lier :style avec la couleur actuelle quand actif.' },
     code: `<template>
   <div class="ob">
     <div class="content-wrap">
@@ -4108,6 +4188,7 @@ const onboardingFlowRN: Step[] = [
   {
     title: 'Static screens',
     description: 'Show one screen at a time using state. Use StyleSheet.absoluteFillObject so screens overlap in the same parent View — this is the container we will animate into.',
+    fr: { title: 'Écrans statiques', description: 'Afficher un écran à la fois en utilisant l\'état. Utiliser StyleSheet.absoluteFillObject pour que les écrans se superposent dans le même View parent — c\'est le conteneur dans lequel nous animerons.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 
@@ -4157,6 +4238,7 @@ const st = StyleSheet.create({
   {
     title: 'FadeIn / FadeOut from Reanimated',
     description: 'Add the Animated.View key prop — Reanimated detects the key change, runs FadeOut on the old screen, then FadeIn on the new one. No explicit AnimatePresence equivalent needed.',
+    fr: { title: 'FadeIn / FadeOut depuis Reanimated', description: 'Ajouter la prop key à Animated.View — Reanimated détecte le changement de clé, exécute FadeOut sur l\'ancien écran, puis FadeIn sur le nouveau. Pas d\'équivalent explicite à AnimatePresence nécessaire.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
@@ -4213,6 +4295,7 @@ const st = StyleSheet.create({
   {
     title: 'Slide direction + icon scale',
     description: 'Replace FadeIn with SlideInRight / SlideOutLeft (and the reverse on Back). Chain with .springify() to match the ease curve. Add a separate ScaleIn on the icon with a 100ms delay.',
+    fr: { title: 'Direction de glissement + mise à l\'échelle d\'icône', description: 'Remplacer FadeIn par SlideInRight / SlideOutLeft (et l\'inverse sur Retour). Chaîner avec .springify() pour correspondre à la courbe d\'accélération. Ajouter un ScaleIn séparé sur l\'icône avec un délai de 100ms.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Animated, {
@@ -4289,6 +4372,7 @@ const st = StyleSheet.create({
   {
     title: 'Animated pill dots',
     description: 'Replace the static dot width with useSharedValue + useAnimatedStyle so the active dot springs to 24px. Pass the current screen color as a shared value so the dot color also transitions.',
+    fr: { title: 'Points pilule animés', description: 'Remplacer la largeur statique du point par useSharedValue + useAnimatedStyle pour que le point actif rebondisse à 24px. Passer la couleur de l\'écran actuel comme valeur partagée pour que la couleur du point soit également en transition.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Animated, {
@@ -4378,6 +4462,7 @@ const onboardingFlowFlutter: Step[] = [
   {
     title: 'Static screens',
     description: 'Use an IndexedStack or switch on _step to show one screen at a time. Store step state in a StatefulWidget and advance it with setState.',
+    fr: { title: 'Écrans statiques', description: 'Utiliser un IndexedStack ou un switch sur _step pour afficher un écran à la fois. Stocker l\'état des étapes dans un StatefulWidget et l\'avancer avec setState.' },
     code: `import 'package:flutter/material.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -4434,6 +4519,7 @@ class _State extends State<OnboardingFlow> {
   {
     title: 'AnimatedSwitcher crossfade',
     description: 'Wrap the screen content in AnimatedSwitcher. The key drives the swap — when _step changes, AnimatedSwitcher fades out the old widget and fades in the new one.',
+    fr: { title: 'Fondu enchaîné AnimatedSwitcher', description: 'Envelopper le contenu de l\'écran dans AnimatedSwitcher. La clé pilote le basculement — quand _step change, AnimatedSwitcher fait disparaître l\'ancien widget et apparaître le nouveau.' },
     code: `import 'package:flutter/material.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -4498,6 +4584,7 @@ class _State extends State<OnboardingFlow> {
   {
     title: 'Slide direction + icon pop',
     description: 'Add a custom SlideTransition to AnimatedSwitcher. Track direction to flip the slide axis. The icon gets its own AnimatedSwitcher so it can pop in independently with a scale + fade.',
+    fr: { title: 'Direction de glissement + explosion d\'icône', description: 'Ajouter un SlideTransition personnalisé à AnimatedSwitcher. Suivre la direction pour inverser l\'axe de glissement. L\'icône obtient son propre AnimatedSwitcher pour pouvoir apparaître indépendamment avec une mise à l\'échelle + fondu.' },
     code: `import 'package:flutter/material.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -4591,6 +4678,7 @@ class _State extends State<OnboardingFlow> {
   {
     title: 'Animated pill dots',
     description: 'Wrap each dot in AnimatedContainer. The active dot expands its width from 8 to 24 using the spring-like easeOut curve. Animate color too by passing the screen color conditionally.',
+    fr: { title: 'Points pilule animés', description: 'Envelopper chaque point dans AnimatedContainer. Le point actif élargit sa largeur de 8 à 24 en utilisant la courbe easeOut similaire à un ressort. Animer aussi la couleur en passant la couleur de l\'écran conditionnellement.' },
     code: `import 'package:flutter/material.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -4944,6 +5032,7 @@ const sharedElementNextjs: Step[] = [
   {
     title: 'List + static overlay',
     description: "Add 'use client'. The state machine and overlay are identical to React — the only Next.js requirement is the client directive.",
+    fr: { title: 'Liste + overlay statique', description: "Ajouter `'use client'`. La machine à états et l'overlay sont identiques à React — la seule exigence Next.js est la directive client." },
     code: `'use client'
 import { useState } from 'react'
 
@@ -4992,6 +5081,7 @@ export function SharedElementDemo() {
   {
     title: 'Animated backdrop + sheet',
     description: 'AnimatePresence works inside "use client" components in App Router. The backdrop fades and the sheet springs up as before.',
+    fr: { title: 'Backdrop animé + sheet', description: '`AnimatePresence` fonctionne dans les composants `"use client"` de l\'App Router. Le backdrop s\'estompe et la sheet remonte en spring comme avant.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -5049,6 +5139,7 @@ export function SharedElementDemo() {
   {
     title: 'layoutId on thumbnail',
     description: 'Add layoutId to the list thumbnail and the detail banner. Both the list and the detail sheet must be rendered inside the same Client Component tree for layoutId to match them.',
+    fr: { title: 'layoutId sur la miniature', description: 'Ajouter `layoutId` à la miniature de la liste et à la bannière de détail. La liste et la sheet de détail doivent toutes deux être rendues dans le même arbre Client Component pour que `layoutId` les corresponde.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -5108,6 +5199,7 @@ export function SharedElementDemo() {
   {
     title: 'Polish — spring + list reflow',
     description: 'Add layout to list rows and tune the layoutId spring. Export from components/SharedElementDemo.tsx — any Server Component page can import it directly.',
+    fr: { title: 'Polissage — spring + reflow de la liste', description: 'Ajouter `layout` aux lignes de la liste et ajuster le spring du `layoutId`. Exporter depuis `components/SharedElementDemo.tsx` — n\'importe quelle page Server Component peut l\'importer directement.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -5180,6 +5272,7 @@ const sharedElementVue: Step[] = [
   {
     title: 'List + static overlay',
     description: 'Render the list and a v-if overlay. Track the selected item id in a ref. No animation yet — establish the state machine first.',
+    fr: { title: 'Liste + surimpression statique', description: 'Afficher la liste et une surimpression v-if. Suivre l\'id de l\'élément sélectionné dans un ref. Pas encore d\'animation — établir d\'abord la machine d\'état.' },
     code: `<template>
   <div class="root">
     <div class="list">
@@ -5232,6 +5325,7 @@ button { margin-top: 16px; padding: 10px 20px; border-radius: 10px; border: none
   {
     title: 'Transition overlay in/out',
     description: 'Wrap the overlay in <Transition name="fade"> so the backdrop fades and the sheet slides up using CSS transitions. The bottom sheet uses translateY.',
+    fr: { title: 'Transition surimpression entrée/sortie', description: 'Envelopper la surimpression dans <Transition name="fade"> pour que le fond de scène disparaisse et que la feuille glisse vers le haut avec des transitions CSS. La feuille du bas utilise translateY.' },
     code: `<template>
   <div class="root">
     <div class="list">
@@ -5297,6 +5391,7 @@ button { margin-top: 16px; padding: 10px 20px; border-radius: 10px; border: none
   {
     title: 'FLIP hero transition — record thumb rect',
     description: 'Vue has no layoutId equivalent. Implement FLIP manually: record the thumbnail\'s getBoundingClientRect() on click, then after the sheet mounts, translate the hero FROM that rect TO its natural position.',
+    fr: { title: 'Transition héros FLIP — enregistrer le rect de la miniature', description: 'Vue n\'a pas d\'équivalent à layoutId. Implémenter FLIP manuellement : enregistrer getBoundingClientRect() de la miniature au clic, puis après le montage de la feuille, translater le héros DEPUIS ce rect VERS sa position naturelle.' },
     code: `<template>
   <div class="root">
     <div class="list">
@@ -5383,6 +5478,7 @@ button { margin-top: 16px; padding: 10px 20px; border-radius: 10px; border: none
   {
     title: 'Reverse FLIP on close',
     description: 'Record the hero\'s rect before closing, then animate it back to the thumbnail position using the same FLIP technique. This gives the "fly back" effect on dismiss.',
+    fr: { title: 'FLIP inversé à la fermeture', description: 'Enregistrer le rect du héros avant la fermeture, puis l\'animer vers la position de la miniature avec la même technique FLIP. Cela donne l\'effet "vol retour" au rejet.' },
     code: `<template>
   <div class="root">
     <div class="list">
@@ -5492,6 +5588,7 @@ const sharedElementRN: Step[] = [
   {
     title: 'List + static overlay',
     description: 'Build the list and overlay state machine. Use StyleSheet.absoluteFillObject on the backdrop and a bottom-aligned sheet — no animation yet.',
+    fr: { title: 'Liste + surimpression statique', description: 'Construire la liste et la machine d\'état de surimpression. Utiliser StyleSheet.absoluteFillObject sur le fond de scène et une feuille alignée en bas — pas encore d\'animation.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 
@@ -5552,6 +5649,7 @@ const s = StyleSheet.create({
   {
     title: 'Animated backdrop + spring sheet',
     description: 'Add FadeIn on the backdrop and drive the sheet with useSharedValue + withSpring so it springs up from the bottom.',
+    fr: { title: 'Fond animé + feuille à ressort', description: 'Ajouter FadeIn sur le fond de scène et piloter la feuille avec useSharedValue + withSpring pour qu\'elle surgisse du bas comme un ressort.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Animated, {
@@ -5629,6 +5727,7 @@ const s = StyleSheet.create({
   {
     title: 'sharedTransitionTag — hero morph',
     description: 'Add sharedTransitionTag from react-native-reanimated to both the list thumbnail and the sheet hero. Reanimated animates size and position between the two automatically.',
+    fr: { title: 'sharedTransitionTag — morphisme héros', description: 'Ajouter sharedTransitionTag de react-native-reanimated à la miniature de liste et au héros de la feuille. Reanimated anime automatiquement la taille et la position entre les deux.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Animated, {
@@ -5728,6 +5827,7 @@ const s = StyleSheet.create({
   {
     title: 'Spring tuning + border radius morph',
     description: 'Add borderRadius to the sharedTransitionStyle worklet so it animates from 10px (thumbnail) to 16px (hero). Tune stiffness/damping for a slower, more cinematic morph.',
+    fr: { title: 'Réglage du ressort + morphisme du rayon de bordure', description: 'Ajouter borderRadius au worklet sharedTransitionStyle pour qu\'il anime de 10px (miniature) à 16px (héros). Ajuster la rigidité/amortissement pour un morphisme plus lent et cinématographique.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Animated, {
@@ -5823,6 +5923,7 @@ const sharedElementFlutter: Step[] = [
   {
     title: 'List + detail route (static)',
     description: 'Create two screens — ItemList and ItemDetail. Use Navigator.push to navigate between them. No Hero yet — just establish the two-screen structure.',
+    fr: { title: 'Liste + route de détail (statique)', description: 'Créer deux écrans — ItemList et ItemDetail. Utiliser Navigator.push pour naviguer entre eux. Pas encore de Hero — juste établir la structure à deux écrans.' },
     code: `import 'package:flutter/material.dart';
 
 const _items = [
@@ -5894,6 +5995,7 @@ class ItemDetail extends StatelessWidget {
   {
     title: 'Wrap thumbnail in Hero',
     description: 'Add Hero(tag: ...) around the list thumbnail. The tag is the only shared identifier Flutter needs — nothing else changes.',
+    fr: { title: 'Envelopper la miniature dans Hero', description: 'Ajouter Hero(tag: ...) autour de la miniature de liste. Le tag est le seul identifiant partagé dont Flutter a besoin — rien d\'autre ne change.' },
     code: `import 'package:flutter/material.dart';
 
 const _items = [
@@ -5969,6 +6071,7 @@ class ItemDetail extends StatelessWidget {
   {
     title: 'Wrap detail banner in Hero',
     description: 'Add the matching Hero(tag: ...) to the detail banner. Flutter now animates the element between the two positions automatically on push and pop.',
+    fr: { title: 'Envelopper la bannière de détail dans Hero', description: 'Ajouter le Hero(tag: ...) correspondant à la bannière de détail. Flutter anime maintenant automatiquement l\'élément entre les deux positions à push et pop.' },
     code: `import 'package:flutter/material.dart';
 
 const _items = [
@@ -6046,6 +6149,7 @@ class ItemDetail extends StatelessWidget {
   {
     title: 'Custom FlightShuttleBuilder for border radius morph',
     description: 'The default Hero flight widget clips at its source shape. Override flightShuttleBuilder to interpolate borderRadius during the flight so the thumbnail rounds out to the full banner shape.',
+    fr: { title: 'FlightShuttleBuilder personnalisé pour le morphisme du rayon de bordure', description: 'Le widget de vol Hero par défaut coupe à sa forme source. Surcharger flightShuttleBuilder pour interpoler borderRadius pendant le vol afin que la miniature s\'arrondisse vers la forme complète de bannière.' },
     code: `import 'package:flutter/material.dart';
 
 const _items = [
@@ -6347,6 +6451,7 @@ const collapsingHeaderNextjs: Step[] = [
   {
     title: 'Static header layout',
     description: "Add 'use client' — any component that uses scroll hooks must be a Client Component in App Router. Build the static header and scrollable content area first.",
+    fr: { title: 'Mise en page de l\'en-tête statique', description: "Ajouter `'use client'` — tout composant utilisant des hooks de scroll doit être un Client Component dans l'App Router. Construire d'abord l'en-tête statique et la zone de contenu défilable." },
     code: `'use client'
 
 export function CollapsingHeaderDemo() {
@@ -6403,6 +6508,7 @@ export function CollapsingHeaderDemo() {
   {
     title: 'useScroll setup',
     description: 'Import useScroll and useRef from framer-motion and react. Attach a containerRef to the scrollable div and pass it to useScroll — this scopes the scroll tracking to the container, not the page.',
+    fr: { title: 'Configuration de useScroll', description: 'Importer `useScroll` et `useRef` depuis framer-motion et react. Attacher un `containerRef` à la div défilable et le passer à `useScroll` — cela scope le suivi du scroll au conteneur, pas à la page.' },
     code: `'use client'
 import { useRef } from 'react'
 import { useScroll } from 'framer-motion'
@@ -6463,6 +6569,7 @@ export function CollapsingHeaderDemo() {
   {
     title: 'Avatar scale + search opacity',
     description: 'Feed scrollY into useTransform to shrink the avatar and hide the search bar as the user scrolls. Convert the header and avatar divs to motion elements.',
+    fr: { title: 'Scale de l\'avatar + opacité de la recherche', description: 'Injecter `scrollY` dans `useTransform` pour rétrécir l\'avatar et masquer la barre de recherche au défilement. Convertir les divs de l\'en-tête et de l\'avatar en éléments motion.' },
     code: `'use client'
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
@@ -6522,6 +6629,7 @@ export function CollapsingHeaderDemo() {
   {
     title: 'Title font size + padding sync',
     description: 'Add title font size and header padding transforms so the header compresses smoothly. Export from a "use client" component file — any Server Component page imports it directly.',
+    fr: { title: 'Taille de police du titre + sync du padding', description: 'Ajouter les transforms de taille de police du titre et de padding de l\'en-tête pour une compression fluide. Exporter depuis un fichier composant `"use client"` — n\'importe quelle page Server Component l\'importe directement.' },
     code: `'use client'
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
@@ -6594,6 +6702,7 @@ const collapsingHeaderVue: Step[] = [
   {
     title: 'Static header layout',
     description: 'Build the static header and scrollable list in Vue. The header has an avatar row and a search bar. No scroll tracking yet — just the visual structure.',
+    fr: { title: 'Mise en page d\'en-tête statique', description: 'Construire l\'en-tête statique et la liste défilable en Vue. L\'en-tête a une rangée d\'avatar et une barre de recherche. Pas encore de suivi du scroll — juste la structure visuelle.' },
     code: `<template>
   <div class="root">
     <div class="header">
@@ -6638,6 +6747,7 @@ const collapsingHeaderVue: Step[] = [
   {
     title: 'Track scroll with @vueuse/core useScroll',
     description: 'Add a templateRef for the feed div and use useScroll from @vueuse/core to reactively track its scrollTop. No visual change yet — log scrollTop to verify.',
+    fr: { title: 'Suivre le scroll avec @vueuse/core useScroll', description: 'Ajouter un templateRef pour le div de flux et utiliser useScroll de @vueuse/core pour suivre réactivement son scrollTop. Pas encore de changement visuel — journaliser scrollTop pour vérifier.' },
     code: `<template>
   <div class="root">
     <div class="header">
@@ -6690,6 +6800,7 @@ const { y }   = useScroll(feedRef)
   {
     title: 'Avatar scale + search opacity via computed',
     description: 'Write lerp() helper computed values that map scrollY [0→120] to the CSS property range. Bind them to inline styles on the avatar and search bar.',
+    fr: { title: 'Mise à l\'échelle de l\'avatar + opacité de recherche via computed', description: 'Écrire des valeurs calculées d\'aide lerp() qui mappent scrollY [0→120] à la plage de propriété CSS. Les lier aux styles en ligne sur l\'avatar et la barre de recherche.' },
     code: `<template>
   <div class="root">
     <div class="header" :style="{ paddingTop: headerPadY + 'px', paddingBottom: headerPadY + 'px' }">
@@ -6755,6 +6866,7 @@ const headerPadY    = computed(() => lerp(y.value, 120, 20,   10))
   {
     title: 'Dynamic paddingTop + smooth transition fallback',
     description: 'Drive paddingTop on the feed div from computed headerHeight so content never hides under the collapsing header. Add will-change: transform for GPU compositing.',
+    fr: { title: 'paddingTop dynamique + repli de transition fluide', description: 'Piloter paddingTop sur le div de flux depuis headerHeight calculé pour que le contenu ne se cache jamais sous l\'en-tête rétractable. Ajouter will-change: transform pour la composition GPU.' },
     code: `<template>
   <div class="root">
     <div ref="headerRef" class="header"
@@ -6828,6 +6940,7 @@ const collapsingHeaderRN: Step[] = [
   {
     title: 'Static header + FlatList',
     description: 'Render the static profile header above a FlatList. Use position: absolute for the header and a paddingTop on the FlatList so content starts below it. No animation yet.',
+    fr: { title: 'En-tête statique + FlatList', description: 'Afficher l\'en-tête de profil statique au-dessus d\'un FlatList. Utiliser position: absolute pour l\'en-tête et un paddingTop sur le FlatList pour que le contenu commence en dessous. Pas encore d\'animation.' },
     code: `import { View, Text, FlatList, StyleSheet } from 'react-native'
 
 const POSTS = Array.from({ length: 20 }, (_, i) => ({ id: String(i), text: \`Post \${i + 1}\` }))
@@ -6887,6 +7000,7 @@ const s = StyleSheet.create({
   {
     title: 'Animated.event scroll tracking',
     description: 'Replace FlatList with Animated.FlatList and wire onScroll to an Animated.Value with useNativeDriver. The animated value now tracks the scroll position on the UI thread.',
+    fr: { title: 'Suivi du scroll avec Animated.event', description: 'Remplacer FlatList par Animated.FlatList et connecter onScroll à un Animated.Value avec useNativeDriver. La valeur animée suit maintenant la position de défilement sur le thread UI.' },
     code: `import { useRef } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import Animated from 'react-native-reanimated'
@@ -6955,6 +7069,7 @@ const s = StyleSheet.create({
   {
     title: 'interpolate avatar scale + search opacity',
     description: 'Call scrollY.interpolate() to map the raw scroll offset to the CSS property range. Wrap avatar and search in Animated.View and bind the interpolated values.',
+    fr: { title: 'Interpoler la mise à l\'échelle de l\'avatar + l\'opacité de recherche', description: 'Appeler scrollY.interpolate() pour mapper le décalage de défilement brut à la plage de propriété CSS. Envelopper l\'avatar et la recherche dans Animated.View et lier les valeurs interpolées.' },
     code: `import { useRef } from 'react'
 import { View, Text, StyleSheet, Animated } from 'react-native'
 
@@ -7026,6 +7141,7 @@ const s = StyleSheet.create({
   {
     title: 'Title size + padding sync',
     description: 'Add interpolations for title font size and header padding so the entire header compresses smoothly. Switch avatar scale to useNativeDriver: true by separating opacity/height onto a JS-driven value.',
+    fr: { title: 'Taille du titre + synchronisation du rembourrage', description: 'Ajouter des interpolations pour la taille de police du titre et le rembourrage de l\'en-tête pour que l\'en-tête entier se comprime en douceur. Passer la mise à l\'échelle de l\'avatar à useNativeDriver: true en séparant opacité/hauteur sur une valeur pilotée par JS.' },
     code: `import { useRef } from 'react'
 import { View, Text, StyleSheet, Animated } from 'react-native'
 
@@ -7106,6 +7222,7 @@ const collapsingHeaderFlutter: Step[] = [
   {
     title: 'Static SliverAppBar layout',
     description: 'Use CustomScrollView with SliverAppBar and SliverList. SliverAppBar handles the collapsing header — expandedHeight sets its max size.',
+    fr: { title: 'Mise en page SliverAppBar statique', description: 'Utiliser CustomScrollView avec SliverAppBar et SliverList. SliverAppBar gère l\'en-tête rétractable — expandedHeight définit sa taille maximale.' },
     code: `import 'package:flutter/material.dart';
 
 class CollapsingHeaderDemo extends StatelessWidget {
@@ -7180,6 +7297,7 @@ class CollapsingHeaderDemo extends StatelessWidget {
   {
     title: 'LayoutBuilder to read collapse ratio',
     description: 'Wrap FlexibleSpaceBar content in a LayoutBuilder. The availableHeight vs expandedHeight ratio gives a t value (0 = expanded, 1 = fully collapsed) for manual interpolation.',
+    fr: { title: 'LayoutBuilder pour lire le ratio de réduction', description: 'Envelopper le contenu de FlexibleSpaceBar dans un LayoutBuilder. Le ratio availableHeight vs expandedHeight donne une valeur t (0 = étendu, 1 = complètement réduit) pour l\'interpolation manuelle.' },
     code: `import 'package:flutter/material.dart';
 
 class CollapsingHeaderDemo extends StatelessWidget {
@@ -7266,6 +7384,7 @@ class CollapsingHeaderDemo extends StatelessWidget {
   {
     title: 'Avatar scale + search opacity',
     description: 'Use t to drive Transform.scale on the avatar and Opacity on the search bar. lerpDouble interpolates between start and end values.',
+    fr: { title: 'Mise à l\'échelle de l\'avatar + opacité de recherche', description: 'Utiliser t pour piloter Transform.scale sur l\'avatar et Opacity sur la barre de recherche. lerpDouble interpole entre les valeurs de début et de fin.' },
     code: `import 'package:flutter/material.dart';
 
 class CollapsingHeaderDemo extends StatelessWidget {
@@ -7361,6 +7480,7 @@ class CollapsingHeaderDemo extends StatelessWidget {
   {
     title: 'Title size + padding sync',
     description: 'Add title font size and padding interpolations so every element in the header compresses in sync. The result is a buttery smooth collapsing profile header driven entirely by SliverAppBar\'s constraints.',
+    fr: { title: 'Taille du titre + synchronisation du rembourrage', description: 'Ajouter des interpolations de taille de police du titre et de rembourrage pour que chaque élément de l\'en-tête se comprime en synchronisation. Le résultat est un en-tête de profil rétractable extrêmement fluide entièrement piloté par les contraintes de SliverAppBar.' },
     code: `import 'package:flutter/material.dart';
 
 class CollapsingHeaderDemo extends StatelessWidget {
