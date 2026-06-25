@@ -36,6 +36,8 @@ const T = {
     filt_cta:           'View pattern →',
     /* ── Detail top bar ── */
     det_back:           '← Patterns',
+    det_tab_preview:    'Preview',
+    det_tab_learn:      'Learn',
     det_web:            'Web',
     det_mobile:         'Mobile',
     /* ── Detail sections ── */
@@ -84,6 +86,8 @@ const T = {
     filt_cta:           'Voir le pattern →',
     /* ── Detail top bar ── */
     det_back:           '← Patterns',
+    det_tab_preview:    'Aperçu',
+    det_tab_learn:      'Apprendre',
     det_web:            'Web',
     det_mobile:         'Mobile',
     /* ── Detail sections ── */

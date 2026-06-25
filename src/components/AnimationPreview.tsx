@@ -1512,67 +1512,70 @@ const HERO_ITEMS = [
 ]
 
 function FlutterHeroWeb({ step }: { step: number }) {
-  const [selIdx, setSelIdx] = useState<number | null>(null)
-  const [page, setPage] = useState<'grid' | 'detail'>('grid')
+  const [selected, setSelected] = useState<string | null>(null)
+  const item = HERO_ITEMS.find(i => i.id === selected)
 
-  useEffect(() => { setSelIdx(null); setPage('grid') }, [step])
-
-  function open(i: number) { setSelIdx(i); setPage('detail') }
-  function close() { setPage('grid') }
-
-  const item = selIdx !== null ? HERO_ITEMS[selIdx] : null
+  useEffect(() => { setSelected(null) }, [step])
 
   return (
-    <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
-      <AnimatePresence mode={step >= 2 ? 'wait' : undefined}>
-        {page === 'grid' ? (
-          <motion.div key="grid"
-            initial={step >= 2 ? { opacity: 0 } : false} animate={{ opacity: 1 }}
-            exit={step >= 2 ? { opacity: 0 } : {}} transition={{ duration: 0.18 }}
-            style={{ position: 'absolute', inset: 0, padding: '14px 16px' }}
-          >
-            <div style={{ fontSize: 13, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 10 }}>Gallery</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-              {HERO_ITEMS.map((it, i) => (
-                step >= 3 ? (
-                  <motion.div key={it.id} layoutId={`hero-web-${it.id}`}
-                    onClick={() => open(i)} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
-                    style={{ height: 80, borderRadius: 10, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 7 }}>
-                    <span style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
-                  </motion.div>
-                ) : (
-                  <div key={it.id} onClick={() => open(i)}
-                    style={{ height: 80, borderRadius: 10, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 7 }}>
-                    <span style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
-                  </div>
-                )
-              ))}
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div key="detail"
-            initial={step >= 2 ? { opacity: 0 } : false} animate={{ opacity: 1 }}
-            exit={step >= 2 ? { opacity: 0 } : {}} transition={{ duration: 0.18 }}
-            style={{ position: 'absolute', inset: 0, padding: '14px 16px' }}
-          >
-            <button onClick={close} style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 10, fontFamily: 'var(--font-outfit)' }}>← Back</button>
-            {item && (
-              step >= 3 ? (
-                <motion.div layoutId={`hero-web-${item.id}`}
-                  transition={{ type: 'spring', stiffness: 200, damping: 28 }}
-                  style={{ width: '100%', height: 110, borderRadius: 12, background: item.color, marginBottom: 12, display: 'flex', alignItems: 'flex-end', padding: 12 }}>
+    <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+      {/* Grid — always in the DOM so layoutId origin is preserved */}
+      <div style={{ padding: '14px 16px' }}>
+        <div style={{ fontSize: 13, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 10 }}>Gallery</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          {HERO_ITEMS.map(it => (
+            step >= 3 ? (
+              <motion.div key={it.id} layoutId={`hw-${it.id}`}
+                onClick={() => setSelected(it.id)}
+                transition={{ type: 'spring', stiffness: 220, damping: 28 }}
+                style={{ height: 80, borderRadius: 10, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 7 }}>
+                <span style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
+              </motion.div>
+            ) : (
+              <div key={it.id} onClick={() => setSelected(it.id)}
+                style={{ height: 80, borderRadius: 10, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 7 }}>
+                <span style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
+              </div>
+            )
+          ))}
+        </div>
+      </div>
+
+      {/* Overlay sheet — detail slides up over the grid */}
+      <AnimatePresence>
+        {selected && item && (
+          <>
+            <motion.div key="bd"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSelected(null)}
+              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 40 }}
+            />
+            <motion.div key="sheet"
+              initial={step >= 1 ? { y: '100%' } : {}} animate={{ y: 0 }}
+              exit={step >= 1 ? { y: '100%' } : { opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+              style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50,
+                background: 'var(--bg)', borderRadius: '14px 14px 0 0', padding: 16 }}
+            >
+              {step >= 3 ? (
+                <motion.div layoutId={`hw-${selected}`}
+                  transition={{ type: 'spring', stiffness: 220, damping: 28 }}
+                  style={{ width: '100%', height: 100, borderRadius: 12, background: item.color, marginBottom: 12,
+                    display: 'flex', alignItems: 'flex-end', padding: 12 }}>
                   <span style={{ fontSize: 15, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</span>
                 </motion.div>
               ) : (
-                <div style={{ width: '100%', height: 110, borderRadius: 12, background: item.color, marginBottom: 12, display: 'flex', alignItems: 'flex-end', padding: 12 }}>
+                <div style={{ width: '100%', height: 100, borderRadius: 12, background: item.color, marginBottom: 12,
+                  display: 'flex', alignItems: 'flex-end', padding: 12 }}>
                   <span style={{ fontSize: 15, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</span>
                 </div>
-              )
-            )}
-            <div style={{ width: 80, height: 8, borderRadius: 4, background: 'var(--text-primary)', marginBottom: 6 }} />
-            <div style={{ width: '75%', height: 5, borderRadius: 3, background: 'var(--border-strong)', marginBottom: 4 }} />
-            <div style={{ width: '60%', height: 5, borderRadius: 3, background: 'var(--border-strong)' }} />
-          </motion.div>
+              )}
+              <div style={{ width: 80, height: 8, borderRadius: 4, background: 'var(--text-primary)', marginBottom: 6 }} />
+              <div style={{ width: '72%', height: 5, borderRadius: 3, background: 'var(--border-strong)', marginBottom: 4 }} />
+              <button onClick={() => setSelected(null)} style={{ marginTop: 10, padding: '6px 14px', borderRadius: 8,
+                background: item.color, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11 }}>Close</button>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
@@ -1580,23 +1583,24 @@ function FlutterHeroWeb({ step }: { step: number }) {
 }
 
 function FlutterHeroMobile({ step }: { step: number }) {
-  const [selIdx, setSelIdx] = useState<number | null>(null)
-  const item = selIdx !== null ? HERO_ITEMS[selIdx] : null
+  const [selected, setSelected] = useState<string | null>(null)
+  const item = HERO_ITEMS.find(i => i.id === selected)
 
-  useEffect(() => { setSelIdx(null) }, [step])
+  useEffect(() => { setSelected(null) }, [step])
 
   return (
     <div style={{ height: '100%', position: 'relative', overflow: 'hidden', padding: 10 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5 }}>
-        {HERO_ITEMS.map((it, i) => (
+        {HERO_ITEMS.map(it => (
           step >= 3 ? (
-            <motion.div key={it.id} layoutId={`hero-mob-${it.id}`}
-              onClick={() => setSelIdx(i)} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+            <motion.div key={it.id} layoutId={`hm-${it.id}`}
+              onClick={() => setSelected(it.id)}
+              transition={{ type: 'spring', stiffness: 220, damping: 28 }}
               style={{ height: 65, borderRadius: 9, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 5 }}>
               <span style={{ fontSize: 8, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
             </motion.div>
           ) : (
-            <div key={it.id} onClick={() => setSelIdx(i)}
+            <div key={it.id} onClick={() => setSelected(it.id)}
               style={{ height: 65, borderRadius: 9, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 5 }}>
               <span style={{ fontSize: 8, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
             </div>
@@ -1605,36 +1609,34 @@ function FlutterHeroMobile({ step }: { step: number }) {
       </div>
 
       <AnimatePresence>
-        {selIdx !== null && item && (
+        {selected && item && (
           <>
             <motion.div key="bd"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setSelIdx(null)}
+              onClick={() => setSelected(null)}
               style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40 }} />
-            {step >= 3 ? (
-              <motion.div key="detail" layoutId={`hero-mob-${item.id}`}
-                transition={{ type: 'spring', stiffness: 200, damping: 28 }}
-                onClick={() => setSelIdx(null)}
-                style={{ position: 'absolute', top: 14, left: 10, right: 10, height: 160, borderRadius: 14, background: item.color, zIndex: 50, display: 'flex', alignItems: 'flex-end', padding: 12, cursor: 'pointer' }}>
-                <div>
-                  <div style={{ fontSize: 14, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</div>
-                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-outfit)' }}>Tap to close</div>
+            <motion.div key="sheet"
+              initial={step >= 1 ? { y: '100%' } : {}} animate={{ y: 0 }}
+              exit={step >= 1 ? { y: '100%' } : { opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+              style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50,
+                background: 'var(--bg)', borderRadius: '12px 12px 0 0', padding: 12 }}>
+              {step >= 3 ? (
+                <motion.div layoutId={`hm-${selected}`}
+                  transition={{ type: 'spring', stiffness: 220, damping: 28 }}
+                  style={{ width: '100%', height: 90, borderRadius: 10, background: item.color, marginBottom: 10,
+                    display: 'flex', alignItems: 'flex-end', padding: 10 }}>
+                  <div style={{ fontSize: 13, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</div>
+                </motion.div>
+              ) : (
+                <div style={{ width: '100%', height: 90, borderRadius: 10, background: item.color, marginBottom: 10,
+                  display: 'flex', alignItems: 'flex-end', padding: 10 }}>
+                  <div style={{ fontSize: 13, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</div>
                 </div>
-              </motion.div>
-            ) : (
-              <motion.div key="detail-static"
-                initial={step >= 1 ? { opacity: 0, scale: 0.92 } : {}}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={step >= 1 ? { opacity: 0, scale: 0.92 } : {}}
-                transition={{ duration: 0.22 }}
-                onClick={() => setSelIdx(null)}
-                style={{ position: 'absolute', top: 14, left: 10, right: 10, height: 160, borderRadius: 14, background: item.color, zIndex: 50, display: 'flex', alignItems: 'flex-end', padding: 12, cursor: 'pointer' }}>
-                <div>
-                  <div style={{ fontSize: 14, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</div>
-                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-outfit)' }}>Tap to close</div>
-                </div>
-              </motion.div>
-            )}
+              )}
+              <button onClick={() => setSelected(null)} style={{ padding: '5px 12px', borderRadius: 7,
+                background: item.color, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 10 }}>Close</button>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
@@ -1656,39 +1658,35 @@ function ViewTransitionsWeb({ step }: { step: number }) {
   useEffect(() => { setPage('list') }, [step])
 
   function open(i: number) { setSelIdx(i); setPage('detail') }
+  const it = VT_ITEMS[selIdx]
 
   const listContent = (
-    <div style={{ padding: '14px 16px' }}>
+    <div style={{ padding: '14px 16px', height: '100%' }}>
       <div style={{ fontSize: 13, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 10 }}>Articles</div>
-      {VT_ITEMS.map((it, i) => (
+      {VT_ITEMS.map((item, i) => (
         <div key={i} onClick={() => open(i)} style={{
           display: 'flex', gap: 10, alignItems: 'center', padding: '8px 10px',
           borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-secondary)',
           cursor: 'pointer', marginBottom: 8,
         }}>
-          {step >= 3
-            ? <motion.div layoutId={`vt-w-${i}`} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
-                style={{ width: 44, height: 44, borderRadius: 8, background: it.color, flexShrink: 0 }} />
-            : <div style={{ width: 44, height: 44, borderRadius: 8, background: it.color, flexShrink: 0 }} />
-          }
+          <div style={{ width: 44, height: 44, borderRadius: 8, background: item.color, flexShrink: 0,
+            /* step 3: named element — shown visually with a ring */
+            outline: step >= 3 ? `2px solid ${item.color}50` : 'none', outlineOffset: 2 }} />
           <div>
-            <div style={{ fontSize: 12, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)', fontWeight: 500 }}>{it.title}</div>
-            <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{it.sub}</div>
+            <div style={{ fontSize: 12, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)', fontWeight: 500 }}>{item.title}</div>
+            <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{item.sub}</div>
           </div>
+          {step >= 3 && <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--accent)', fontFamily: 'var(--font-outfit)' }}>named ✦</span>}
         </div>
       ))}
     </div>
   )
 
-  const it = VT_ITEMS[selIdx]
   const detailContent = (
-    <div style={{ padding: '14px 16px' }}>
+    <div style={{ padding: '14px 16px', height: '100%' }}>
       <button onClick={() => setPage('list')} style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 10, fontFamily: 'var(--font-outfit)' }}>← Articles</button>
-      {step >= 3
-        ? <motion.div layoutId={`vt-w-${selIdx}`} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
-            style={{ width: '100%', height: 100, borderRadius: 12, background: it.color, marginBottom: 12 }} />
-        : <div style={{ width: '100%', height: 100, borderRadius: 12, background: it.color, marginBottom: 12 }} />
-      }
+      <div style={{ width: '100%', height: 100, borderRadius: 12, background: it.color, marginBottom: 12,
+        outline: step >= 3 ? `2px solid ${it.color}50` : 'none', outlineOffset: 2 }} />
       <div style={{ fontSize: 14, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 4 }}>{it.title}</div>
       <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 10 }}>{it.sub}</div>
       <div style={{ width: '100%', height: 5, borderRadius: 3, background: 'var(--border-strong)', marginBottom: 4 }} />
@@ -1710,10 +1708,10 @@ function ViewTransitionsWeb({ step }: { step: number }) {
       <AnimatePresence mode="wait">
         <motion.div
           key={page}
-          initial={{ opacity: 0, y: step >= 2 ? 12 : 0 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: step >= 2 ? -12 : 0 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
+          initial={{ opacity: 0, scale: step >= 2 ? 0.97 : 1 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: step >= 2 ? 1.02 : 1 }}
+          transition={{ duration: step >= 3 ? 0.28 : 0.18, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
           style={{ position: 'absolute', inset: 0 }}
         >
           {page === 'list' ? listContent : detailContent}
@@ -1730,7 +1728,6 @@ function ViewTransitionsMobile({ step }: { step: number }) {
   useEffect(() => { setPage('list') }, [step])
 
   function open(i: number) { setSelIdx(i); setPage('detail') }
-
   const it = VT_ITEMS[selIdx]
 
   const listContent = (
@@ -1742,11 +1739,8 @@ function ViewTransitionsMobile({ step }: { step: number }) {
           borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-secondary)',
           cursor: 'pointer', marginBottom: 6,
         }}>
-          {step >= 3
-            ? <motion.div layoutId={`vt-m-${i}`} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
-                style={{ width: 36, height: 36, borderRadius: 7, background: item.color, flexShrink: 0 }} />
-            : <div style={{ width: 36, height: 36, borderRadius: 7, background: item.color, flexShrink: 0 }} />
-          }
+          <div style={{ width: 36, height: 36, borderRadius: 7, background: item.color, flexShrink: 0,
+            outline: step >= 3 ? `2px solid ${item.color}50` : 'none', outlineOffset: 2 }} />
           <div>
             <div style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)', fontWeight: 500 }}>{item.title}</div>
             <div style={{ fontSize: 8, color: 'var(--text-tertiary)' }}>{item.sub}</div>
@@ -1759,11 +1753,8 @@ function ViewTransitionsMobile({ step }: { step: number }) {
   const detailContent = (
     <div style={{ padding: '8px 10px' }}>
       <button onClick={() => setPage('list')} style={{ fontSize: 10, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 8, fontFamily: 'var(--font-outfit)' }}>← Back</button>
-      {step >= 3
-        ? <motion.div layoutId={`vt-m-${selIdx}`} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
-            style={{ width: '100%', height: 80, borderRadius: 10, background: it.color, marginBottom: 10 }} />
-        : <div style={{ width: '100%', height: 80, borderRadius: 10, background: it.color, marginBottom: 10 }} />
-      }
+      <div style={{ width: '100%', height: 80, borderRadius: 10, background: it.color, marginBottom: 10,
+        outline: step >= 3 ? `2px solid ${it.color}50` : 'none', outlineOffset: 2 }} />
       <div style={{ fontSize: 12, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 3 }}>{it.title}</div>
       <div style={{ fontSize: 9, color: 'var(--text-tertiary)', marginBottom: 8 }}>{it.sub}</div>
       <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'var(--border-strong)', marginBottom: 3 }} />
@@ -1781,9 +1772,9 @@ function ViewTransitionsMobile({ step }: { step: number }) {
       <AnimatePresence mode="wait">
         <motion.div
           key={page}
-          initial={{ opacity: 0, x: page === 'detail' ? (step >= 2 ? 18 : 0) : (step >= 2 ? -18 : 0) }}
+          initial={{ opacity: 0, x: step >= 2 ? (page === 'detail' ? 18 : -18) : 0 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: page === 'list' ? (step >= 2 ? -18 : 0) : (step >= 2 ? 18 : 0) }}
+          exit={{ opacity: 0, x: step >= 2 ? (page === 'list' ? -18 : 18) : 0 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
           style={{ position: 'absolute', inset: 0 }}
         >

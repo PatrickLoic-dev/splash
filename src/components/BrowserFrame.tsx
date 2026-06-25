@@ -38,7 +38,7 @@ export function BrowserFrame({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       {/* Page content */}
-      <div style={{ minHeight: 240, overflow: 'hidden' }}>
+      <div style={{ height: 240, overflow: 'hidden' }}>
         {children}
       </div>
     </div>

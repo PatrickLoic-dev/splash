@@ -385,17 +385,119 @@ function FilteredView({
   onSwitchPlatform: (p: PlatformId) => void
 }) {
   const { t } = useI18n()
-  const { isMobile, isTablet } = useBreakpoint()
+  const { isMobile, isTablet, isDesktop } = useBreakpoint()
   const platformInfo = PLATFORMS.find(p => p.id === platform)!
   const context      = PLATFORM_CONTEXT[platform] ?? 'web'
   const available    = ANIMATIONS.filter(a => a.implementations.some(i => i.platform === platform))
   const LogoComp     = PLATFORM_LOGOS[platform]
 
+  /* ── Secondary filters ── */
+  const allCategories  = Array.from(new Set(available.map(a => a.category))) as string[]
+  const allDifficulties: Array<'Beginner' | 'Intermediate' | 'Advanced'> = ['Beginner', 'Intermediate', 'Advanced']
+  const [activeCats,   setActiveCats]   = useState<string[]>([])
+  const [activeDiffs,  setActiveDiffs]  = useState<string[]>([])
+
+  function toggleCat(cat: string) {
+    setActiveCats(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])
+  }
+  function toggleDiff(diff: string) {
+    setActiveDiffs(prev => prev.includes(diff) ? prev.filter(d => d !== diff) : [...prev, diff])
+  }
+
+  const filtered = available.filter(a =>
+    (activeCats.length  === 0 || activeCats.includes(a.category))  &&
+    (activeDiffs.length === 0 || activeDiffs.includes(a.difficulty))
+  )
+
+  const hasActiveFilters = activeCats.length > 0 || activeDiffs.length > 0
+
+  /* ── Left sidebar (desktop) / horizontal chips (mobile/tablet) ── */
+  const SidebarSection = ({ label, items, active, onToggle, colorMap }: {
+    label: string
+    items: string[]
+    active: string[]
+    onToggle: (v: string) => void
+    colorMap?: Record<string, string>
+  }) => (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{
+        fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 700,
+        letterSpacing: '0.1em', textTransform: 'uppercase',
+        color: 'var(--text-tertiary)', marginBottom: 8,
+      }}>{label}</div>
+      <div style={{ display: 'flex', flexDirection: isDesktop ? 'column' : 'row', gap: 4, flexWrap: 'wrap' }}>
+        {items.map(item => {
+          const isActive = active.includes(item)
+          const color    = colorMap?.[item] ?? 'var(--accent)'
+          return (
+            <motion.button key={item} whileTap={{ scale: 0.95 }}
+              onClick={() => onToggle(item)}
+              style={{
+                padding: isDesktop ? '6px 10px' : '4px 10px',
+                borderRadius: 7, cursor: 'pointer',
+                border: `1px solid ${isActive ? color + '60' : 'var(--border)'}`,
+                background: isActive ? color + '14' : 'transparent',
+                color: isActive ? color : 'var(--text-tertiary)',
+                fontSize: 11, fontFamily: 'var(--font-outfit)',
+                fontWeight: isActive ? 600 : 400,
+                textAlign: 'left', width: isDesktop ? '100%' : 'auto',
+                transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {isActive && <span style={{ width: 5, height: 5, borderRadius: 3, background: color, flexShrink: 0 }} />}
+              {item}
+            </motion.button>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  const sidebar = (
+    <div style={{
+      width: isDesktop ? 172 : '100%',
+      flexShrink: 0,
+      ...(isDesktop ? {
+        position: 'sticky', top: 76, alignSelf: 'flex-start',
+        padding: '16px 14px', borderRadius: 12,
+        border: '1px solid var(--border)', background: 'var(--bg-secondary)',
+      } : {}),
+    }}>
+      {isDesktop && (
+        <div style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16, letterSpacing: '0.04em' }}>
+          Filters {hasActiveFilters && <span style={{ color: 'var(--accent)' }}>· {filtered.length}</span>}
+        </div>
+      )}
+      <SidebarSection
+        label="Category"
+        items={allCategories}
+        active={activeCats}
+        onToggle={toggleCat}
+        colorMap={CAT_COLORS}
+      />
+      <SidebarSection
+        label="Difficulty"
+        items={allDifficulties.filter(d => available.some(a => a.difficulty === d))}
+        active={activeDiffs}
+        onToggle={toggleDiff}
+        colorMap={DIFF_COLORS}
+      />
+      {hasActiveFilters && (
+        <button onClick={() => { setActiveCats([]); setActiveDiffs([]) }} style={{
+          fontSize: 11, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)',
+          background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0',
+          textDecoration: 'underline', textUnderlineOffset: 3,
+        }}>Clear filters</button>
+      )}
+    </div>
+  )
+
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '32px 16px 72px' : isTablet ? '40px 28px 80px' : '48px 40px 96px' }}>
+    <div style={{ maxWidth: isDesktop ? 1200 : 1000, margin: '0 auto', padding: isMobile ? '32px 16px 72px' : isTablet ? '40px 28px 80px' : '48px 40px 96px' }}>
 
       {/* Header — icon morphs from the selected platform card via layoutId */}
-      <div style={{ marginBottom: 40 }}>
+      <div style={{ marginBottom: 32 }}>
         <button onClick={onBack} style={{
           fontSize: 12, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)',
           background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 16px',
@@ -409,7 +511,6 @@ function FilteredView({
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-          {/* Shared icon — morphs from selector card */}
           <motion.div
             layoutId={`plt-icon-${platform}`}
             transition={{ type: 'spring', stiffness: 320, damping: 32 }}
@@ -429,10 +530,8 @@ function FilteredView({
             }}>
               {platformInfo.label}
             </h1>
-            <p style={{
-              fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-tertiary)', marginTop: 3,
-            }}>
-              {available.length} {t('filt_patterns')} · {context === 'web' ? t('sel_web') : t('sel_mobile')}
+            <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-tertiary)', marginTop: 3 }}>
+              {hasActiveFilters ? `${filtered.length} of ${available.length}` : available.length} {t('filt_patterns')} · {context === 'web' ? t('sel_web') : t('sel_mobile')}
             </p>
           </motion.div>
         </div>
@@ -467,108 +566,130 @@ function FilteredView({
         </div>
       </div>
 
-      {/* Animation cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(280px, 1fr))',
-        gap: isMobile ? 10 : 14,
-      }}>
-        {available.map((anim, i) => (
-          <motion.button
-            key={anim.slug}
-            onClick={() => onSelect(anim.slug, platform)}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.06 + i * 0.04, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            whileHover={{ y: -3, transition: { duration: 0.18 } }}
-            whileTap={{ scale: 0.98 }}
-            style={{
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border)',
-              borderRadius: 14,
-              padding: 0,
-              cursor: 'pointer',
-              textAlign: 'left',
-              display: 'flex', flexDirection: 'column', gap: 0,
-              overflow: 'hidden',
-            }}
-            onMouseEnter={e => {
-              const c = CAT_COLORS[anim.category] ?? '#534AB7'
-              e.currentTarget.style.borderColor = c + '60'
-              e.currentTarget.style.boxShadow   = `0 4px 20px ${c}14`
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'var(--border)'
-              e.currentTarget.style.boxShadow   = 'none'
-            }}
-          >
-            {/* ── Mini framed preview thumbnail ── */}
-            <div style={{
-              height: context === 'mobile' ? 148 : 136,
-              overflow: 'hidden',
-              borderBottom: '1px solid var(--border)',
-              background: 'var(--bg)',
-              display: 'flex',
-              alignItems: context === 'mobile' ? 'flex-start' : 'stretch',
-              justifyContent: context === 'mobile' ? 'center' : 'stretch',
-              pointerEvents: 'none',
-              flexShrink: 0,
-            }}>
-              {context === 'mobile' ? (
-                <div style={{ transform: 'scale(0.32)', transformOrigin: 'top center', width: 200, flexShrink: 0 }}>
-                  <PhoneFrame>
-                    <AnimationPreview slug={anim.slug} context="mobile" stepIndex={3} />
-                  </PhoneFrame>
-                </div>
-              ) : (
-                <div style={{ transform: 'scale(0.56)', transformOrigin: 'top left', width: '179%', flexShrink: 0 }}>
-                  <BrowserFrame>
-                    <AnimationPreview slug={anim.slug} context="web" stepIndex={3} />
-                  </BrowserFrame>
-                </div>
-              )}
-            </div>
+      {/* Body: sidebar + cards */}
+      <div style={{ display: 'flex', gap: isDesktop ? 28 : 0, alignItems: 'flex-start', flexDirection: isDesktop ? 'row' : 'column' }}>
 
-            {/* ── Text content ── */}
-            <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{
-                  padding: '3px 8px', borderRadius: 5,
-                  background: (CAT_COLORS[anim.category] ?? '#534AB7') + '18',
-                  color: CAT_COLORS[anim.category] ?? '#534AB7',
-                  fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600,
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                }}>
-                  {anim.category}
-                </span>
-                <span style={{
-                  fontSize: 10, fontFamily: 'var(--font-outfit)',
-                  color: DIFF_COLORS[anim.difficulty], letterSpacing: '0.04em',
-                }}>
-                  {t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}
-                </span>
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-power)', fontSize: 20, fontWeight: 700,
-                letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1.2,
-              }}>
-                {anim.title}
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-outfit)', fontSize: 12,
-                color: 'var(--text-tertiary)', lineHeight: 1.6,
-              }}>
-                {anim.tagline}
-              </div>
-              <div style={{
-                fontSize: 11, fontFamily: 'var(--font-outfit)',
-                color: 'var(--accent)', marginTop: 2,
-              }}>
-                {t('filt_cta')}
-              </div>
-            </div>
-          </motion.button>
-        ))}
+        {/* Sidebar / horizontal chips */}
+        {!isDesktop && <div style={{ width: '100%', marginBottom: 16 }}>{sidebar}</div>}
+        {isDesktop && sidebar}
+
+        {/* Animation cards grid */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <AnimatePresence mode="popLayout">
+            {filtered.length === 0 ? (
+              <motion.div key="empty"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontFamily: 'var(--font-outfit)', fontSize: 13 }}>
+                No animations match the selected filters.
+                <button onClick={() => { setActiveCats([]); setActiveDiffs([]) }} style={{ display: 'block', margin: '12px auto 0', fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>Clear filters</button>
+              </motion.div>
+            ) : (
+              <motion.div key="grid"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(260px, 1fr))',
+                  gap: isMobile ? 10 : 14,
+                }}
+              >
+                {filtered.map((anim, i) => (
+                  <motion.button
+                    key={anim.slug}
+                    layout
+                    onClick={() => onSelect(anim.slug, platform)}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: 0.04 + i * 0.03, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ y: -3, transition: { duration: 0.18 } }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 14,
+                      padding: 0,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      display: 'flex', flexDirection: 'column', gap: 0,
+                      overflow: 'hidden',
+                    }}
+                    onMouseEnter={e => {
+                      const c = CAT_COLORS[anim.category] ?? '#534AB7'
+                      e.currentTarget.style.borderColor = c + '60'
+                      e.currentTarget.style.boxShadow   = `0 4px 20px ${c}14`
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'var(--border)'
+                      e.currentTarget.style.boxShadow   = 'none'
+                    }}
+                  >
+                    {/* ── Mini framed preview thumbnail ── */}
+                    <div style={{
+                      height: context === 'mobile' ? 148 : 136,
+                      overflow: 'hidden',
+                      borderBottom: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                      display: 'flex',
+                      alignItems: context === 'mobile' ? 'flex-start' : 'stretch',
+                      justifyContent: context === 'mobile' ? 'center' : 'stretch',
+                      pointerEvents: 'none',
+                      flexShrink: 0,
+                    }}>
+                      {context === 'mobile' ? (
+                        <div style={{ transform: 'scale(0.32)', transformOrigin: 'top center', width: 200, flexShrink: 0 }}>
+                          <PhoneFrame>
+                            <AnimationPreview slug={anim.slug} context="mobile" stepIndex={3} />
+                          </PhoneFrame>
+                        </div>
+                      ) : (
+                        <div style={{ transform: 'scale(0.56)', transformOrigin: 'top left', width: '179%', flexShrink: 0 }}>
+                          <BrowserFrame>
+                            <AnimationPreview slug={anim.slug} context="web" stepIndex={3} />
+                          </BrowserFrame>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Text content ── */}
+                    <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{
+                          padding: '3px 8px', borderRadius: 5,
+                          background: (CAT_COLORS[anim.category] ?? '#534AB7') + '18',
+                          color: CAT_COLORS[anim.category] ?? '#534AB7',
+                          fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600,
+                          letterSpacing: '0.08em', textTransform: 'uppercase',
+                        }}>
+                          {anim.category}
+                        </span>
+                        <span style={{
+                          fontSize: 10, fontFamily: 'var(--font-outfit)',
+                          color: DIFF_COLORS[anim.difficulty], letterSpacing: '0.04em',
+                        }}>
+                          {t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}
+                        </span>
+                      </div>
+                      <div style={{
+                        fontFamily: 'var(--font-power)', fontSize: 18, fontWeight: 700,
+                        letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1.2,
+                      }}>
+                        {anim.title}
+                      </div>
+                      <div style={{
+                        fontFamily: 'var(--font-outfit)', fontSize: 12,
+                        color: 'var(--text-tertiary)', lineHeight: 1.6,
+                      }}>
+                        {anim.tagline}
+                      </div>
+                      <div style={{ fontSize: 11, fontFamily: 'var(--font-outfit)', color: 'var(--accent)', marginTop: 2 }}>
+                        {t('filt_cta')}
+                      </div>
+                    </div>
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   )
