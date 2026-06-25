@@ -115,6 +115,7 @@ function RevealOnScroll({ children, delay = 0 }) {
     {
       title: 'Add the client directive',
       description: 'In the App Router, any component that uses `useRef` or `useInView` (browser APIs) must declare `\'use client\'` at the top. Server Components can still import and use this component — Next.js handles the boundary.',
+      fr: { title: 'Ajouter la directive client', description: 'Dans l\'App Router, tout composant utilisant `useRef` ou `useInView` (APIs navigateur) doit déclarer `\'use client\'` en haut. Les Server Components peuvent toujours importer et utiliser ce composant — Next.js gère la frontière.' },
       code: `'use client'
 
 // This directive tells Next.js: "render this component in the browser."
@@ -128,6 +129,7 @@ function RevealOnScroll({ children }) {
     {
       title: 'Add motion.div',
       description: 'Same as the React implementation. The `\'use client\'` directive at the top is the only Next.js-specific requirement.',
+      fr: { title: 'Ajouter motion.div', description: 'Identique à l\'implémentation React. La directive `\'use client\'` en haut est la seule exigence spécifique à Next.js.' },
       code: `'use client'
 import { motion } from 'framer-motion'
 
@@ -146,6 +148,7 @@ function RevealOnScroll({ children }) {
     {
       title: 'Add slide + easing',
       description: 'Add `y` offset and the cubic-bezier ease. At this stage, the animation plays on every mount. In Next.js, hard navigations remount the page — so users see the animation every time they arrive.',
+      fr: { title: 'Ajouter le glissement + easing', description: 'Ajouter le décalage `y` et l\'ease cubic-bezier. À ce stade, l\'animation se joue à chaque montage. Dans Next.js, les navigations dures remontent la page — les utilisateurs voient l\'animation à chaque arrivée.' },
       code: `'use client'
 import { motion } from 'framer-motion'
 
@@ -167,6 +170,7 @@ function RevealOnScroll({ children }) {
     {
       title: 'Connect useInView + stagger',
       description: 'Export this component from a dedicated file and import it into any Server Component page — the boundary is implicit. The `delay` prop staggers siblings without any additional orchestration logic.',
+      fr: { title: 'Connecter useInView + cascade', description: 'Exporter ce composant depuis un fichier dédié et l\'importer dans n\'importe quel Server Component — la frontière est implicite. La prop `delay` cascade les frères sans logique d\'orchestration supplémentaire.' },
       code: `'use client'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
@@ -505,6 +509,7 @@ const pageTransitions: StepMap = {
     {
       title: 'Instant state switch',
       description: 'Two views controlled by a `useState` boolean. Swapping state replaces one component with another immediately — no animation. This is the baseline to improve on.',
+      fr: { title: 'Changement d\'état instantané', description: 'Deux vues contrôlées par un `useState`. Changer l\'état remplace immédiatement un composant par un autre — sans animation. C\'est la base que nous allons améliorer.' },
       code: `import { useState } from 'react'
 
 export function App() {
@@ -524,6 +529,7 @@ export function App() {
     {
       title: 'Wrap in AnimatePresence',
       description: '`AnimatePresence` watches its children for unmounts and runs their `exit` animation before removing them from the DOM. Without an `exit` prop on children, there\'s still no visible animation — but the plumbing is in place.',
+      fr: { title: 'Envelopper dans AnimatePresence', description: '`AnimatePresence` surveille ses enfants pour les démontages et exécute leur animation `exit` avant de les supprimer du DOM. Sans prop `exit` sur les enfants, il n\'y a toujours pas d\'animation visible — mais la plomberie est en place.' },
       code: `import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 
@@ -543,6 +549,7 @@ export function App() {
     {
       title: 'Add initial + exit to the page',
       description: 'Each page component becomes a `motion.div` with `initial`, `animate`, and `exit`. The `key` prop is critical — React uses it to identify which child changed, and `AnimatePresence` uses it to trigger enter/exit.',
+      fr: { title: 'Ajouter initial + exit à la page', description: 'Chaque composant de page devient un `motion.div` avec `initial`, `animate` et `exit`. La prop `key` est cruciale — React l\'utilise pour identifier quel enfant a changé, et `AnimatePresence` s\'en sert pour déclencher l\'entrée/sortie.' },
       code: `import { motion } from 'framer-motion'
 
 // Each page component:
@@ -577,6 +584,7 @@ function DetailPage() {
     {
       title: 'Add mode="wait" and directional slide',
       description: '`mode="wait"` makes the exit animation finish before the enter animation starts — prevents two pages overlapping. Adding `y` offset makes the swap feel directional: old page slides up, new page comes in from below.',
+      fr: { title: 'Ajouter mode="wait" et glissement directionnel', description: '`mode="wait"` fait terminer l\'animation de sortie avant que l\'animation d\'entrée commence — évite que deux pages se superposent. Ajouter un décalage `y` rend l\'échange directionnel : l\'ancienne page glisse vers le haut, la nouvelle arrive par le bas.' },
       code: `import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -935,6 +943,7 @@ const gestureFeedback: StepMap = {
     {
       title: 'Plain HTML button',
       description: 'A regular `<button>` — no animation. Clicking it works, but there\'s no visual confirmation that the press was registered. This is the problem we\'re solving.',
+      fr: { title: 'Bouton HTML simple', description: 'Un `<button>` ordinaire — pas d\'animation. Le clic fonctionne, mais il n\'y a aucune confirmation visuelle que l\'appui a été enregistré. C\'est le problème que nous allons résoudre.' },
       code: `export function ActionButton({ children, onClick }) {
   return (
     <button
@@ -957,6 +966,7 @@ const gestureFeedback: StepMap = {
     {
       title: 'Add whileTap press feedback',
       description: '`motion.button` replaces the plain button. `whileTap={{ scale: 0.94 }}` animates to 94% size while the pointer is held down and springs back on release. The spring\'s stiffness/damping ratio determines bounciness.',
+      fr: { title: 'Ajouter le retour whileTap', description: '`motion.button` remplace le bouton simple. `whileTap={{ scale: 0.94 }}` anime à 94% de sa taille pendant que le pointeur est maintenu et rebondit à la relâche. Le ratio stiffness/damping du spring détermine le rebond.' },
       code: `import { motion } from 'framer-motion'
 
 export function ActionButton({ children, onClick }) {
@@ -979,6 +989,7 @@ export function ActionButton({ children, onClick }) {
     {
       title: 'Add whileHover lift',
       description: '`whileHover` activates while the cursor is over the element. Combining a slight scale-up with a negative `y` offset simulates the button rising from the surface — shadow would complete the illusion.',
+      fr: { title: 'Ajouter la lévitation whileHover', description: '`whileHover` s\'active quand le curseur survole l\'élément. Combiner un léger scale-up avec un décalage `y` négatif simule le bouton qui s\'élève de la surface — une ombre compléterait l\'illusion.' },
       code: `import { motion } from 'framer-motion'
 
 export function ActionButton({ children, onClick }) {
@@ -1002,6 +1013,7 @@ export function ActionButton({ children, onClick }) {
     {
       title: 'Add drag-to-dismiss card',
       description: '`drag="x"` enables horizontal dragging. `dragConstraints` sets the allowed range — `{ left: 0, right: 0 }` means the card always wants to return to center. `dragElastic` controls how far it can stretch past the constraint.',
+      fr: { title: 'Ajouter le glissement pour rejeter', description: '`drag="x"` active le glissement horizontal. `dragConstraints` définit la plage autorisée — `{ left: 0, right: 0 }` signifie que la carte veut toujours revenir au centre. `dragElastic` contrôle jusqu\'où elle peut s\'étirer au-delà de la contrainte.' },
       code: `import { motion } from 'framer-motion'
 
 // Spring button (from step 3)
@@ -1238,6 +1250,7 @@ const parallax: StepMap = {
     {
       title: 'Static layered divs',
       description: 'Two layers — a background and foreground — stacked with `position: absolute`. No animation yet. Establish `overflow: hidden` on the container now; forgetting it causes background bleed when we add motion.',
+      fr: { title: 'Divs superposés statiques', description: 'Deux couches — un arrière-plan et un premier plan — empilées avec `position: absolute`. Pas encore d\'animation. Établir `overflow: hidden` sur le conteneur maintenant ; l\'oublier cause un débordement de l\'arrière-plan quand on ajoute le mouvement.' },
       code: `export function ParallaxSection({ image, children }) {
   return (
     <section style={{ position: 'relative', overflow: 'hidden', minHeight: 480 }}>
@@ -1259,6 +1272,7 @@ const parallax: StepMap = {
     {
       title: 'Wire useScroll to the section',
       description: '`useScroll({ target: sectionRef })` creates a `scrollYProgress` MotionValue that goes from 0 (section bottom entering viewport) to 1 (section top leaving). At this stage we\'re just reading the value — no visual change yet.',
+      fr: { title: 'Connecter useScroll à la section', description: '`useScroll({ target: sectionRef })` crée une MotionValue `scrollYProgress` qui va de 0 (bas de la section entrant dans la fenêtre) à 1 (haut de la section quittant). À ce stade, on lit juste la valeur — aucun changement visuel encore.' },
       code: `import { useRef } from 'react'
 import { useScroll } from 'framer-motion'
 
@@ -1282,6 +1296,7 @@ export function ParallaxSection({ image, children }) {
     {
       title: 'Apply motion to the background',
       description: '`useTransform` maps the 0–1 scroll range to pixel offsets. The background gets a ±40px range — small, but enough to create visible depth. Apply it via `style={{ y: bgY }}` on a `motion.div`.',
+      fr: { title: 'Appliquer le mouvement à l\'arrière-plan', description: '`useTransform` mappe le range 0–1 du scroll à des décalages en pixels. L\'arrière-plan reçoit une plage ±40px — petit, mais suffisant pour créer de la profondeur visible. L\'appliquer via `style={{ y: bgY }}` sur un `motion.div`.' },
       code: `import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
@@ -1311,6 +1326,7 @@ export function ParallaxSection({ image, children }) {
     {
       title: 'Add a foreground layer at a different speed',
       description: 'The foreground moves in the opposite direction to the background — this is what creates the perceived depth. Two layers moving at different speeds tricks the visual cortex into reading distance.',
+      fr: { title: 'Ajouter une couche de premier plan à vitesse différente', description: 'Le premier plan bouge dans la direction opposée à l\'arrière-plan — c\'est ce qui crée la profondeur perçue. Deux couches se déplaçant à des vitesses différentes trompent le cortex visuel en lisant la distance.' },
       code: `import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
@@ -1565,6 +1581,7 @@ const skeletonLoading: StepMap = {
     {
       title: 'Static gray placeholder',
       description: 'A gray rectangle the same size as the real content. This is already better than a spinner — the user can see that something is coming and where it will appear.',
+      fr: { title: 'Espace réservé gris statique', description: 'Un rectangle gris de la même taille que le vrai contenu. C\'est déjà mieux qu\'un spinner — l\'utilisateur peut voir que quelque chose arrive et où il apparaîtra.' },
       code: `export function Skeleton() {
   return (
     <div style={{
@@ -1579,6 +1596,7 @@ const skeletonLoading: StepMap = {
     {
       title: 'Add the shimmer animation',
       description: 'A `motion.div` absolutely positioned inside the skeleton sweeps from left to right using `animate={{ x: ["-100%", "100%"] }}`. The gradient creates the light-catching effect. The parent\'s `overflow: hidden` keeps it clipped.',
+      fr: { title: 'Ajouter l\'animation shimmer', description: 'Un `motion.div` positionné en absolu à l\'intérieur du squelette balaie de gauche à droite avec `animate={{ x: ["-100%", "100%"] }}`. Le dégradé crée l\'effet de lumière captée. Le `overflow: hidden` du parent le garde clipé.' },
       code: `import { motion } from 'framer-motion'
 
 export function Skeleton({ width = '100%', height = 16, borderRadius = 6 }) {
@@ -1604,6 +1622,7 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 6 }) {
     {
       title: 'Compose into a card skeleton',
       description: 'Build the structural skeleton of the real card — same layout, same proportions, but every element is a `<Skeleton>`. A narrow avatar, two short text lines, one long line.',
+      fr: { title: 'Composer en squelette de carte', description: 'Construire le squelette structurel de la vraie carte — même mise en page, mêmes proportions, mais chaque élément est un `<Skeleton>`. Un avatar étroit, deux courtes lignes de texte, une longue ligne.' },
       code: `import { motion } from 'framer-motion'
 
 function Skeleton({ width = '100%', height = 16, borderRadius = 6 }) {
@@ -1637,6 +1656,7 @@ export function CardSkeleton() {
     {
       title: 'Swap to real content on load',
       description: '`AnimatePresence mode="wait"` handles the skeleton → content swap. The skeleton fades out, then the real content fades in. `once` state ensures the swap only happens in one direction.',
+      fr: { title: 'Remplacer par le vrai contenu au chargement', description: '`AnimatePresence mode="wait"` gère le remplacement squelette → contenu. Le squelette s\'estompe, puis le vrai contenu s\'estompe. L\'état `once` garantit que le remplacement ne se fait que dans un sens.' },
       code: `import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -1894,6 +1914,7 @@ const staggerList: StepMap = {
     {
       title: 'Plain ul/li list',
       description: 'A regular HTML list. All items render simultaneously with no transition. This is what we\'re improving — the instant pop-in feels abrupt, especially for long lists.',
+      fr: { title: 'Liste ul/li simple', description: 'Une liste HTML ordinaire. Tous les éléments s\'affichent simultanément sans transition. C\'est ce que nous améliorons — l\'apparition instantanée semble abrupte, surtout pour les longues listes.' },
       code: `const items = ['Dashboard', 'Analytics', 'Users', 'Settings', 'Billing']
 
 export function NavList() {
@@ -1911,6 +1932,7 @@ export function NavList() {
     {
       title: 'Add opacity animation to each item',
       description: 'Swap `li` for `motion.li` with `initial={{ opacity: 0 }}` and `animate={{ opacity: 1 }}`. All items animate — but they all fade in at exactly the same time. Still no cascade.',
+      fr: { title: 'Ajouter l\'animation d\'opacité à chaque élément', description: 'Remplacer `li` par `motion.li` avec `initial={{ opacity: 0 }}` et `animate={{ opacity: 1 }}`. Tous les éléments s\'animent — mais ils s\'estompent tous exactement au même moment. Toujours pas de cascade.' },
       code: `import { motion } from 'framer-motion'
 
 const items = ['Dashboard', 'Analytics', 'Users', 'Settings', 'Billing']
@@ -1936,6 +1958,7 @@ export function NavList() {
     {
       title: 'Add staggerChildren with variants',
       description: '`variants` let the parent (`motion.ul`) orchestrate its children. Setting `staggerChildren: 0.07` on the container\'s `transition` tells Framer Motion to delay each child\'s animation start by 70ms. Children don\'t need explicit delays — they inherit from the parent variant.',
+      fr: { title: 'Ajouter staggerChildren avec des variantes', description: '`variants` permettent au parent (`motion.ul`) d\'orchestrer ses enfants. Définir `staggerChildren: 0.07` sur la `transition` du conteneur indique à Framer Motion de retarder chaque animation d\'enfant de 70ms. Les enfants n\'ont pas besoin de délais explicites — ils héritent de la variante parent.' },
       code: `import { motion } from 'framer-motion'
 
 const container = {
@@ -1972,6 +1995,7 @@ export function NavList() {
     {
       title: 'Trigger on scroll with useInView',
       description: '`useInView` on the container controls when the `animate` prop switches from `"hidden"` to `"visible"`. `once: true` prevents replaying on scroll-back. The stagger still runs from the container — no per-item change needed.',
+      fr: { title: 'Déclencher au scroll avec useInView', description: '`useInView` sur le conteneur contrôle quand la prop `animate` passe de `"hidden"` à `"visible"`. `once: true` empêche de rejouer au retour du scroll. Le stagger s\'exécute toujours depuis le conteneur — aucune modification par élément nécessaire.' },
       code: `import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 
@@ -2265,6 +2289,7 @@ const imageCarouselReact: Step[] = [
   {
     title: 'Static slides',
     description: 'Render three coloured slides in a relative container. No animation yet — just the layout foundation.',
+    fr: { title: 'Slides statiques', description: 'Afficher trois slides colorées dans un conteneur relatif. Pas encore d\'animation — juste la base de mise en page.' },
     code: `import { useState } from 'react'
 
 const slides = [
@@ -2297,6 +2322,7 @@ export function ImageCarousel() {
   {
     title: 'AnimatePresence + slide',
     description: 'Wrap slides in AnimatePresence so the outgoing slide exits before the next one enters. Add x-axis enter/exit so cards slide in from the correct edge.',
+    fr: { title: 'AnimatePresence + glissement', description: 'Envelopper les slides dans `AnimatePresence` pour que la slide sortante quitte avant que la suivante entre. Ajouter l\'entrée/sortie sur l\'axe x pour que les cartes glissent depuis le bon bord.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -2345,6 +2371,7 @@ export function ImageCarousel() {
   {
     title: 'Scale depth + dark overlay',
     description: 'Add scale: 0.92 on enter so slides zoom in as they arrive. Add a sibling motion.div that fades from opacity 0.5 to 0, creating the cinematic dark-reveal effect.',
+    fr: { title: 'Profondeur de scale + overlay sombre', description: 'Ajouter `scale: 0.92` à l\'entrée pour que les slides zooment en arrivant. Ajouter un `motion.div` frère qui s\'estompe de opacity 0.5 à 0, créant l\'effet de révélation cinématique sombre.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -2404,6 +2431,7 @@ export function ImageCarousel() {
   {
     title: 'Drag-to-swipe + spring dots',
     description: 'Add drag="x" with a velocity/offset threshold so swiping advances the carousel. Replace CSS dot transitions with motion.div animate={{ width }} springs.',
+    fr: { title: 'Glisser pour swiper + pastilles spring', description: 'Ajouter `drag="x"` avec un threshold de vélocité/offset pour que le swipe avance le carrousel. Remplacer les transitions CSS des pastilles par des springs `motion.div animate={{ width }}`.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -3391,6 +3419,7 @@ const onboardingFlowReact: Step[] = [
   {
     title: 'Static screens',
     description: 'Render a single screen with an icon, title, and body. Add a basic step counter and Next button — no animation yet.',
+    fr: { title: 'Écrans statiques', description: 'Afficher un seul écran avec une icône, un titre et un corps. Ajouter un compteur d\'étapes basique et un bouton Suivant — pas encore d\'animation.' },
     code: `import { useState } from 'react'
 
 const screens = [
@@ -3429,6 +3458,7 @@ export function OnboardingFlow() {
   {
     title: 'AnimatePresence crossfade',
     description: 'Wrap the screen content in AnimatePresence mode="wait" so the exiting screen fades out before the entering one fades in. Key by step so changing it triggers the animation.',
+    fr: { title: 'Fondu enchaîné AnimatePresence', description: 'Envelopper le contenu de l\'écran dans `AnimatePresence mode="wait"` pour que l\'écran sortant s\'estompe avant que l\'entrant s\'estompe. Clef par étape pour déclencher l\'animation au changement.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -3475,6 +3505,7 @@ export function OnboardingFlow() {
   {
     title: 'Slide + icon pop',
     description: 'Replace the fade with a slide-in from the right and slide-out to the left. Add a delayed scale animation on the icon so it "pops" in after the container settles.',
+    fr: { title: 'Glissement + pop d\'icône', description: 'Remplacer le fondu par un glissement depuis la droite et une sortie vers la gauche. Ajouter une animation de scale retardée sur l\'icône pour qu\'elle "pop" après que le conteneur se stabilise.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -3527,6 +3558,7 @@ export function OnboardingFlow() {
   {
     title: 'Spring dots + Back button',
     description: 'Replace CSS dot transitions with motion.div spring-animated width. Add the Back button and a whileTap on the Next button for haptic-feel feedback.',
+    fr: { title: 'Pastilles spring + bouton Retour', description: 'Remplacer les transitions CSS des pastilles par une largeur animée en spring avec `motion.div`. Ajouter le bouton Retour et un `whileTap` sur le bouton Suivant pour un retour haptique.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -4665,6 +4697,7 @@ const sharedElementReact: Step[] = [
   {
     title: 'List + static overlay',
     description: 'Render a list of items and a detail overlay that appears when an item is clicked. No animation yet — just the state machine.',
+    fr: { title: 'Liste + overlay statique', description: 'Afficher une liste d\'éléments et un overlay de détail qui apparaît au clic. Pas encore d\'animation — juste la machine à états.' },
     code: `import { useState } from 'react'
 
 const items = [
@@ -4714,6 +4747,7 @@ export function SharedElementDemo() {
   {
     title: 'Animated backdrop + sheet',
     description: 'Wrap the overlay in AnimatePresence so the backdrop fades in/out and the bottom sheet slides up from below.',
+    fr: { title: 'Backdrop animé + sheet', description: 'Envelopper l\'overlay dans `AnimatePresence` pour que le backdrop s\'estompe et que la bottom sheet glisse depuis le bas.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -4771,6 +4805,7 @@ export function SharedElementDemo() {
   {
     title: 'layoutId on thumbnail',
     description: 'Add layoutId to the list thumbnail. Framer Motion detects the matching layoutId in the detail sheet and FLIP-animates the element between positions automatically.',
+    fr: { title: 'layoutId sur la miniature', description: 'Ajouter `layoutId` à la miniature de la liste. Framer Motion détecte le `layoutId` correspondant dans la sheet de détail et anime l\'élément entre les positions automatiquement avec FLIP.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -4832,6 +4867,7 @@ export function SharedElementDemo() {
   {
     title: 'Polish — spring + list reflow',
     description: 'Add a layout prop to every list row so siblings reflow smoothly when the overlay unmounts. Tune the layoutId spring for a slower, more cinematic morph.',
+    fr: { title: 'Polissage — spring + reflow de la liste', description: 'Ajouter une prop `layout` à chaque ligne de la liste pour que les frères se repositionnent en douceur quand l\'overlay se démonte. Ajuster le spring du `layoutId` pour un morph plus lent et cinématique.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -6122,6 +6158,7 @@ const collapsingHeaderReact: Step[] = [
   {
     title: 'Static header',
     description: 'Build the header layout with avatar, title, and search bar. Scroll the content below — nothing collapses yet.',
+    fr: { title: 'En-tête statique', description: 'Construire la mise en page de l\'en-tête avec avatar, titre et barre de recherche. Faire défiler le contenu en dessous — rien ne se réduit encore.' },
     code: `export function CollapsingHeader() {
   return (
     <div style={{ height: '100%', overflowY: 'auto' }}>
@@ -6156,6 +6193,7 @@ const collapsingHeaderReact: Step[] = [
   {
     title: 'Track scroll with useScroll',
     description: 'Attach a ref to the scroll container and pass it to useScroll. Log scrollY to confirm it tracks the container, not the page.',
+    fr: { title: 'Suivre le scroll avec useScroll', description: 'Attacher un ref au conteneur de scroll et le passer à `useScroll`. Logger `scrollY` pour confirmer qu\'il suit le conteneur, pas la page.' },
     code: `import { useRef } from 'react'
 import { useScroll } from 'framer-motion'
 
@@ -6199,6 +6237,7 @@ export function CollapsingHeader() {
   {
     title: 'useTransform — search fades, avatar shrinks',
     description: 'Map scrollY 0→120px to avatar scale (1→0.55) and search opacity (1→0). useTransform clamps automatically — scrolling past 120px holds the values at their endpoints.',
+    fr: { title: 'useTransform — recherche s\'estompe, avatar rétrécit', description: 'Mapper scrollY 0→120px au scale de l\'avatar (1→0.55) et à l\'opacité de la recherche (1→0). `useTransform` clamp automatiquement — défiler au-delà de 120px maintient les valeurs à leurs endpoints.' },
     code: `import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
@@ -6245,6 +6284,7 @@ export function CollapsingHeader() {
   {
     title: 'Title font size + padding sync',
     description: 'Add useTransform for header padding (20→10px) and title font size (22→14px). All four transforms share the same scrollY — perfect synchronisation with no extra state.',
+    fr: { title: 'Taille de police du titre + sync du padding', description: 'Ajouter `useTransform` pour le padding de l\'en-tête (20→10px) et la taille de police du titre (22→14px). Les quatre transforms partagent le même `scrollY` — synchronisation parfaite sans état supplémentaire.' },
     code: `import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
