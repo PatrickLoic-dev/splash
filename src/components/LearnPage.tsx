@@ -974,26 +974,6 @@ function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, cur
                 ))}
               </div>
             )}
-            {/* ── Per-implementation inline preview ── */}
-            <div style={{
-              borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)',
-              background: 'var(--bg-secondary)', padding: '16px 20px',
-              display: 'flex', justifyContent: 'center', alignItems: 'center',
-              pointerEvents: 'none',
-            }}>
-              {context === 'web' ? (
-                <div style={{ width: '100%' }}>
-                  <BrowserFrame>
-                    <AnimationPreview slug={anim.slug} context="web" stepIndex={stepIndex} />
-                  </BrowserFrame>
-                </div>
-              ) : (
-                <PhoneFrame>
-                  <AnimationPreview slug={anim.slug} context="mobile" stepIndex={stepIndex} />
-                </PhoneFrame>
-              )}
-            </div>
-
             {steps.length > 0 && currentStep ? (
               <StepperBlock steps={steps} stepIndex={stepIndex} accentColor={accentColor} onStepChange={onStepChange} currentStep={currentStep} lang={lang} />
             ) : (
@@ -1008,11 +988,41 @@ function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, cur
       </Section>
       <Divider />
       <Section title={t('det_cases')} color={accentColor}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {anim.useCases.map((uc, i) => (
-            <div key={i} style={{ padding: '14px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', gap: 14 }}>
-              <span style={{ flexShrink: 0, padding: '2px 8px', borderRadius: 16, background: accentColor + '1a', color: accentColor, fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600, letterSpacing: '0.04em', height: 'fit-content', marginTop: 2, whiteSpace: 'nowrap' }}>{uc.label}</span>
-              <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{uc.example}</p>
+            <div key={i} style={{
+              borderRadius: 12, border: '1px solid var(--border)',
+              background: 'var(--bg-secondary)', overflow: 'hidden',
+            }}>
+              {/* Mini preview thumbnail */}
+              <div style={{
+                height: context === 'mobile' ? 148 : 136,
+                background: 'var(--bg)', overflow: 'hidden', flexShrink: 0,
+                display: 'flex',
+                alignItems: context === 'mobile' ? 'flex-start' : 'stretch',
+                justifyContent: context === 'mobile' ? 'center' : 'stretch',
+                pointerEvents: 'none',
+                borderBottom: '1px solid var(--border)',
+              }}>
+                {context === 'mobile' ? (
+                  <div style={{ transform: 'scale(0.32)', transformOrigin: 'top center', width: 200, flexShrink: 0 }}>
+                    <PhoneFrame>
+                      <AnimationPreview slug={anim.slug} context="mobile" stepIndex={3} />
+                    </PhoneFrame>
+                  </div>
+                ) : (
+                  <div style={{ transform: 'scale(0.56)', transformOrigin: 'top left', width: '179%', flexShrink: 0 }}>
+                    <BrowserFrame>
+                      <AnimationPreview slug={anim.slug} context="web" stepIndex={3} />
+                    </BrowserFrame>
+                  </div>
+                )}
+              </div>
+              {/* Label + text */}
+              <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ padding: '2px 8px', borderRadius: 12, background: accentColor + '1a', color: accentColor, fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600, letterSpacing: '0.04em', width: 'fit-content' }}>{uc.label}</span>
+                <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{uc.example}</p>
+              </div>
             </div>
           ))}
         </div>
