@@ -19,11 +19,11 @@ export type StepMap = Partial<Record<PlatformId, Step[]>>
 const entranceReveal: StepMap = {
   react: [
     {
-      title: 'Render the element',
-      description: 'Start with a plain `div`. Get the layout right before adding any animation. The element renders immediately at full opacity — this is the baseline we\'ll animate from.',
+      title: 'Render the static element',
+      description: 'Start with a plain `div` and get the layout, spacing, and styles exactly right *before* introducing any motion. **Every good animation begins from a working static state** — if the element looks correct here, you only have one variable to reason about later. The element renders immediately at full opacity, and this is the visual baseline we animate *from*.',
       fr: {
-        title: 'Rendre l\'élément',
-        description: 'Commencer avec un `div` simple. Obtenir la mise en page correcte avant d\'ajouter des animations. L\'élément s\'affiche immédiatement en opacité totale — c\'est la base depuis laquelle nous allons animer.',
+        title: 'Rendre l\'élément statique',
+        description: 'Commencez par un `div` simple et réglez la mise en page, les espacements et les styles *avant* d\'introduire le moindre mouvement. **Toute bonne animation part d\'un état statique fonctionnel** — si l\'élément est correct ici, il ne reste qu\'une seule variable à raisonner ensuite. L\'élément s\'affiche immédiatement en opacité totale : c\'est la base visuelle depuis laquelle nous animons.',
       },
       code: `function RevealOnScroll({ children }) {
   return (
@@ -34,11 +34,11 @@ const entranceReveal: StepMap = {
 }`,
     },
     {
-      title: 'Swap to motion.div',
-      description: 'Replace `div` with `motion.div` and set `initial` → `animate`. The element now fades from invisible to visible on every mount. No scroll awareness yet — it plays immediately.',
+      title: 'Swap in motion.div',
+      description: 'Replace the `div` with `motion.div` and declare an `initial` and `animate` state — Framer Motion **animates the difference between them automatically**. The element now fades from invisible to visible on every mount, which proves the motion library is wired up correctly. There is *no scroll awareness yet*; it simply plays once when the component appears.',
       fr: {
         title: 'Passer à motion.div',
-        description: 'Remplacer `div` par `motion.div` et définir `initial` → `animate`. L\'élément s\'estompe maintenant de invisible à visible à chaque montage. Pas encore de conscience du scroll — il se joue immédiatement.',
+        description: 'Remplacez le `div` par `motion.div` et déclarez un état `initial` et `animate` — Framer Motion **anime automatiquement la différence entre les deux**. L\'élément passe maintenant d\'invisible à visible à chaque montage, ce qui prouve que la bibliothèque de mouvement est bien branchée. Il n\'y a *aucune conscience du scroll* pour l\'instant : il se joue une fois à l\'apparition du composant.',
       },
       code: `import { motion } from 'framer-motion'
 
@@ -56,10 +56,10 @@ function RevealOnScroll({ children }) {
     },
     {
       title: 'Add a slide direction',
-      description: 'Add `y: 32` to `initial` so the element slides up as it fades in. The cubic-bezier `[0.22, 1, 0.36, 1]` starts fast and decelerates — it matches how objects fall, which reads as natural.',
+      description: 'Adding `y: 32` to `initial` gives the fade a **direction of travel**, so the element rises into place instead of just appearing — motion that has an origin reads as intentional. The *easing curve* matters even more than the distance: `[0.22, 1, 0.36, 1]` starts fast and decelerates, mirroring how real objects settle under momentum. **A linear fade always feels mechanical**, which is why this curve is the single biggest quality upgrade here.',
       fr: {
         title: 'Ajouter une direction de glissement',
-        description: 'Ajouter `y: 32` à `initial` pour que l\'élément glisse vers le haut en s\'estompant. Le cubic-bezier `[0.22, 1, 0.36, 1]` démarre vite et décélère — il imite la façon dont les objets tombent, ce qui paraît naturel.',
+        description: 'Ajouter `y: 32` à `initial` donne au fondu une **direction de déplacement** : l\'élément s\'élève en place au lieu de simplement apparaître, et un mouvement qui a une origine paraît intentionnel. La *courbe d\'accélération* compte encore plus que la distance : `[0.22, 1, 0.36, 1]` démarre vite puis décélère, imitant la façon dont un objet réel se stabilise sous son élan. **Un fondu linéaire paraît toujours mécanique**, c\'est pourquoi cette courbe est ici le plus grand gain de qualité.',
       },
       code: `import { motion } from 'framer-motion'
 
@@ -80,10 +80,10 @@ function RevealOnScroll({ children }) {
     },
     {
       title: 'Trigger on scroll + stagger',
-      description: '`useInView` wraps an IntersectionObserver. When the element crosses `margin: \'-80px\'` (80px before the viewport edge), `inView` flips true and the animation runs once. Pass a `delay` prop to stagger multiple sibling elements.',
+      description: 'This is the step that turns a *mount animation* into a true **scroll reveal**. `useInView` wraps an `IntersectionObserver`, so the browser — not a scroll listener — tells you when the element is near the viewport; the `margin: \'-80px\'` fires it *80px early* so the motion is already underway by the time the user looks. With `once: true` the reveal plays a single time, and a `delay` prop lets siblings **stagger** into view, which guides the eye through the content in sequence.',
       fr: {
         title: 'Déclencher au scroll + cascade',
-        description: '`useInView` enveloppe un IntersectionObserver. Quand l\'élément franchit `margin: \'-80px\'` (80px avant le bord de la fenêtre), `inView` passe à true et l\'animation se joue une fois. Passer une prop `delay` pour décaler plusieurs éléments frères.',
+        description: 'C\'est l\'étape qui transforme une *animation au montage* en véritable **révélation au scroll**. `useInView` enveloppe un `IntersectionObserver` : c\'est le navigateur — pas un écouteur de scroll — qui signale que l\'élément approche du viewport, et le `margin: \'-80px\'` le déclenche *80px en avance* pour que le mouvement soit déjà en cours quand l\'utilisateur regarde. Avec `once: true` la révélation ne joue qu\'une fois, et une prop `delay` permet de faire **cascader** les frères, ce qui guide l\'œil à travers le contenu de façon séquentielle.',
       },
       code: `import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
@@ -114,8 +114,8 @@ function RevealOnScroll({ children, delay = 0 }) {
   nextjs: [
     {
       title: 'Add the client directive',
-      description: 'In the App Router, any component that uses `useRef` or `useInView` (browser APIs) must declare `\'use client\'` at the top. Server Components can still import and use this component — Next.js handles the boundary.',
-      fr: { title: 'Ajouter la directive client', description: 'Dans l\'App Router, tout composant utilisant `useRef` ou `useInView` (APIs navigateur) doit déclarer `\'use client\'` en haut. Les Server Components peuvent toujours importer et utiliser ce composant — Next.js gère la frontière.' },
+      description: 'The App Router renders components on the **server by default**, where there is no DOM and no hooks like `useRef` or `useInView`. Declaring `\'use client\'` opts this component into the browser runtime so those APIs actually exist at runtime. The key insight: this directive marks a *boundary*, not a whole page — Server Components can freely import and render it, and only this leaf ships JavaScript to the client.',
+      fr: { title: 'Ajouter la directive client', description: 'L\'App Router rend les composants **côté serveur par défaut**, où il n\'y a ni DOM ni hooks comme `useRef` ou `useInView`. Déclarer `\'use client\'` fait basculer ce composant vers le runtime navigateur pour que ces APIs existent réellement à l\'exécution. L\'idée clé : cette directive marque une *frontière*, pas une page entière — les Server Components peuvent l\'importer librement, et seule cette feuille envoie du JavaScript au client.' },
       code: `'use client'
 
 // This directive tells Next.js: "render this component in the browser."
@@ -128,8 +128,8 @@ function RevealOnScroll({ children }) {
     },
     {
       title: 'Add motion.div',
-      description: 'Same as the React implementation. The `\'use client\'` directive at the top is the only Next.js-specific requirement.',
-      fr: { title: 'Ajouter motion.div', description: 'Identique à l\'implémentation React. La directive `\'use client\'` en haut est la seule exigence spécifique à Next.js.' },
+      description: 'Once the client boundary exists, the motion code is **identical to plain React** — `initial`, `animate`, and `transition` behave exactly the same. That symmetry is the real lesson here: Framer Motion is *framework-agnostic*, so the only Next.js-specific cost is the `\'use client\'` directive at the top. Everything you learn in one environment carries directly to the other.',
+      fr: { title: 'Ajouter motion.div', description: 'Une fois la frontière client en place, le code de mouvement est **identique au React classique** — `initial`, `animate` et `transition` se comportent exactement pareil. Cette symétrie est la vraie leçon : Framer Motion est *agnostique du framework*, donc le seul coût propre à Next.js est la directive `\'use client\'` en haut. Tout ce que vous apprenez dans un environnement se transpose directement à l\'autre.' },
       code: `'use client'
 import { motion } from 'framer-motion'
 
@@ -147,8 +147,8 @@ function RevealOnScroll({ children }) {
     },
     {
       title: 'Add slide + easing',
-      description: 'Add `y` offset and the cubic-bezier ease. At this stage, the animation plays on every mount. In Next.js, hard navigations remount the page — so users see the animation every time they arrive.',
-      fr: { title: 'Ajouter le glissement + easing', description: 'Ajouter le décalage `y` et l\'ease cubic-bezier. À ce stade, l\'animation se joue à chaque montage. Dans Next.js, les navigations dures remontent la page — les utilisateurs voient l\'animation à chaque arrivée.' },
+      description: 'Adding the `y` offset and the `[0.22, 1, 0.36, 1]` cubic-bezier gives the reveal the same **rise-and-settle** feel as the React version. There is a routing subtlety worth knowing: this animation fires on every *mount*, and in Next.js a **hard navigation remounts the page**, so users replay the reveal each time they arrive fresh. Soft client transitions keep the component alive and *won\'t* retrigger it — a distinction that explains most "why did my animation stop playing?" confusion.',
+      fr: { title: 'Ajouter le glissement + easing', description: 'Ajouter le décalage `y` et le cubic-bezier `[0.22, 1, 0.36, 1]` donne à la révélation le même effet de **montée et stabilisation** que la version React. Une subtilité de routage mérite d\'être connue : cette animation se joue à chaque *montage*, et dans Next.js une **navigation dure remonte la page**, donc les utilisateurs rejouent la révélation à chaque arrivée à neuf. Les transitions client douces gardent le composant en vie et ne la *redéclenchent pas* — une distinction qui explique la plupart des confusions du type « pourquoi mon animation ne joue plus ? ».' },
       code: `'use client'
 import { motion } from 'framer-motion'
 
@@ -169,8 +169,8 @@ function RevealOnScroll({ children }) {
     },
     {
       title: 'Connect useInView + stagger',
-      description: 'Export this component from a dedicated file and import it into any Server Component page — the boundary is implicit. The `delay` prop staggers siblings without any additional orchestration logic.',
-      fr: { title: 'Connecter useInView + cascade', description: 'Exporter ce composant depuis un fichier dédié et l\'importer dans n\'importe quel Server Component — la frontière est implicite. La prop `delay` cascade les frères sans logique d\'orchestration supplémentaire.' },
+      description: 'Wiring in `useInView` finally ties the reveal to the **scroll position** rather than the mount, and packaging it as a reusable export is what makes it practical. By exporting from a dedicated `\'use client\'` file, *any* Server Component page can drop it in — the client boundary travels with the component, so consumers never think about it. The `delay` prop then **staggers siblings declaratively**, letting you choreograph a whole section with nothing but numbers.',
+      fr: { title: 'Connecter useInView + cascade', description: 'Brancher `useInView` rattache enfin la révélation à la **position de scroll** plutôt qu\'au montage, et l\'empaqueter en export réutilisable est ce qui la rend pratique. En l\'exportant depuis un fichier `\'use client\'` dédié, *n\'importe quelle* page Server Component peut l\'insérer — la frontière client voyage avec le composant, donc les consommateurs n\'y pensent jamais. La prop `delay` permet ensuite de **cascader les frères de façon déclarative**, orchestrant toute une section avec de simples nombres.' },
       code: `'use client'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
@@ -203,8 +203,8 @@ export function RevealOnScroll({ children, delay = 0 }: {
   vue: [
     {
       title: 'Plain template div',
-      description: 'Render the content without any animation. In Vue 3, the `<template>` tag holds the markup. Establish the correct layout before touching transitions.',
-      fr: { title: 'Div template simple', description: 'Afficher le contenu sans animation. En Vue 3, la balise `<template>` contient le balisage. Établir la mise en page correcte avant de toucher aux transitions.' },
+      description: 'Begin with the markup alone, no motion at all — in Vue 3 the `<template>` block holds the structure and `<slot />` forwards whatever the parent passes in. **Nailing the static layout first means any later glitch is an animation bug, not a layout bug**, which keeps debugging simple. This is the *visual baseline* every transition will animate away from.',
+      fr: { title: 'Div template simple', description: 'Commencez par le seul balisage, sans aucun mouvement — en Vue 3 le bloc `<template>` contient la structure et `<slot />` transmet ce que le parent fournit. **Verrouiller la mise en page statique d\'abord garantit que tout défaut ultérieur est un bug d\'animation, pas de mise en page**, ce qui simplifie le débogage. C\'est la *base visuelle* depuis laquelle chaque transition animera.' },
       code: `<template>
   <div class="section">
     <slot />
@@ -217,8 +217,8 @@ export function RevealOnScroll({ children, delay = 0 }: {
     },
     {
       title: 'Bind opacity to a reactive flag',
-      description: 'Introduce a `isVisible` ref and bind `opacity` to it via `:style`. Set `isVisible` to true in `onMounted` so it animates on mount. Add a CSS `transition` for the actual motion.',
-      fr: { title: 'Lier l\'opacité à un flag réactif', description: 'Introduire un ref `isVisible` et lier `opacity` via `:style`. Mettre `isVisible` à true dans `onMounted` pour animer au montage. Ajouter une CSS `transition` pour le mouvement réel.' },
+      description: 'This step introduces Vue\'s core animation pattern: **drive a style from reactive state and let CSS interpolate the change**. An `isVisible` ref bound through `:style` flips from `0` to `1`, and because a CSS `transition` is declared, the browser tweens the opacity *for free* on the compositor. Toggling the flag in `onMounted` plays the reveal once the element exists — *state changes, the DOM follows*, which is the mental model behind nearly every Vue transition.',
+      fr: { title: 'Lier l\'opacité à un flag réactif', description: 'Cette étape introduit le motif d\'animation central de Vue : **piloter un style depuis un état réactif et laisser CSS interpoler le changement**. Un ref `isVisible` lié via `:style` passe de `0` à `1`, et comme une `transition` CSS est déclarée, le navigateur anime l\'opacité *gratuitement* sur le compositeur. Basculer le flag dans `onMounted` joue la révélation dès que l\'élément existe — *l\'état change, le DOM suit*, le modèle mental derrière presque toutes les transitions Vue.' },
       code: `<template>
   <div :style="{ opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease' }">
     <slot />
@@ -233,8 +233,8 @@ onMounted(() => { isVisible.value = true })
     },
     {
       title: 'Add translateY',
-      description: 'Add `transform: translateY` to the bound style object. Use the same cubic-bezier easing string you\'d use in Framer Motion — CSS `transition` accepts it natively.',
-      fr: { title: 'Ajouter translateY', description: 'Ajouter `transform: translateY` à l\'objet de style lié. Utiliser la même chaîne cubic-bezier qu\'avec Framer Motion — CSS `transition` l\'accepte nativement.' },
+      description: 'Moving the inline styles into a `computed` keeps the template clean and lets us add `transform: translateY` alongside opacity, so the element **slides and fades as one gesture**. The easing is the exact same `cubic-bezier(0.22,1,0.36,1)` string Framer Motion uses — a reminder that *easing curves are a web-platform primitive*, not a library feature. Animating `transform` and `opacity` (rather than layout properties) keeps the whole reveal on the **GPU compositor**, so it stays smooth even on cheap devices.',
+      fr: { title: 'Ajouter translateY', description: 'Déplacer les styles inline dans un `computed` garde le template propre et permet d\'ajouter `transform: translateY` à côté de l\'opacité, pour que l\'élément **glisse et s\'estompe d\'un seul geste**. L\'accélération est exactement la même chaîne `cubic-bezier(0.22,1,0.36,1)` qu\'utilise Framer Motion — un rappel que les *courbes d\'accélération sont une primitive de la plateforme web*, pas une fonctionnalité de bibliothèque. Animer `transform` et `opacity` (plutôt que des propriétés de mise en page) garde toute la révélation sur le **compositeur GPU**, donc fluide même sur les appareils modestes.' },
       code: `<template>
   <div :style="style">
     <slot />
@@ -257,8 +257,8 @@ const style = computed(() => ({
     },
     {
       title: 'Trigger on scroll with VueUse',
-      description: '`useIntersectionObserver` from VueUse replaces the manual `onMounted` trigger. The observer fires once when the element enters the viewport, then disconnects (`{ once: true }` equivalent via `stop()`).',
-      fr: { title: 'Déclenchement au scroll avec VueUse', description: '`useIntersectionObserver` de VueUse remplace le déclencheur `onMounted` manuel. L\'observateur se déclenche une fois quand l\'élément entre dans le viewport, puis se déconnecte (équivalent `{ once: true }` via `stop()`).' },
+      description: 'Swapping `onMounted` for **`useIntersectionObserver`** from VueUse is what turns a mount animation into a real scroll reveal — the flag now flips when the element actually *enters the viewport*, not when it\'s created. Calling `stop()` after the first intersection disconnects the observer, which is both the `{ once: true }` behavior and a small **performance win**: no idle observer lingering on the page. Leaning on a composable here is idiomatic Vue — *the messy observer lifecycle is hidden behind a clean reactive surface*.',
+      fr: { title: 'Déclenchement au scroll avec VueUse', description: 'Remplacer `onMounted` par **`useIntersectionObserver`** de VueUse est ce qui transforme une animation au montage en véritable révélation au scroll — le flag bascule désormais quand l\'élément *entre réellement dans le viewport*, et non à sa création. Appeler `stop()` après la première intersection déconnecte l\'observateur, ce qui constitue à la fois le comportement `{ once: true }` et un petit **gain de performance** : aucun observateur inactif ne traîne sur la page. S\'appuyer sur un composable ici est du Vue idiomatique — *le cycle de vie complexe de l\'observateur est masqué derrière une surface réactive propre*.' },
       code: `<template>
   <div ref="el" :style="style"><slot /></div>
 </template>
@@ -293,8 +293,8 @@ const style = computed(() => ({
   'react-native': [
     {
       title: 'Plain View',
-      description: 'Start with a standard `View`. In React Native there is no DOM, so no IntersectionObserver — the animation will trigger on layout (when the element is measured) rather than on scroll.',
-      fr: { title: 'View simple', description: 'Commencer avec un `View` standard. Dans React Native il n\'y a pas de DOM, donc pas d\'IntersectionObserver — l\'animation se déclenchera au layout (quand l\'élément est mesuré) plutôt qu\'au scroll.' },
+      description: 'Start with a bare `View`, the native equivalent of a `div`. The crucial difference from the web: **React Native has no DOM and therefore no `IntersectionObserver`**, so you can\'t key an animation off scroll position the same way. Instead the reveal will hang off the `onLayout` callback — *the moment the element is measured and placed* — which is why the component is named `RevealOnMount` rather than on scroll.',
+      fr: { title: 'View simple', description: 'Commencez avec un `View` nu, l\'équivalent natif d\'un `div`. La différence cruciale avec le web : **React Native n\'a pas de DOM, donc pas d\'`IntersectionObserver`**, on ne peut pas accrocher une animation à la position de scroll de la même manière. La révélation s\'appuiera plutôt sur le callback `onLayout` — *le moment où l\'élément est mesuré et placé* — d\'où le nom `RevealOnMount` plutôt qu\'au scroll.' },
       code: `import { View } from 'react-native'
 
 function RevealOnMount({ children }) {
@@ -307,8 +307,8 @@ function RevealOnMount({ children }) {
     },
     {
       title: 'Create shared values',
-      description: '`useSharedValue` creates values that live on the UI thread — animations driven by them never pass through the JS bridge. Declare one for opacity and one for translateY.',
-      fr: { title: 'Créer des valeurs partagées', description: '`useSharedValue` crée des valeurs qui vivent sur le thread UI — les animations pilotées par elles ne passent jamais par le pont JS. Déclarer une valeur pour opacity et une pour translateY.' },
+      description: 'Reanimated\'s **`useSharedValue`** is the heart of why it feels native: these values live on the **UI thread**, so animations that read them run *without ever crossing the JS bridge*. That matters because the JS thread can be busy or janky, yet a shared-value animation keeps hitting 60fps regardless. Here we declare two — one for `opacity`, one for `translateY` — seeded at their *hidden* starting state, ready to be driven toward visible.',
+      fr: { title: 'Créer des valeurs partagées', description: '**`useSharedValue`** de Reanimated est au cœur de son rendu natif : ces valeurs vivent sur le **thread UI**, donc les animations qui les lisent s\'exécutent *sans jamais traverser le pont JS*. C\'est déterminant, car le thread JS peut être occupé ou saccadé, alors qu\'une animation par valeur partagée tient le 60fps quoi qu\'il arrive. Ici on en déclare deux — une pour `opacity`, une pour `translateY` — initialisées à leur état *caché*, prêtes à être menées vers visible.' },
       code: `import Animated, { useSharedValue } from 'react-native-reanimated'
 
 function RevealOnMount({ children }) {
@@ -324,8 +324,8 @@ function RevealOnMount({ children }) {
     },
     {
       title: 'Animate on layout',
-      description: '`onLayout` fires once when the element is first measured and added to the layout tree. Trigger `withTiming` there — no setTimeout needed. `useAnimatedStyle` subscribes to shared value changes on the UI thread.',
-      fr: { title: 'Animer au layout', description: '`onLayout` se déclenche une fois quand l\'élément est mesuré et ajouté à l\'arbre de layout. Déclencher `withTiming` là — pas de setTimeout nécessaire. `useAnimatedStyle` s\'abonne aux changements de valeurs partagées sur le thread UI.' },
+      description: 'The `onLayout` callback fires *exactly once* when the element is first measured, giving a precise, **timer-free trigger** for the reveal — far more reliable than guessing with a `setTimeout`. Inside it, `withTiming` animates each shared value toward its visible target, and `Easing.bezier(0.22, 1, 0.36, 1)` reuses the same curve as every other platform here. The glue is `useAnimatedStyle`: it *subscribes to the shared values on the UI thread* and produces the style object, so the whole animation runs natively without involving React re-renders.',
+      fr: { title: 'Animer au layout', description: 'Le callback `onLayout` se déclenche *exactement une fois* quand l\'élément est d\'abord mesuré, offrant un **déclencheur sans minuterie** précis pour la révélation — bien plus fiable qu\'un `setTimeout` approximatif. À l\'intérieur, `withTiming` anime chaque valeur partagée vers sa cible visible, et `Easing.bezier(0.22, 1, 0.36, 1)` réutilise la même courbe que toutes les autres plateformes ici. Le liant est `useAnimatedStyle` : il *s\'abonne aux valeurs partagées sur le thread UI* et produit l\'objet de style, donc toute l\'animation s\'exécute nativement sans déclencher de re-render React.' },
       code: `import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated'
@@ -356,8 +356,8 @@ function RevealOnMount({ children }) {
     },
     {
       title: 'Add delay prop for stagger',
-      description: '`withDelay` wraps any animation and defers it by the given milliseconds. Pass a `delay` prop to each instance and the parent controls the cascade — no separate stagger hook needed.',
-      fr: { title: 'Ajouter une prop delay pour la cascade', description: '`withDelay` enveloppe n\'importe quelle animation et la diffère du nombre de millisecondes donné. Passer une prop `delay` à chaque instance et le parent contrôle la cascade — pas de hook stagger séparé nécessaire.' },
+      description: 'Reanimated\'s animation helpers **compose**, and `withDelay` is the proof: wrap any existing `withTiming` and it simply defers the start by the given milliseconds — no rewrite, no extra state. Exposing that as a `delay` prop pushes orchestration *up to the parent*, so a cascade is just three instances with increasing delays rather than a dedicated stagger hook. This composability — *animations as values you can wrap and nest* — is what makes Reanimated scale to complex sequences.',
+      fr: { title: 'Ajouter une prop delay pour la cascade', description: 'Les helpers d\'animation de Reanimated **se composent**, et `withDelay` en est la preuve : enveloppez n\'importe quel `withTiming` existant et il diffère simplement le départ du nombre de millisecondes donné — sans réécriture ni état supplémentaire. Exposer cela en prop `delay` remonte l\'orchestration *vers le parent*, donc une cascade n\'est que trois instances aux délais croissants, sans hook de stagger dédié. Cette composabilité — *des animations comme des valeurs que l\'on enveloppe et imbrique* — est ce qui permet à Reanimated de gérer des séquences complexes.' },
       code: `import Animated, {
   useSharedValue, useAnimatedStyle,
   withDelay, withTiming, Easing,
@@ -396,8 +396,8 @@ function RevealOnMount({ children, delay = 0 }: {
   flutter: [
     {
       title: 'StatefulWidget scaffold',
-      description: 'Flutter animations require a `StatefulWidget` so the `AnimationController` can be initialized and disposed with the widget lifecycle. Start with the scaffold — no animation logic yet.',
-      fr: { title: 'Structure StatefulWidget', description: 'Les animations Flutter nécessitent un `StatefulWidget` pour que l\'`AnimationController` puisse être initialisé et libéré avec le cycle de vie du widget. Commencer par la structure — pas encore de logique d\'animation.' },
+      description: 'Flutter animations need a **`StatefulWidget`** because an `AnimationController` holds live resources that must be created in `initState` and released in `dispose` — a `StatelessWidget` has no place to hang that lifecycle. Starting with just the scaffold, before any animation logic, makes the lifecycle hooks visible and gives the controller a *home to be born and die in*. **Skipping disposal later leaks the controller**, so building this structure first is what keeps the animation memory-safe.',
+      fr: { title: 'Structure StatefulWidget', description: 'Les animations Flutter exigent un **`StatefulWidget`** car un `AnimationController` détient des ressources vivantes à créer dans `initState` et à libérer dans `dispose` — un `StatelessWidget` n\'a nulle part où accrocher ce cycle de vie. Commencer par la seule structure, avant toute logique d\'animation, rend les hooks de cycle de vie visibles et donne au contrôleur *un foyer où naître et mourir*. **Oublier la libération plus tard fait fuir le contrôleur**, donc bâtir cette structure d\'abord est ce qui garde l\'animation sûre en mémoire.' },
       code: `import 'package:flutter/material.dart';
 
 class RevealOnMount extends StatefulWidget {
@@ -415,8 +415,8 @@ class _RevealOnMountState extends State<RevealOnMount> {
     },
     {
       title: 'Add AnimationController + FadeTransition',
-      description: '`AnimationController` drives all animations in Flutter — think of it as the `useMotionValue(0)` → animate to 1 equivalent. `FadeTransition` subscribes to the animation and handles opacity.',
-      fr: { title: 'Ajouter AnimationController + FadeTransition', description: '`AnimationController` pilote toutes les animations en Flutter — pensez-y comme l\'équivalent de `useMotionValue(0)` → animer vers 1. `FadeTransition` s\'abonne à l\'animation et gère l\'opacité.' },
+      description: 'The **`AnimationController`** is Flutter\'s clock: it ticks a value from `0` to `1` over a duration, and *everything else reads off it* — conceptually the `useMotionValue(0)` you animate toward 1. A `Tween` maps that raw `0→1` onto a real range and `CurvedAnimation` bends it through an easing curve, while **`FadeTransition`** subscribes and rebuilds *only the opacity* — far cheaper than wrapping the child in `setState`. Calling `_ctrl.forward()` in `initState` plays the reveal the moment the widget mounts.',
+      fr: { title: 'Ajouter AnimationController + FadeTransition', description: 'L\'**`AnimationController`** est l\'horloge de Flutter : il fait avancer une valeur de `0` à `1` sur une durée, et *tout le reste s\'y réfère* — conceptuellement le `useMotionValue(0)` que vous animez vers 1. Un `Tween` mappe ce `0→1` brut sur une plage réelle et `CurvedAnimation` le courbe via une courbe d\'accélération, tandis que **`FadeTransition`** s\'abonne et ne reconstruit *que l\'opacité* — bien moins coûteux qu\'envelopper l\'enfant dans un `setState`. Appeler `_ctrl.forward()` dans `initState` joue la révélation dès le montage du widget.' },
       code: `class _RevealOnMountState extends State<RevealOnMount>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
@@ -445,8 +445,8 @@ class _RevealOnMountState extends State<RevealOnMount> {
     },
     {
       title: 'Add SlideTransition',
-      description: '`SlideTransition` animates position as a fractional offset of the widget\'s own size. `Offset(0, 0.1)` starts 10% below — equivalent to `translateY: 32px` on a 320px element.',
-      fr: { title: 'Ajouter SlideTransition', description: '`SlideTransition` anime la position comme un décalage fractionnaire de la taille propre du widget. `Offset(0, 0.1)` commence 10% en dessous — équivalent à `translateY: 32px` sur un élément de 320px.' },
+      description: '**`SlideTransition`** adds the *rise* that pairs with the fade, but its offset is **fractional, not pixel-based** — `Offset(0, 0.1)` means "10% of my own height below", so `translateY: 32px` on a 320px element. That relative model is a feature: the slide *scales with the widget*, staying proportional across screen sizes without hardcoded distances. Because the new `_slide` animation shares the **same `_ctrl`**, the fade and slide are perfectly synchronized by construction.',
+      fr: { title: 'Ajouter SlideTransition', description: '**`SlideTransition`** ajoute la *montée* qui accompagne le fondu, mais son décalage est **fractionnaire, pas en pixels** — `Offset(0, 0.1)` signifie « 10 % de ma propre hauteur en dessous », soit `translateY: 32px` sur un élément de 320px. Ce modèle relatif est un atout : le glissement *s\'adapte au widget*, restant proportionnel sur toutes les tailles d\'écran sans distances codées en dur. Comme la nouvelle animation `_slide` partage le **même `_ctrl`**, le fondu et le glissement sont parfaitement synchronisés par construction.' },
       code: `// Add to initState:
 _slide = Tween<Offset>(
   begin: const Offset(0, 0.1),
@@ -465,8 +465,8 @@ Widget build(BuildContext context) => FadeTransition(
     },
     {
       title: 'Add delay for stagger',
-      description: '`Future.delayed` defers the controller\'s `forward()` call. The `mounted` check prevents calling `forward()` if the widget was disposed before the delay elapsed — important for fast navigation.',
-      fr: { title: 'Ajouter un délai pour la cascade', description: '`Future.delayed` diffère l\'appel `forward()` du contrôleur. La vérification `mounted` empêche d\'appeler `forward()` si le widget a été libéré avant la fin du délai — important pour la navigation rapide.' },
+      description: 'A `delay` parameter plus **`Future.delayed`** defers the controller\'s `forward()` call, so passing increasing delays to siblings produces a **staggered cascade** from the parent. The easy-to-miss but critical detail is the **`mounted` check**: if the user navigates away before the delay fires, calling `forward()` on a disposed controller *throws*. Guarding with `if (mounted)` makes the stagger **safe under fast navigation** — exactly the kind of lifecycle edge case Flutter forces you to handle explicitly.',
+      fr: { title: 'Ajouter un délai pour la cascade', description: 'Un paramètre `delay` plus **`Future.delayed`** diffère l\'appel `forward()` du contrôleur, donc passer des délais croissants aux frères produit une **cascade décalée** depuis le parent. Le détail facile à manquer mais essentiel est la **vérification `mounted`** : si l\'utilisateur quitte avant la fin du délai, appeler `forward()` sur un contrôleur libéré *lève une exception*. Se protéger avec `if (mounted)` rend la cascade **sûre en navigation rapide** — exactement le genre de cas limite de cycle de vie que Flutter oblige à gérer explicitement.' },
       code: `import 'package:flutter/material.dart';
 
 class RevealOnMount extends StatefulWidget {
@@ -520,8 +520,8 @@ const pageTransitions: StepMap = {
   react: [
     {
       title: 'Instant state switch',
-      description: 'Two views controlled by a `useState` boolean. Swapping state replaces one component with another immediately — no animation. This is the baseline to improve on.',
-      fr: { title: 'Changement d\'état instantané', description: 'Deux vues contrôlées par un `useState`. Changer l\'état remplace immédiatement un composant par un autre — sans animation. C\'est la base que nous allons améliorer.' },
+      description: 'Two views are controlled by a single `useState` boolean, and a ternary picks which component to render. When the state flips, React **unmounts** the old tree and **mounts** the new one in the same frame — visually jarring because nothing eases the cut. This is the *baseline* we improve on: every animation step from here exists to soften this abrupt swap.',
+      fr: { title: 'Changement d\'état instantané', description: 'Deux vues sont contrôlées par un seul booléen `useState`, et un ternaire choisit quel composant afficher. Quand l\'état bascule, React **démonte** l\'ancien arbre et **monte** le nouveau dans la même frame — brutal car rien n\'adoucit la coupure. C\'est la *base* que nous améliorons : chaque étape d\'animation qui suit existe pour atténuer cet échange abrupt.' },
       code: `import { useState } from 'react'
 
 export function App() {
@@ -540,8 +540,8 @@ export function App() {
     },
     {
       title: 'Wrap in AnimatePresence',
-      description: '`AnimatePresence` watches its children for unmounts and runs their `exit` animation before removing them from the DOM. Without an `exit` prop on children, there\'s still no visible animation — but the plumbing is in place.',
-      fr: { title: 'Envelopper dans AnimatePresence', description: '`AnimatePresence` surveille ses enfants pour les démontages et exécute leur animation `exit` avant de les supprimer du DOM. Sans prop `exit` sur les enfants, il n\'y a toujours pas d\'animation visible — mais la plomberie est en place.' },
+      description: 'Normally React removes a component from the DOM the instant it stops being rendered, leaving no chance to animate it out. `AnimatePresence` solves this by *keeping* a leaving child alive until its `exit` animation finishes, then unmounting it. At this stage there is no `exit` prop yet, so nothing is visible — but the **plumbing that defers unmounting** is now in place, which is the hard part.',
+      fr: { title: 'Envelopper dans AnimatePresence', description: 'Normalement React retire un composant du DOM dès qu\'il cesse d\'être rendu, sans laisser le temps de l\'animer en sortie. `AnimatePresence` résout cela en *gardant* un enfant sortant en vie jusqu\'à la fin de son animation `exit`, puis le démonte. À ce stade il n\'y a pas encore de prop `exit`, donc rien n\'est visible — mais la **plomberie qui diffère le démontage** est en place, et c\'est le plus dur.' },
       code: `import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 
@@ -560,8 +560,8 @@ export function App() {
     },
     {
       title: 'Add initial + exit to the page',
-      description: 'Each page component becomes a `motion.div` with `initial`, `animate`, and `exit`. The `key` prop is critical — React uses it to identify which child changed, and `AnimatePresence` uses it to trigger enter/exit.',
-      fr: { title: 'Ajouter initial + exit à la page', description: 'Chaque composant de page devient un `motion.div` avec `initial`, `animate` et `exit`. La prop `key` est cruciale — React l\'utilise pour identifier quel enfant a changé, et `AnimatePresence` s\'en sert pour déclencher l\'entrée/sortie.' },
+      description: 'Each page becomes a `motion.div` declaring three states: `initial` (where it starts before mounting), `animate` (its resting state), and `exit` (where it animates to before unmounting). The `key` prop is the linchpin — React uses it to tell *which* child changed, and `AnimatePresence` keys off the same value to know an element left and a new one arrived. Without distinct keys, no enter/exit fires.',
+      fr: { title: 'Ajouter initial + exit à la page', description: 'Chaque page devient un `motion.div` déclarant trois états : `initial` (le point de départ avant le montage), `animate` (l\'état de repos) et `exit` (vers où elle anime avant le démontage). La prop `key` est le pivot — React s\'en sert pour savoir *quel* enfant a changé, et `AnimatePresence` se base sur la même valeur pour détecter qu\'un élément est parti et qu\'un nouveau est arrivé. Sans clés distinctes, aucune entrée/sortie ne se déclenche.' },
       code: `import { motion } from 'framer-motion'
 
 // Each page component:
@@ -595,8 +595,8 @@ function DetailPage() {
     },
     {
       title: 'Add mode="wait" and directional slide',
-      description: '`mode="wait"` makes the exit animation finish before the enter animation starts — prevents two pages overlapping. Adding `y` offset makes the swap feel directional: old page slides up, new page comes in from below.',
-      fr: { title: 'Ajouter mode="wait" et glissement directionnel', description: '`mode="wait"` fait terminer l\'animation de sortie avant que l\'animation d\'entrée commence — évite que deux pages se superposent. Ajouter un décalage `y` rend l\'échange directionnel : l\'ancienne page glisse vers le haut, la nouvelle arrive par le bas.' },
+      description: 'By default `AnimatePresence` runs exit and enter *simultaneously*, so two pages briefly stack on top of each other. Setting `mode="wait"` serializes them — the old page fully leaves before the new one begins — which keeps layout clean inside a `relative`/`overflow: hidden` container. Adding a `y` offset turns the swap **directional**: the old page lifts up and out while the new one rises in from below, giving the motion a sense of forward flow.',
+      fr: { title: 'Ajouter mode="wait" et glissement directionnel', description: 'Par défaut `AnimatePresence` joue la sortie et l\'entrée *simultanément*, donc deux pages se chevauchent un instant. Définir `mode="wait"` les sérialise — l\'ancienne page part entièrement avant que la nouvelle commence — ce qui garde la mise en page propre dans un conteneur `relative`/`overflow: hidden`. Ajouter un décalage `y` rend l\'échange **directionnel** : l\'ancienne page s\'élève et sort tandis que la nouvelle monte par le bas, donnant au mouvement une impression de progression.' },
       code: `import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -626,7 +626,7 @@ export function App() {
   nextjs: [
     {
       title: 'Detect the current route',
-      description: '`usePathname` from `next/navigation` gives you the current URL path as a string. This is the key React needs to identify which page is "current" — and which one just changed.',
+      description: 'In the App Router there is no single component that re-mounts on navigation, so you need a value that *changes* with the URL to drive transitions. `usePathname` from `next/navigation` returns the current path as a string (e.g. `/work/project-1`) and re-renders whenever it changes. That string becomes the **stable identity key** React and `AnimatePresence` use to tell one page from the next.',
       code: `'use client'
 import { usePathname } from 'next/navigation'
 
@@ -641,7 +641,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     },
     {
       title: 'Add AnimatePresence in the layout',
-      description: 'Place `AnimatePresence` in a Client Component inside `app/layout.tsx`. Use `pathname` as the key — React treats a different key as a new child, triggering the exit → enter sequence.',
+      description: 'Animations require client-side state, so `AnimatePresence` must live in a **Client Component** (`\'use client\'`) — here a wrapper mounted inside `app/layout.tsx`. Passing `pathname` as the `key` is what makes route changes animatable: React sees a different key as an entirely new child, so the old one runs its `exit` → enter sequence. Doing this in the layout means **every route inherits the transition** without touching individual pages.',
       code: `'use client'
 import { AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
@@ -659,7 +659,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     },
     {
       title: 'Upgrade the wrapper to motion.div',
-      description: 'Swap the inner `div` for `motion.div` with `initial`, `animate`, and `exit`. Every page in the app now gets this transition for free — no per-page changes needed.',
+      description: 'Swapping the plain `div` for a `motion.div` activates the actual animation: `initial` sets the off-screen starting state, `animate` the resting state, and `exit` where it goes on the way out. Because this wrapper sits in the layout and is keyed by `pathname`, **every page in the app gets the transition for free** — a single declaration replaces per-page animation code. The custom `ease` cubic-bezier gives the slide a polished, decelerating feel.',
       code: `'use client'
 import { AnimatePresence, motion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
@@ -684,7 +684,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     },
     {
       title: 'Wire into the root layout',
-      description: '`RootLayout` is a Server Component — it can import the Client Component `LayoutWrapper` freely. The `{children}` passed in are the Server-rendered page components; they stream in without waiting for the client.',
+      description: 'This is the payoff of Next.js\'s **server/client boundary**: `RootLayout` stays a Server Component (no `\'use client\'`) and simply renders the client `LayoutWrapper` as a child. The `{children}` it passes are server-rendered page components that **stream to the browser without waiting on the client bundle** — you get fast first paint *and* animated transitions. Mixing the two component types like this is the idiomatic App Router pattern.',
       code: `// app/layout.tsx  — Server Component (no 'use client')
 import { LayoutWrapper } from '@/components/LayoutWrapper'
 
@@ -721,8 +721,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   vue: [
     {
       title: 'Instant RouterView',
-      description: '`<RouterView>` renders the current route\'s component. By default, switching routes is instant — the old component unmounts and the new one mounts in the same tick.',
-      fr: { title: 'RouterView instantané', description: '`<RouterView>` affiche le composant de la route actuelle. Par défaut, le changement de route est instantané — l\'ancien composant est démonté et le nouveau est monté dans le même tick.' },
+      description: '`<RouterView>` is the outlet where Vue Router renders whichever component matches the current URL. Out of the box the swap is **instant**: the leaving component unmounts and the entering one mounts in the same tick, with no easing between them. Seeing this raw behaviour first makes it clear *what* the `<Transition>` wrapper in the next steps actually buys you.',
+      fr: { title: 'RouterView instantané', description: '`<RouterView>` est la sortie où Vue Router affiche le composant correspondant à l\'URL actuelle. Par défaut l\'échange est **instantané** : le composant sortant est démonté et l\'entrant monté dans le même tick, sans aucun adoucissement. Voir ce comportement brut d\'abord clarifie *ce que* le wrapper `<Transition>` des étapes suivantes apporte réellement.' },
       code: `<!-- App.vue -->
 <template>
   <nav>
@@ -734,8 +734,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     },
     {
       title: 'Wrap RouterView in Transition',
-      description: 'Vue\'s `<Transition>` component wraps the entering/leaving element and applies CSS classes at each phase. The `name` prop prefixes all class names: `page-enter-from`, `page-leave-to`, etc.',
-      fr: { title: 'Envelopper RouterView dans Transition', description: 'Le composant `<Transition>` de Vue enveloppe l\'élément entrant/sortant et applique des classes CSS à chaque phase. La prop `name` préfixe tous les noms de classe : `page-enter-from`, `page-leave-to`, etc.' },
+      description: 'Vue\'s built-in `<Transition>` doesn\'t animate anything itself — it **toggles well-known CSS classes** on the entering and leaving element at each phase of the lifecycle, leaving the actual motion to your stylesheet. The `name="page"` prop prefixes every class, so you get `page-enter-from`, `page-enter-active`, `page-leave-to`, and so on. Using the `v-slot` form of `<RouterView>` exposes the resolved `Component` so it can be wrapped. With no CSS yet, the transition exists but is still instant.',
+      fr: { title: 'Envelopper RouterView dans Transition', description: 'Le composant intégré `<Transition>` de Vue n\'anime rien lui-même — il **bascule des classes CSS connues** sur l\'élément entrant et sortant à chaque phase du cycle de vie, laissant le mouvement réel à votre feuille de style. La prop `name="page"` préfixe chaque classe, donnant `page-enter-from`, `page-enter-active`, `page-leave-to`, etc. La forme `v-slot` de `<RouterView>` expose le `Component` résolu pour pouvoir l\'envelopper. Sans CSS encore, la transition existe mais reste instantanée.' },
       code: `<template>
   <RouterView v-slot="{ Component }">
     <Transition name="page">
@@ -748,8 +748,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     },
     {
       title: 'Add CSS transition classes',
-      description: 'Apply `transition` in the `-active` classes and the start/end states in `-from` / `-to`. Vue applies these classes during the enter/leave phases, and CSS does the actual animation.',
-      fr: { title: 'Ajouter les classes de transition CSS', description: 'Appliquer `transition` dans les classes `-active` et les états de début/fin dans `-from` / `-to`. Vue applique ces classes pendant les phases d\'entrée/sortie, et CSS réalise l\'animation réelle.' },
+      description: 'Now you fill in the classes Vue toggles. The `-active` classes carry the `transition` property — they define *which* properties animate and over what duration — while `-from`/`-to` pin the **start and end states** (e.g. `opacity: 0` and a `translateY` offset). Vue adds the `-from` class for one frame, swaps to `-to`, and the browser interpolates between them. This separation of *what changes* (your CSS) from *when* (Vue) is the core of the model.',
+      fr: { title: 'Ajouter les classes de transition CSS', description: 'Vous remplissez maintenant les classes que Vue bascule. Les classes `-active` portent la propriété `transition` — elles définissent *quelles* propriétés s\'animent et sur quelle durée — tandis que `-from`/`-to` fixent les **états de début et de fin** (par ex. `opacity: 0` et un décalage `translateY`). Vue ajoute la classe `-from` pour une frame, passe à `-to`, et le navigateur interpole entre les deux. Cette séparation entre *ce qui change* (votre CSS) et *quand* (Vue) est le cœur du modèle.' },
       code: `<template>
   <RouterView v-slot="{ Component }">
     <Transition name="page">
@@ -769,8 +769,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     },
     {
       title: 'Add mode="out-in" to prevent overlap',
-      description: '`mode="out-in"` tells Vue to wait for the leaving component to finish its exit before mounting the entering one — preventing two pages from overlapping mid-transition. Pass the route path as `:key` so Vue detects same-component route changes.',
-      fr: { title: 'Ajouter mode="out-in" pour éviter le chevauchement', description: '`mode="out-in"` indique à Vue d\'attendre que le composant sortant termine son exit avant de monter celui qui entre — empêchant deux pages de se chevaucher en pleine transition. Passer le chemin de route comme `:key` pour que Vue détecte les changements de route avec le même composant.' },
+      description: 'Without a `mode`, Vue runs leave and enter at once, so the two pages briefly sit side by side and the layout jumps. `mode="out-in"` **serializes** the phases — the leaving page finishes before the entering one mounts — for a clean single-page-at-a-time feel. The `:key="route.path"` is the subtle but essential bit: when two routes share the *same* component, Vue would otherwise reuse it and skip the transition entirely; a changing key forces a real unmount/mount so the animation fires.',
+      fr: { title: 'Ajouter mode="out-in" pour éviter le chevauchement', description: 'Sans `mode`, Vue joue la sortie et l\'entrée en même temps, donc les deux pages se côtoient brièvement et la mise en page saute. `mode="out-in"` **sérialise** les phases — la page sortante se termine avant que l\'entrante monte — pour un rendu propre, une page à la fois. Le `:key="route.path"` est le détail subtil mais essentiel : quand deux routes partagent le *même* composant, Vue le réutiliserait sinon et sauterait la transition ; une clé qui change force un vrai démontage/montage pour que l\'animation se déclenche.' },
       code: `<template>
   <RouterView v-slot="{ Component, route }">
     <Transition name="page" mode="out-in">
@@ -796,8 +796,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   'react-native': [
     {
       title: 'Default Stack navigator',
-      description: 'React Navigation\'s Stack navigator already provides platform-native transitions (slide on iOS, fade-up on Android). Understanding the default is important before customising.',
-      fr: { title: 'Navigateur Stack par défaut', description: 'Le navigateur Stack de React Navigation fournit déjà des transitions natives à la plateforme (glissement sur iOS, fondu vers le haut sur Android). Comprendre le comportement par défaut est important avant de personnaliser.' },
+      description: 'React Navigation\'s `createStackNavigator` ships with **platform-native transitions out of the box** — a right-to-left slide on iOS, a scale-and-fade-up on Android — so screens already feel correct to each OS\'s conventions. Knowing this default matters because users expect their platform\'s motion language; any customization should be a deliberate deviation, not an accident. Start here, then override only what you need.',
+      fr: { title: 'Navigateur Stack par défaut', description: '`createStackNavigator` de React Navigation fournit des **transitions natives à la plateforme prêtes à l\'emploi** — un glissement de droite à gauche sur iOS, un agrandissement-fondu vers le haut sur Android — donc les écrans paraissent déjà corrects selon les conventions de chaque OS. Connaître ce comportement par défaut compte car les utilisateurs attendent le langage de mouvement de leur plateforme ; toute personnalisation doit être un écart délibéré, pas un accident. Partez d\'ici, puis ne surchargez que le nécessaire.' },
       code: `import { createStackNavigator } from '@react-navigation/stack'
 const Stack = createStackNavigator()
 
@@ -813,8 +813,8 @@ export function AppNavigator() {
     },
     {
       title: 'Use a built-in interpolator',
-      description: '`CardStyleInterpolators` ships preset animation curves. `forFadeFromCenter` gives a cross-fade, `forHorizontalIOS` gives the native iOS push slide. No custom math needed.',
-      fr: { title: 'Utiliser un interpolateur intégré', description: '`CardStyleInterpolators` fournit des courbes d\'animation prédéfinies. `forFadeFromCenter` donne un fondu enchaîné, `forHorizontalIOS` donne le glissement iOS natif. Pas de calcul personnalisé nécessaire.' },
+      description: 'Before writing animation math by hand, reach for `CardStyleInterpolators` — a set of **ready-made presets** you assign to `cardStyleInterpolator` in `screenOptions`. `forFadeFromCenter` gives a cross-fade, `forHorizontalIOS` the native iOS push slide, and you pair it with a `transitionSpec` to control timing. This is the pragmatic 90% solution: a consistent custom transition across every screen with zero interpolation code.',
+      fr: { title: 'Utiliser un interpolateur intégré', description: 'Avant d\'écrire les calculs d\'animation à la main, utilisez `CardStyleInterpolators` — un ensemble de **préréglages prêts à l\'emploi** que vous assignez à `cardStyleInterpolator` dans `screenOptions`. `forFadeFromCenter` donne un fondu enchaîné, `forHorizontalIOS` le glissement iOS natif, et vous le combinez à un `transitionSpec` pour contrôler le timing. C\'est la solution pragmatique à 90 % : une transition personnalisée cohérente sur chaque écran sans aucun code d\'interpolation.' },
       code: `import { CardStyleInterpolators } from '@react-navigation/stack'
 
 <Stack.Navigator
@@ -833,8 +833,8 @@ export function AppNavigator() {
     },
     {
       title: 'Write a custom interpolator',
-      description: 'A `cardStyleInterpolator` receives `current.progress` (0 → 1 on enter, 1 → 0 on exit) and the screen dimensions. Return an animated style object.',
-      fr: { title: 'Écrire un interpolateur personnalisé', description: 'Un `cardStyleInterpolator` reçoit `current.progress` (0 → 1 à l\'entrée, 1 → 0 à la sortie) et les dimensions de l\'écran. Retourner un objet de style animé.' },
+      description: 'When the presets aren\'t enough, a custom `cardStyleInterpolator` gives you full control. It receives `current.progress` — an **Animated value driven 0 → 1 on enter and 1 → 0 on exit** — plus `layouts` with the screen dimensions, and returns a `cardStyle`. The key technique is `progress.interpolate({ inputRange, outputRange })`, which maps that 0–1 driver onto any pixel or opacity range, so a single animated value can fade *and* slide the card at once.',
+      fr: { title: 'Écrire un interpolateur personnalisé', description: 'Quand les préréglages ne suffisent pas, un `cardStyleInterpolator` personnalisé offre un contrôle total. Il reçoit `current.progress` — une **valeur Animated pilotée de 0 → 1 à l\'entrée et 1 → 0 à la sortie** — ainsi que `layouts` avec les dimensions de l\'écran, et retourne un `cardStyle`. La technique clé est `progress.interpolate({ inputRange, outputRange })`, qui mappe ce pilote 0–1 sur n\'importe quelle plage de pixels ou d\'opacité, donc une seule valeur animée peut à la fois faire un fondu *et* glisser la carte.' },
       code: `const forFadeSlide = ({ current, layouts }) => ({
   cardStyle: {
     opacity: current.progress,
@@ -854,8 +854,8 @@ export function AppNavigator() {
     },
     {
       title: 'Configure timing per transition',
-      description: '`transitionSpec` lets you set different speeds for push (open) vs pop (close). Closing slightly faster than opening feels more responsive — the user already knows where they\'re going.',
-      fr: { title: 'Configurer le timing par transition', description: '`transitionSpec` permet de définir des vitesses différentes pour push (ouverture) et pop (fermeture). Fermer légèrement plus vite qu\'ouvrir paraît plus réactif — l\'utilisateur sait déjà où il va.' },
+      description: '`transitionSpec` decouples the *duration and curve* from the interpolator\'s *shape*, and crucially lets `open` (push) and `close` (pop) differ. The practical tip baked in here: make **closing faster than opening** (~280ms vs ~380ms). When users go back they already know the destination, so a snappier pop feels more responsive, while a slightly slower push gives the new screen room to make an entrance.',
+      fr: { title: 'Configurer le timing par transition', description: '`transitionSpec` découple la *durée et la courbe* de la *forme* de l\'interpolateur, et permet surtout à `open` (push) et `close` (pop) de différer. L\'astuce pratique intégrée ici : rendre la **fermeture plus rapide que l\'ouverture** (~280ms contre ~380ms). En revenant en arrière, l\'utilisateur connaît déjà la destination, donc un pop plus vif paraît plus réactif, tandis qu\'un push un peu plus lent laisse à l\'écran entrant le temps de faire son entrée.' },
       code: `import { createStackNavigator } from '@react-navigation/stack'
 const Stack = createStackNavigator()
 
@@ -891,8 +891,8 @@ export function AppNavigator() {
   flutter: [
     {
       title: 'Navigator.push with default route',
-      description: 'Flutter\'s default `MaterialPageRoute` slides up from the bottom on Android and slides from the right on iOS. This is the baseline — we\'ll replace it with a custom route.',
-      fr: { title: 'Navigator.push avec la route par défaut', description: 'La `MaterialPageRoute` par défaut de Flutter glisse depuis le bas sur Android et depuis la droite sur iOS. C\'est la base — nous la remplacerons par une route personnalisée.' },
+      description: 'Flutter models navigation as a **stack of routes**, and `Navigator.push` puts a new one on top. Wrapping a screen in `MaterialPageRoute` gives it the platform-adaptive default transition — a slide-up from the bottom on Android, a right-to-left push on iOS. It works and respects each platform, but the animation is fixed; the next steps swap in `PageRouteBuilder` so *you* own the motion.',
+      fr: { title: 'Navigator.push avec la route par défaut', description: 'Flutter modélise la navigation comme une **pile de routes**, et `Navigator.push` en empile une nouvelle au sommet. Envelopper un écran dans `MaterialPageRoute` lui donne la transition par défaut adaptée à la plateforme — un glissement depuis le bas sur Android, un push de droite à gauche sur iOS. Ça fonctionne et respecte chaque plateforme, mais l\'animation est figée ; les étapes suivantes basculent vers `PageRouteBuilder` pour que *vous* maîtrisiez le mouvement.' },
       code: `// Navigate with the default transition
 Navigator.push(
   context,
@@ -901,8 +901,8 @@ Navigator.push(
     },
     {
       title: 'Replace with PageRouteBuilder',
-      description: '`PageRouteBuilder` lets you define `transitionsBuilder`. The `animation` parameter is the controller (0 → 1 on enter). Returning `child` unchanged gives an instant transition — the hook is in place.',
-      fr: { title: 'Remplacer par PageRouteBuilder', description: '`PageRouteBuilder` permet de définir `transitionsBuilder`. Le paramètre `animation` est le contrôleur (0 → 1 à l\'entrée). Retourner `child` inchangé donne une transition instantanée — le crochet est en place.' },
+      description: '`PageRouteBuilder` is the customizable cousin of `MaterialPageRoute`: it exposes a `transitionsBuilder` callback that runs on every animation frame. Its `animation` parameter is an `Animation<double>` **driven 0 → 1 as the route enters and back to 0 as it leaves** — the single source of truth every transition reads from. Returning `child` unmodified here keeps the motion instant on purpose, proving the wiring works before any effect is added.',
+      fr: { title: 'Remplacer par PageRouteBuilder', description: '`PageRouteBuilder` est le cousin personnalisable de `MaterialPageRoute` : il expose un callback `transitionsBuilder` exécuté à chaque frame d\'animation. Son paramètre `animation` est une `Animation<double>` **pilotée de 0 → 1 à l\'entrée de la route et de retour à 0 à sa sortie** — la source de vérité unique que lit chaque transition. Retourner `child` inchangé ici garde le mouvement instantané volontairement, prouvant que le câblage fonctionne avant d\'ajouter le moindre effet.' },
       code: `Navigator.push(
   context,
   PageRouteBuilder(
@@ -917,8 +917,8 @@ Navigator.push(
     },
     {
       title: 'Add FadeTransition',
-      description: '`FadeTransition` subscribes to the `animation` and sets the widget\'s opacity. `CurveTween` maps the linear 0–1 controller value through a curve for more natural motion.',
-      fr: { title: 'Ajouter FadeTransition', description: '`FadeTransition` s\'abonne à l\'`animation` et définit l\'opacité du widget. `CurveTween` mappe la valeur linéaire 0–1 du contrôleur à travers une courbe pour un mouvement plus naturel.' },
+      description: '`FadeTransition` is a built-in widget that **listens to an animation and drives its child\'s opacity**, so you wrap `child` in it rather than animating opacity by hand. Feeding the raw linear `animation` straight in would look mechanical, so you first run it through a `Tween` chained with `CurveTween(curve: Curves.easeOut)` — the curve reshapes the 0–1 progression for **natural deceleration**. Tween + curve + transition widget is the canonical Flutter animation recipe.',
+      fr: { title: 'Ajouter FadeTransition', description: '`FadeTransition` est un widget intégré qui **écoute une animation et pilote l\'opacité de son enfant**, vous enveloppez donc `child` dedans plutôt que d\'animer l\'opacité à la main. Injecter l\'`animation` linéaire brute donnerait un rendu mécanique, vous la passez donc d\'abord dans un `Tween` enchaîné avec `CurveTween(curve: Curves.easeOut)` — la courbe remodèle la progression 0–1 pour une **décélération naturelle**. Tween + courbe + widget de transition est la recette d\'animation canonique de Flutter.' },
       code: `transitionsBuilder: (context, animation, secondary, child) {
   final fade = Tween<double>(begin: 0.0, end: 1.0)
       .chain(CurveTween(curve: Curves.easeOut))
@@ -929,8 +929,8 @@ Navigator.push(
     },
     {
       title: 'Combine fade + slide as a reusable route',
-      description: 'Extract into a `FadeSlideRoute` class so you can use it anywhere in the app with `Navigator.push(context, FadeSlideRoute(page: ...))` — no boilerplate at the call site.',
-      fr: { title: 'Combiner fondu + glissement en route réutilisable', description: 'Extraire dans une classe `FadeSlideRoute` pour l\'utiliser partout dans l\'app avec `Navigator.push(context, FadeSlideRoute(page: ...))` — pas de code répétitif au site d\'appel.' },
+      description: 'The final step composes two transitions — nesting `SlideTransition` inside `FadeTransition` so the page fades *and* rises together — and **encapsulates the whole thing in a reusable `FadeSlideRoute` class** that extends `PageRouteBuilder`. This is the payoff of subclassing: the timing, curves, and `reverseTransitionDuration` live in one place, and every call site shrinks to `Navigator.push(context, FadeSlideRoute(page: ...))`. One definition gives the entire app a consistent, custom transition with zero boilerplate.',
+      fr: { title: 'Combiner fondu + glissement en route réutilisable', description: 'La dernière étape compose deux transitions — en imbriquant `SlideTransition` dans `FadeTransition` pour que la page fasse un fondu *et* monte ensemble — et **encapsule le tout dans une classe réutilisable `FadeSlideRoute`** qui étend `PageRouteBuilder`. C\'est l\'intérêt du sous-classement : le timing, les courbes et `reverseTransitionDuration` vivent au même endroit, et chaque site d\'appel se réduit à `Navigator.push(context, FadeSlideRoute(page: ...))`. Une seule définition donne à toute l\'app une transition personnalisée et cohérente sans code répétitif.' },
       code: `import 'package:flutter/material.dart';
 
 class FadeSlideRoute<T> extends PageRouteBuilder<T> {
@@ -966,8 +966,8 @@ const gestureFeedback: StepMap = {
   react: [
     {
       title: 'Plain HTML button',
-      description: 'A regular `<button>` — no animation. Clicking it works, but there\'s no visual confirmation that the press was registered. This is the problem we\'re solving.',
-      fr: { title: 'Bouton HTML simple', description: 'Un `<button>` ordinaire — pas d\'animation. Le clic fonctionne, mais il n\'y a aucune confirmation visuelle que l\'appui a été enregistré. C\'est le problème que nous allons résoudre.' },
+      description: 'A plain `<button>` with **no motion**. The click handler fires, but the user gets *zero* tactile confirmation that their press landed. This matters because **gesture feedback** is what makes an interface feel alive and trustworthy — without it, users tap twice or wonder if the app froze. This is the baseline we\'ll progressively enrich.',
+      fr: { title: 'Bouton HTML simple', description: 'Un `<button>` ordinaire, **sans aucun mouvement**. Le gestionnaire de clic se déclenche, mais l\'utilisateur n\'a *aucune* confirmation tactile que son appui a été pris en compte. C\'est important car le **retour gestuel** est ce qui rend une interface vivante et fiable — sans lui, l\'utilisateur tape deux fois ou se demande si l\'app a planté. C\'est la base que nous allons enrichir.' },
       code: `export function ActionButton({ children, onClick }) {
   return (
     <button
@@ -989,8 +989,8 @@ const gestureFeedback: StepMap = {
     },
     {
       title: 'Add whileTap press feedback',
-      description: '`motion.button` replaces the plain button. `whileTap={{ scale: 0.94 }}` animates to 94% size while the pointer is held down and springs back on release. The spring\'s stiffness/damping ratio determines bounciness.',
-      fr: { title: 'Ajouter le retour whileTap', description: '`motion.button` remplace le bouton simple. `whileTap={{ scale: 0.94 }}` anime à 94% de sa taille pendant que le pointeur est maintenu et rebondit à la relâche. Le ratio stiffness/damping du spring détermine le rebond.' },
+      description: 'Swapping `<button>` for `motion.button` unlocks Framer Motion\'s gesture props. `whileTap={{ scale: 0.94 }}` shrinks the element to **94%** while the pointer is held and springs it back on release, mimicking a physical button depressing. The key insight: the `spring` `transition` — its **stiffness/damping** ratio — is what makes the rebound feel *natural* rather than mechanical.',
+      fr: { title: 'Ajouter le retour whileTap', description: 'Remplacer `<button>` par `motion.button` débloque les props de geste de Framer Motion. `whileTap={{ scale: 0.94 }}` réduit l\'élément à **94%** tant que le pointeur est maintenu, puis le ramène par ressort au relâchement, imitant un vrai bouton enfoncé. L\'idée clé : la `transition` de type `spring` — son ratio **stiffness/damping** — est ce qui rend le rebond *naturel* plutôt que mécanique.' },
       code: `import { motion } from 'framer-motion'
 
 export function ActionButton({ children, onClick }) {
@@ -1012,8 +1012,8 @@ export function ActionButton({ children, onClick }) {
     },
     {
       title: 'Add whileHover lift',
-      description: '`whileHover` activates while the cursor is over the element. Combining a slight scale-up with a negative `y` offset simulates the button rising from the surface — shadow would complete the illusion.',
-      fr: { title: 'Ajouter la lévitation whileHover', description: '`whileHover` s\'active quand le curseur survole l\'élément. Combiner un léger scale-up avec un décalage `y` négatif simule le bouton qui s\'élève de la surface — une ombre compléterait l\'illusion.' },
+      description: '`whileHover` fires whenever the cursor is over the element, layering an **anticipation** cue on top of the press feedback. Pairing a subtle `scale: 1.03` with a negative `y` offset reads as the button *lifting* toward the user — this depth cue signals interactivity before any click. A matching `box-shadow` would complete the floating illusion. Hover and tap states *compose* cleanly because each owns a distinct gesture.',
+      fr: { title: 'Ajouter la lévitation whileHover', description: '`whileHover` se déclenche dès que le curseur survole l\'élément, ajoutant un indice d\'**anticipation** par-dessus le retour d\'appui. Associer un léger `scale: 1.03` à un décalage `y` négatif donne l\'impression que le bouton *s\'élève* vers l\'utilisateur — cet indice de profondeur signale l\'interactivité avant même le clic. Une `box-shadow` assortie compléterait l\'illusion de lévitation. Les états survol et appui se *composent* proprement car chacun gère un geste distinct.' },
       code: `import { motion } from 'framer-motion'
 
 export function ActionButton({ children, onClick }) {
@@ -1036,8 +1036,8 @@ export function ActionButton({ children, onClick }) {
     },
     {
       title: 'Add drag-to-dismiss card',
-      description: '`drag="x"` enables horizontal dragging. `dragConstraints` sets the allowed range — `{ left: 0, right: 0 }` means the card always wants to return to center. `dragElastic` controls how far it can stretch past the constraint.',
-      fr: { title: 'Ajouter le glissement pour rejeter', description: '`drag="x"` active le glissement horizontal. `dragConstraints` définit la plage autorisée — `{ left: 0, right: 0 }` signifie que la carte veut toujours revenir au centre. `dragElastic` contrôle jusqu\'où elle peut s\'étirer au-delà de la contrainte.' },
+      description: 'Beyond buttons, **direct manipulation** lets users fling content away with their finger. `drag="x"` constrains motion to the horizontal axis, while `dragConstraints={{ left: 0, right: 0 }}` makes the card *want* to snap back to center. `dragElastic` controls the rubber-band give past those bounds, and `onDragEnd` reads **velocity** and **offset** to decide commit-vs-cancel — flicking fast dismisses even on a short drag, matching how physical objects respond to a quick swipe.',
+      fr: { title: 'Ajouter le glissement pour rejeter', description: 'Au-delà des boutons, la **manipulation directe** permet de chasser un contenu d\'un geste du doigt. `drag="x"` limite le mouvement à l\'axe horizontal, tandis que `dragConstraints={{ left: 0, right: 0 }}` fait que la carte *veut* revenir au centre. `dragElastic` règle l\'effet élastique au-delà de ces bornes, et `onDragEnd` lit la **vélocité** et le décalage pour décider de valider ou d\'annuler — un coup rapide rejette même sur un court glissement, comme réagirait un objet physique à un balayage vif.' },
       code: `import { motion } from 'framer-motion'
 
 // Spring button (from step 3)
@@ -1077,8 +1077,8 @@ export function SwipeCard({ onDismiss, children }) {
   'react-native': [
     {
       title: 'Pressable with no animation',
-      description: '`Pressable` is the modern RN touch element — unlike `TouchableOpacity`, it doesn\'t animate by default. This gives us full control over the feedback.',
-      fr: { title: 'Pressable sans animation', description: '`Pressable` est l\'élément tactile moderne de RN — contrairement à `TouchableOpacity`, il n\'anime pas par défaut. Cela nous donne un contrôle total sur le retour visuel.' },
+      description: '`Pressable` is React Native\'s **modern** touch primitive, meant to replace the older `TouchableOpacity` and `TouchableHighlight`. Crucially, it ships with *no* built-in animation — unlike `TouchableOpacity`\'s fixed fade — which hands you a **blank canvas** for custom feedback. Starting from this neutral baseline lets us craft spring physics that feel exactly right rather than fighting a preset effect.',
+      fr: { title: 'Pressable sans animation', description: '`Pressable` est la primitive tactile **moderne** de React Native, conçue pour remplacer les anciens `TouchableOpacity` et `TouchableHighlight`. Surtout, il n\'embarque *aucune* animation par défaut — contrairement au fondu figé de `TouchableOpacity` — ce qui offre une **toile vierge** pour un retour personnalisé. Partir de cette base neutre permet de façonner une physique de ressort exactement comme on le veut, sans lutter contre un effet imposé.' },
       code: `import { Pressable, Text, StyleSheet } from 'react-native'
 
 export function ActionButton({ children, onPress }) {
@@ -1096,8 +1096,8 @@ const styles = StyleSheet.create({
     },
     {
       title: 'Add scale with useSharedValue',
-      description: '`useSharedValue(1)` creates a scale value on the UI thread. `Gesture.Tap().onBegin()` scales it down; `.onFinalize()` springs it back. This runs at 60fps without touching the JS thread.',
-      fr: { title: 'Ajouter la mise à l\'échelle avec useSharedValue', description: '`useSharedValue(1)` crée une valeur d\'échelle sur le thread UI. `Gesture.Tap().onBegin()` la réduit ; `.onFinalize()` la ramène par ressort. Cela s\'exécute à 60fps sans toucher au thread JS.' },
+      description: '`useSharedValue(1)` holds the scale on the **UI thread**, the core idea behind **Reanimated**: animations run independently of JavaScript. `Gesture.Tap().onBegin()` shrinks the value the instant a touch begins, and `.onFinalize()` springs it back. Because the whole loop lives on the UI thread, it stays a buttery **60fps** even when the JS thread is busy rendering or fetching — the usual culprit behind janky native gestures.',
+      fr: { title: 'Ajouter la mise à l\'échelle avec useSharedValue', description: '`useSharedValue(1)` conserve l\'échelle sur le **thread UI**, l\'idée centrale de **Reanimated** : les animations tournent indépendamment du JavaScript. `Gesture.Tap().onBegin()` réduit la valeur dès qu\'un toucher commence, et `.onFinalize()` la ramène par ressort. Comme toute la boucle vit sur le thread UI, elle reste à un fluide **60fps** même quand le thread JS est occupé à rendre ou à charger — la cause habituelle des gestes natifs saccadés.' },
       code: `import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 
@@ -1123,8 +1123,8 @@ export function ActionButton({ children, onPress }) {
     },
     {
       title: 'Call onPress from the UI thread',
-      description: '`runOnJS` bridges a JS function call back from the UI thread. Without it, calling `onPress()` inside a Reanimated gesture handler would crash — JS callbacks must be invoked with `runOnJS`.',
-      fr: { title: 'Appeler onPress depuis le thread UI', description: '`runOnJS` relie un appel de fonction JS depuis le thread UI. Sans lui, appeler `onPress()` dans un gestionnaire de geste Reanimated planterait — les callbacks JS doivent être invoqués avec `runOnJS`.' },
+      description: 'The same UI-thread isolation that buys smoothness introduces a **boundary**: code in a gesture handler runs as a *worklet*, not on the JS thread. Invoking a normal JS callback like `onPress()` directly from there would crash. `runOnJS(onPress)()` is the official **bridge** that schedules the call back on the JS thread. This is the one rule you must respect whenever a gesture needs to trigger app logic — navigation, state updates, network calls.',
+      fr: { title: 'Appeler onPress depuis le thread UI', description: 'L\'isolation sur le thread UI qui apporte la fluidité introduit une **frontière** : le code d\'un gestionnaire de geste s\'exécute comme un *worklet*, pas sur le thread JS. Appeler directement un callback JS classique comme `onPress()` depuis là planterait. `runOnJS(onPress)()` est le **pont** officiel qui replanifie l\'appel sur le thread JS. C\'est la règle à respecter dès qu\'un geste doit déclencher la logique de l\'app — navigation, mises à jour d\'état, appels réseau.' },
       code: `import { runOnJS } from 'react-native-reanimated'
 
 const tap = Gesture.Tap()
@@ -1136,8 +1136,8 @@ const tap = Gesture.Tap()
     },
     {
       title: 'Add swipe-to-dismiss with Pan gesture',
-      description: '`Gesture.Pan()` tracks drag movement. `onChange` updates `translateX` in real time; `onEnd` checks velocity and offset to decide whether to dismiss or snap back with `withSpring(0)`.',
-      fr: { title: 'Ajouter le glissement pour ignorer avec geste Pan', description: '`Gesture.Pan()` suit le mouvement de glissement. `onChange` met à jour `translateX` en temps réel ; `onEnd` vérifie la vitesse et le décalage pour décider d\'ignorer ou de revenir avec `withSpring(0)`.' },
+      description: '`Gesture.Pan()` tracks a continuous drag, the foundation of **direct manipulation** on mobile. `onChange` writes the finger\'s `translationX` straight into a shared value so the card tracks the touch *frame-perfectly*. On release, `onEnd` weighs both **velocity** and total offset: cross either threshold and it animates off-screen, otherwise `withSpring(0)` snaps it home. Honoring velocity is what makes a quick flick feel as decisive as a long, deliberate drag.',
+      fr: { title: 'Ajouter le glissement pour ignorer avec geste Pan', description: '`Gesture.Pan()` suit un glissement continu, le socle de la **manipulation directe** sur mobile. `onChange` écrit le `translationX` du doigt directement dans une valeur partagée, si bien que la carte suit le toucher *image par image*. Au relâchement, `onEnd` pèse la **vélocité** et le décalage total : si l\'un des seuils est franchi, la carte sort de l\'écran, sinon `withSpring(0)` la ramène en place. Tenir compte de la vélocité fait qu\'un coup rapide paraît aussi décisif qu\'un long glissement appuyé.' },
       code: `import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, runOnJS,
 } from 'react-native-reanimated'
@@ -1173,8 +1173,8 @@ export function SwipeCard({ onDismiss, children }) {
   flutter: [
     {
       title: 'Plain ElevatedButton',
-      description: 'Flutter\'s `ElevatedButton` has a built-in ink ripple. That\'s fine for Material apps, but we want precise spring physics — so we\'ll replace it with a custom gesture widget.',
-      fr: { title: 'ElevatedButton simple', description: 'L\'`ElevatedButton` de Flutter a un effet ripple intégré. C\'est bien pour les apps Material, mais nous voulons une physique de ressort précise — nous le remplacerons par un widget de geste personnalisé.' },
+      description: 'Flutter\'s `ElevatedButton` ships with a built-in **Material ink ripple** that radiates from the touch point. That convention is perfect for stock Material apps, but it gives you *no* control over timing or feel. Since our goal is precise **spring physics**, we\'ll set it aside and build a custom gesture widget from primitives — trading a one-liner for full authorship of the motion.',
+      fr: { title: 'ElevatedButton simple', description: 'L\'`ElevatedButton` de Flutter embarque un **effet ripple Material** intégré qui rayonne depuis le point de contact. Cette convention est parfaite pour les apps Material standard, mais elle ne laisse *aucun* contrôle sur le timing ou le ressenti. Comme notre objectif est une **physique de ressort** précise, nous le mettrons de côté pour bâtir un widget de geste personnalisé à partir de primitives — on échange une ligne contre la maîtrise totale du mouvement.' },
       code: `ElevatedButton(
   onPressed: () {},
   child: const Text('Press me'),
@@ -1182,8 +1182,8 @@ export function SwipeCard({ onDismiss, children }) {
     },
     {
       title: 'GestureDetector + press state',
-      description: '`GestureDetector` catches `onTapDown`, `onTapUp`, and `onTapCancel`. The `AnimationController` drives the scale — `forward()` on press, `reverse()` on release.',
-      fr: { title: 'GestureDetector + état d\'appui', description: '`GestureDetector` capte `onTapDown`, `onTapUp` et `onTapCancel`. L\'`AnimationController` pilote l\'échelle — `forward()` à l\'appui, `reverse()` au relâchement.' },
+      description: '`GestureDetector` exposes the **raw lifecycle** of a touch: `onTapDown` fires the moment a finger lands, `onTapUp` on a clean release, and `onTapCancel` when the finger slides off or the gesture is stolen. Handling all three is what keeps the button from getting *stuck* mid-press. An `AnimationController` — Flutter\'s engine for time-based motion — is driven `forward()` on press and `reverse()` on release, giving us a single 0→1 value to map onto scale next.',
+      fr: { title: 'GestureDetector + état d\'appui', description: '`GestureDetector` expose le **cycle de vie brut** d\'un toucher : `onTapDown` se déclenche dès qu\'un doigt se pose, `onTapUp` à un relâchement net, et `onTapCancel` quand le doigt glisse hors de la zone ou que le geste est intercepté. Gérer les trois évite que le bouton ne reste *bloqué* en plein appui. Un `AnimationController` — le moteur de mouvement temporel de Flutter — est piloté avec `forward()` à l\'appui et `reverse()` au relâchement, fournissant une seule valeur 0→1 à mapper ensuite sur l\'échelle.' },
       code: `class SpringButton extends StatefulWidget {
   final Widget child;
   final VoidCallback? onPressed;
@@ -1218,8 +1218,8 @@ class _SpringButtonState extends State<SpringButton>
     },
     {
       title: 'Add ScaleTransition',
-      description: '`ScaleTransition` drives `Transform.scale` from the animation. A `Tween(begin: 1.0, end: 0.94)` maps the 0–1 controller value to the 1–0.94 scale range. `Curves.elasticOut` on reverse gives the spring-back feel.',
-      fr: { title: 'Ajouter ScaleTransition', description: '`ScaleTransition` pilote `Transform.scale` depuis l\'animation. Un `Tween(begin: 1.0, end: 0.94)` mappe la valeur 0–1 du contrôleur à la plage d\'échelle 1–0.94. `Curves.elasticOut` à l\'envers donne la sensation de ressort.' },
+      description: '`ScaleTransition` is a purpose-built widget that rebuilds *only* its `Transform.scale` as the animation ticks — far cheaper than wrapping a `setState` around the whole subtree. A `Tween(begin: 1.0, end: 0.94)` remaps the controller\'s raw 0→1 progress onto the visible 1.0→0.94 scale range. The real magic is the **curve**: `Curves.elasticOut` on the *reverse* leg overshoots and settles, delivering that satisfying **spring-back** without any physics math.',
+      fr: { title: 'Ajouter ScaleTransition', description: '`ScaleTransition` est un widget dédié qui ne reconstruit *que* son `Transform.scale` à chaque tick de l\'animation — bien moins coûteux qu\'envelopper tout le sous-arbre dans un `setState`. Un `Tween(begin: 1.0, end: 0.94)` remappe la progression brute 0→1 du contrôleur sur la plage d\'échelle visible 1.0→0.94. La vraie magie est la **courbe** : `Curves.elasticOut` sur le trajet *retour* dépasse puis se stabilise, offrant ce **rebond** satisfaisant sans aucun calcul de physique.' },
       code: `@override
 void initState() {
   super.initState();
@@ -1242,8 +1242,8 @@ ScaleTransition(scale: _scale, child: widget.child)`,
     },
     {
       title: 'Add Dismissible for swipe',
-      description: '`Dismissible` is a first-party Flutter widget that handles swipe-to-dismiss. Use `SpringButton` for tap feedback and `Dismissible` for swipe — compose them rather than re-implementing.',
-      fr: { title: 'Ajouter Dismissible pour le glissement', description: '`Dismissible` est un widget Flutter natif qui gère le glissement pour ignorer. Utiliser `SpringButton` pour le retour tactile et `Dismissible` pour le glissement — les composer plutôt que de les réimplémenter.' },
+      description: '`Dismissible` is a **first-party** Flutter widget that handles the entire swipe-to-dismiss flow — drag tracking, the reveal `background`, and the `onDismissed` callback — out of the box. The lesson here is **composition over reinvention**: pair your custom `SpringButton` for tap feedback with the built-in `Dismissible` for swipe, each doing one job well. A stable `key` is mandatory so Flutter can correctly remove the right item from the list.',
+      fr: { title: 'Ajouter Dismissible pour le glissement', description: '`Dismissible` est un widget **natif** de Flutter qui gère tout le flux du glissement pour ignorer — suivi du drag, `background` révélé et callback `onDismissed` — clé en main. La leçon ici est la **composition plutôt que la réinvention** : associez votre `SpringButton` personnalisé pour le retour tactile au `Dismissible` intégré pour le glissement, chacun faisant bien une seule tâche. Une `key` stable est obligatoire pour que Flutter retire correctement le bon élément de la liste.' },
       code: `// Compose SpringButton + Dismissible
 
 // 1. Spring tap feedback (full component from step 3)
@@ -1281,8 +1281,8 @@ const parallax: StepMap = {
   react: [
     {
       title: 'Static layered divs',
-      description: 'Two layers — a background and foreground — stacked with `position: absolute`. No animation yet. Establish `overflow: hidden` on the container now; forgetting it causes background bleed when we add motion.',
-      fr: { title: 'Divs superposés statiques', description: 'Deux couches — un arrière-plan et un premier plan — empilées avec `position: absolute`. Pas encore d\'animation. Établir `overflow: hidden` sur le conteneur maintenant ; l\'oublier cause un débordement de l\'arrière-plan quand on ajoute le mouvement.' },
+      description: 'Parallax starts with **layering**: a background and a foreground stacked via `position: absolute` inside a `relative` container. Getting this skeleton right *before* any motion matters because the layers must be free to slide independently. Set `overflow: hidden` now — once we animate, an unclipped background will *bleed* past the section edges and break the illusion of a framed window.',
+      fr: { title: 'Divs superposés statiques', description: 'Le parallax commence par la **superposition** : un arrière-plan et un premier plan empilés via `position: absolute` dans un conteneur `relative`. Bien poser ce squelette *avant* tout mouvement est important car les couches doivent pouvoir glisser indépendamment. Définissez `overflow: hidden` dès maintenant — une fois animé, un arrière-plan non rogné *déborde* hors des bords de la section et brise l\'illusion d\'une fenêtre encadrée.' },
       code: `export function ParallaxSection({ image, children }) {
   return (
     <section style={{ position: 'relative', overflow: 'hidden', minHeight: 480 }}>
@@ -1303,8 +1303,8 @@ const parallax: StepMap = {
     },
     {
       title: 'Wire useScroll to the section',
-      description: '`useScroll({ target: sectionRef })` creates a `scrollYProgress` MotionValue that goes from 0 (section bottom entering viewport) to 1 (section top leaving). At this stage we\'re just reading the value — no visual change yet.',
-      fr: { title: 'Connecter useScroll à la section', description: '`useScroll({ target: sectionRef })` crée une MotionValue `scrollYProgress` qui va de 0 (bas de la section entrant dans la fenêtre) à 1 (haut de la section quittant). À ce stade, on lit juste la valeur — aucun changement visuel encore.' },
+      description: 'Parallax needs to be driven by *scroll position*, not time. `useScroll({ target: sectionRef })` gives you a `scrollYProgress` **MotionValue** that runs from 0 (section bottom entering the viewport) to 1 (section top leaving it). The `offset` option defines exactly where that 0→1 range begins and ends. A MotionValue updates *outside* React render, so reading it here costs nothing — we wire the source first, then connect outputs to it.',
+      fr: { title: 'Connecter useScroll à la section', description: 'Le parallax doit être piloté par la *position de scroll*, pas par le temps. `useScroll({ target: sectionRef })` fournit une **MotionValue** `scrollYProgress` qui va de 0 (bas de la section entrant dans la fenêtre) à 1 (haut de la section la quittant). L\'option `offset` définit précisément où cette plage 0→1 commence et finit. Une MotionValue se met à jour *en dehors* du rendu React, donc la lire ici ne coûte rien — on branche la source d\'abord, puis on y connecte les sorties.' },
       code: `import { useRef } from 'react'
 import { useScroll } from 'framer-motion'
 
@@ -1327,8 +1327,8 @@ export function ParallaxSection({ image, children }) {
     },
     {
       title: 'Apply motion to the background',
-      description: '`useTransform` maps the 0–1 scroll range to pixel offsets. The background gets a ±40px range — small, but enough to create visible depth. Apply it via `style={{ y: bgY }}` on a `motion.div`.',
-      fr: { title: 'Appliquer le mouvement à l\'arrière-plan', description: '`useTransform` mappe le range 0–1 du scroll à des décalages en pixels. L\'arrière-plan reçoit une plage ±40px — petit, mais suffisant pour créer de la profondeur visible. L\'appliquer via `style={{ y: bgY }}` sur un `motion.div`.' },
+      description: '`useTransform` is the bridge that *remaps* one MotionValue into another — here turning the abstract 0→1 progress into a concrete pixel offset of `-40→40`. Feeding it straight into `style={{ y: bgY }}` on a `motion.div` lets Framer Motion drive the transform without re-rendering the component. Keep the range small: parallax reads as **depth**, not displacement, so a subtle ±40px is more convincing than a dramatic shift.',
+      fr: { title: 'Appliquer le mouvement à l\'arrière-plan', description: '`useTransform` est le pont qui *remappe* une MotionValue en une autre — ici en transformant la progression abstraite 0→1 en un décalage concret de `-40→40` pixels. L\'injecter directement dans `style={{ y: bgY }}` sur un `motion.div` laisse Framer Motion piloter la transformation sans re-rendre le composant. Gardez la plage petite : le parallax se lit comme de la **profondeur**, pas du déplacement, donc un subtil ±40px est plus convaincant qu\'un décalage spectaculaire.' },
       code: `import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
@@ -1356,9 +1356,9 @@ export function ParallaxSection({ image, children }) {
 }`,
     },
     {
-      title: 'Add a foreground layer at a different speed',
-      description: 'The foreground moves in the opposite direction to the background — this is what creates the perceived depth. Two layers moving at different speeds tricks the visual cortex into reading distance.',
-      fr: { title: 'Ajouter une couche de premier plan à vitesse différente', description: 'Le premier plan bouge dans la direction opposée à l\'arrière-plan — c\'est ce qui crée la profondeur perçue. Deux couches se déplaçant à des vitesses différentes trompent le cortex visuel en lisant la distance.' },
+      title: 'Foreground at a different speed',
+      description: 'This is the step where the effect actually *becomes* parallax. By giving the foreground a **reversed** `useTransform` range, the two layers move in opposite directions as you scroll — the brain interprets that **relative motion** as one layer being closer than the other. The principle is borrowed from real life: objects near you sweep past faster than distant ones. Tune the two ranges against each other to dial the apparent depth up or down.',
+      fr: { title: 'Premier plan à vitesse différente', description: 'C\'est l\'étape où l\'effet *devient* réellement du parallax. En donnant au premier plan une plage `useTransform` **inversée**, les deux couches se déplacent en sens opposés au scroll — le cerveau interprète ce **mouvement relatif** comme une couche plus proche que l\'autre. Le principe vient de la vie réelle : les objets proches défilent plus vite que les lointains. Ajustez les deux plages l\'une par rapport à l\'autre pour augmenter ou réduire la profondeur apparente.' },
       code: `import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
@@ -1392,8 +1392,8 @@ export function ParallaxSection({ image, children }) {
   'react-native': [
     {
       title: 'ScrollView with a header image',
-      description: 'Place the hero image above the scrollable content inside a `ScrollView`. No parallax yet — just the structure. Use `overflow: hidden` on the image container to clip motion later.',
-      fr: { title: 'ScrollView avec une image d\'en-tête', description: 'Placer l\'image hero au-dessus du contenu défilable dans un `ScrollView`. Pas encore de parallax — juste la structure. Utiliser `overflow: hidden` sur le conteneur d\'image pour rogner le mouvement ensuite.' },
+      description: 'On native, the parallax header lives *inside* the `ScrollView` so it scrolls away with the content — the motion we add later only adjusts how fast it leaves. Start with a fixed-height `View` wrapping the hero `Image` above the body. The `overflow: hidden` on that wrapper is what later lets the image translate *within* its frame instead of spilling over neighbouring content.',
+      fr: { title: 'ScrollView avec une image d\'en-tête', description: 'Sur natif, l\'en-tête parallax vit *à l\'intérieur* du `ScrollView` pour défiler avec le contenu — le mouvement ajouté ensuite ne fait qu\'ajuster la vitesse à laquelle il disparaît. Commencez par un `View` à hauteur fixe enveloppant l\'`Image` hero au-dessus du corps. Le `overflow: hidden` sur ce wrapper est ce qui permettra plus tard à l\'image de se translater *dans* son cadre au lieu de déborder sur le contenu voisin.' },
       code: `import { ScrollView, View, Image, StyleSheet } from 'react-native'
 
 const HEADER_HEIGHT = 280
@@ -1413,8 +1413,8 @@ export function ParallaxScrollView({ imageSource, children }) {
     },
     {
       title: 'Track scroll with Animated.event',
-      description: '`Animated.event` maps `nativeEvent.contentOffset.y` directly to an `Animated.Value` — no JS bridge for every scroll frame. `scrollEventThrottle={16}` syncs at ~60fps.',
-      fr: { title: 'Suivre le scroll avec Animated.event', description: '`Animated.event` mappe `nativeEvent.contentOffset.y` directement vers un `Animated.Value` — pas de pont JS pour chaque frame de scroll. `scrollEventThrottle={16}` se synchronise à ~60fps.' },
+      description: 'Smooth parallax demands the scroll value reach the animation **without a round-trip through JS** on every frame. `Animated.event` wires `nativeEvent.contentOffset.y` straight into an `Animated.Value`, and with `useNativeDriver: true` the whole pipeline runs on the UI thread — so it never stutters even if JS is busy. `scrollEventThrottle={16}` caps updates to roughly one per frame at **60fps**, the sweet spot between smoothness and overhead.',
+      fr: { title: 'Suivre le scroll avec Animated.event', description: 'Un parallax fluide exige que la valeur de scroll atteigne l\'animation **sans aller-retour par JS** à chaque frame. `Animated.event` câble `nativeEvent.contentOffset.y` directement dans un `Animated.Value`, et avec `useNativeDriver: true` tout le pipeline tourne sur le thread UI — il ne saccade jamais même si JS est occupé. `scrollEventThrottle={16}` limite les mises à jour à environ une par frame à **60fps**, le bon compromis entre fluidité et surcharge.' },
       code: `import { useRef } from 'react'
 import { ScrollView, Animated } from 'react-native'
 
@@ -1438,8 +1438,8 @@ export function ParallaxScrollView({ imageSource, children }) {
     },
     {
       title: 'Interpolate scrollY to translateY',
-      description: '`.interpolate()` maps the scroll position to a translateY for the image. As the user scrolls down (positive Y), the image moves up at only 0.3× speed — creating the lag that reads as depth.',
-      fr: { title: 'Interpoler scrollY vers translateY', description: '`.interpolate()` mappe la position de scroll vers un translateY pour l\'image. Quand l\'utilisateur défile vers le bas (Y positif), l\'image remonte à seulement 0.3× de la vitesse — créant le décalage qui donne l\'impression de profondeur.' },
+      description: '`.interpolate()` is the native equivalent of `useTransform`: it remaps the raw scroll offset onto a `translateY` for the image. Driving the image up at only **0.3×** the scroll speed is what produces the *lag* the eye reads as depth. The three-point range also handles the **pull-down** case — a negative offset stretches the image larger, a small touch that makes the header feel elastic. `extrapolate: \'clamp\'` stops the transform running away past the defined bounds.',
+      fr: { title: 'Interpoler scrollY vers translateY', description: '`.interpolate()` est l\'équivalent natif de `useTransform` : il remappe le décalage de scroll brut vers un `translateY` pour l\'image. Faire monter l\'image à seulement **0.3×** de la vitesse de scroll produit le *décalage* que l\'œil lit comme de la profondeur. La plage à trois points gère aussi le cas du **tirer-vers-le-bas** — un décalage négatif agrandit l\'image, un détail qui rend l\'en-tête élastique. `extrapolate: \'clamp\'` empêche la transformation de s\'emballer au-delà des bornes définies.' },
       code: `const imageTranslate = scrollY.interpolate({
   inputRange:  [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
   outputRange: [ HEADER_HEIGHT * 0.5, 0, -HEADER_HEIGHT * 0.3],
@@ -1449,8 +1449,8 @@ export function ParallaxScrollView({ imageSource, children }) {
     },
     {
       title: 'Apply to Animated.Image',
-      description: 'Swap the plain `Image` for `Animated.Image` and apply the interpolated transform. The header fades out as content scrolls up — combine with `headerOpacity` interpolation for the full effect.',
-      fr: { title: 'Appliquer à Animated.Image', description: 'Remplacer l\'`Image` simple par `Animated.Image` et appliquer la transformation interpolée. L\'en-tête s\'estompe quand le contenu défile vers le haut — combiner avec l\'interpolation `headerOpacity` pour l\'effet complet.' },
+      description: 'Only `Animated.*` components can consume an `Animated.Value`, so the plain `Image` becomes `Animated.Image` to receive the interpolated `translateY`. Layering a **second** interpolation onto `opacity` lets the overlay text *fade out* as the header collapses — proof that one scroll source can drive many independent effects at once. Composing several interpolations off the same value is the core pattern behind rich, polished scroll experiences.',
+      fr: { title: 'Appliquer à Animated.Image', description: 'Seuls les composants `Animated.*` peuvent consommer un `Animated.Value`, donc l\'`Image` simple devient `Animated.Image` pour recevoir le `translateY` interpolé. Superposer une **seconde** interpolation sur `opacity` fait *disparaître en fondu* le texte en surimpression quand l\'en-tête se réduit — la preuve qu\'une seule source de scroll peut piloter plusieurs effets indépendants à la fois. Composer plusieurs interpolations sur la même valeur est le motif central des expériences de scroll riches et soignées.' },
       code: `import { useRef } from 'react'
 import { ScrollView, Animated, View, StyleSheet } from 'react-native'
 
@@ -1498,8 +1498,8 @@ export function ParallaxScrollView({ imageSource, children }) {
   flutter: [
     {
       title: 'CustomScrollView scaffold',
-      description: '`CustomScrollView` with `SliverAppBar` and `SliverToBoxAdapter` is Flutter\'s native approach to parallax headers. The `SliverAppBar` handles the collapsing behaviour.',
-      fr: { title: 'Structure CustomScrollView', description: '`CustomScrollView` avec `SliverAppBar` et `SliverToBoxAdapter` est l\'approche native de Flutter pour les en-têtes parallax. `SliverAppBar` gère le comportement de réduction.' },
+      description: 'Flutter models scrollable areas as **slivers** — composable scroll regions a `CustomScrollView` stitches together. Pairing a `SliverAppBar` (the collapsing header) with a `SliverToBoxAdapter` (your normal widget body) is the idiomatic foundation for a parallax screen. Reaching for slivers instead of a plain `ListView` matters because only they expose the *collapse* and *parallax* hooks the framework drives natively, with no manual scroll math.',
+      fr: { title: 'Structure CustomScrollView', description: 'Flutter modélise les zones défilables comme des **slivers** — des régions de scroll composables qu\'un `CustomScrollView` assemble. Associer un `SliverAppBar` (l\'en-tête réductible) à un `SliverToBoxAdapter` (votre corps de widgets normal) est la base idiomatique d\'un écran parallax. Recourir aux slivers plutôt qu\'à un simple `ListView` est important car eux seuls exposent les points d\'ancrage de *réduction* et de *parallax* que le framework pilote nativement, sans calcul de scroll manuel.' },
       code: `import 'package:flutter/material.dart';
 
 class ParallaxScreen extends StatelessWidget {
@@ -1519,8 +1519,8 @@ class ParallaxScreen extends StatelessWidget {
     },
     {
       title: 'Enable built-in parallax',
-      description: '`collapseMode: CollapseMode.parallax` is all you need for Flutter\'s built-in parallax on `FlexibleSpaceBar`. The framework handles the offset math automatically.',
-      fr: { title: 'Activer le parallax intégré', description: '`collapseMode: CollapseMode.parallax` est tout ce dont vous avez besoin pour le parallax intégré de Flutter sur `FlexibleSpaceBar`. Le framework gère automatiquement le calcul des décalages.' },
+      description: 'This is the payoff of staying on the sliver path: a single line, `collapseMode: CollapseMode.parallax` on the `FlexibleSpaceBar`, and the framework moves the background slower than the bar as it collapses. Flutter computes every offset against the scroll position for you, so you get correct, jank-free depth with **zero** controllers or listeners. Always try the built-in mode first — only drop to manual parallax when you need motion the `SliverAppBar` can\'t express.',
+      fr: { title: 'Activer le parallax intégré', description: 'C\'est la récompense de rester sur la voie des slivers : une seule ligne, `collapseMode: CollapseMode.parallax` sur le `FlexibleSpaceBar`, et le framework déplace l\'arrière-plan plus lentement que la barre quand elle se réduit. Flutter calcule chaque décalage par rapport à la position de scroll pour vous, offrant une profondeur correcte et sans à-coups avec **zéro** contrôleur ni écouteur. Essayez toujours le mode intégré d\'abord — ne passez au parallax manuel que lorsque vous avez besoin d\'un mouvement que le `SliverAppBar` ne peut exprimer.' },
       code: `SliverAppBar(
   expandedHeight: 300,
   pinned: true,
@@ -1534,8 +1534,8 @@ class ParallaxScreen extends StatelessWidget {
     },
     {
       title: 'Manual parallax with ScrollController',
-      description: 'For custom parallax on non-SliverAppBar content, attach a `ScrollController` and rebuild on scroll. Multiply the offset by a factor < 1 to slow the background layer down.',
-      fr: { title: 'Parallax manuel avec ScrollController', description: 'Pour un parallax personnalisé sur du contenu non-SliverAppBar, attacher un `ScrollController` et reconstruire au scroll. Multiplier le décalage par un facteur < 1 pour ralentir la couche d\'arrière-plan.' },
+      description: 'When the effect outgrows `SliverAppBar`, you take the wheel: a `ScrollController` exposes the live `offset`, and a listener calls `setState` to rebuild on every frame. A `Transform.translate` then shifts the background by `offset × factor`, where a **factor below 1** is precisely what makes it lag behind the content and read as distant. This is the same slow-the-far-layer principle as the built-in mode, just expressed by hand so you control every pixel.',
+      fr: { title: 'Parallax manuel avec ScrollController', description: 'Quand l\'effet dépasse `SliverAppBar`, vous prenez les commandes : un `ScrollController` expose le `offset` en direct, et un écouteur appelle `setState` pour reconstruire à chaque frame. Un `Transform.translate` décale alors l\'arrière-plan de `offset × factor`, où un **facteur inférieur à 1** est précisément ce qui le fait traîner derrière le contenu et paraître lointain. C\'est le même principe de ralentir-la-couche-lointaine que le mode intégré, exprimé à la main pour contrôler chaque pixel.' },
       code: `class ManualParallax extends StatefulWidget {
   final Widget child;
   const ManualParallax({required this.child, super.key});
@@ -1566,8 +1566,8 @@ class _ManualParallaxState extends State<ManualParallax> {
     },
     {
       title: 'Wrap in a reusable widget',
-      description: 'Extract into a `ParallaxImage` widget that takes `imageUrl` and `factor` props. A `factor` of 0 means the image is fixed; 1 means it scrolls at full speed (no parallax); 0.3 is a good default.',
-      fr: { title: 'Encapsuler dans un widget réutilisable', description: 'Extraire dans un widget `ParallaxImage` qui prend les props `imageUrl` et `factor`. Un `factor` de 0 signifie que l\'image est fixe ; 1 signifie qu\'elle défile à pleine vitesse (pas de parallax) ; 0.3 est un bon défaut.' },
+      description: 'The final move is **encapsulation**: fold the controller, listener, and transform into a self-contained `ParallaxImage` widget exposing just `imageUrl` and `factor`. Surfacing `factor` as a prop turns the effect into a *dial* — **0** pins the image fixed, **1** scrolls it at full speed (no parallax), and `0.3` is a tasteful default. Bundling the lifecycle (including `dispose` on the controller) inside one widget keeps call sites clean and prevents the listener leaks that creep in when this logic is copy-pasted.',
+      fr: { title: 'Encapsuler dans un widget réutilisable', description: 'Le dernier geste est l\'**encapsulation** : replier le contrôleur, l\'écouteur et la transformation dans un widget `ParallaxImage` autonome n\'exposant que `imageUrl` et `factor`. Exposer `factor` comme prop transforme l\'effet en *molette* — **0** fige l\'image, **1** la fait défiler à pleine vitesse (pas de parallax), et `0.3` est un défaut élégant. Regrouper le cycle de vie (y compris `dispose` sur le contrôleur) dans un seul widget garde les appels propres et évite les fuites d\'écouteurs qui apparaissent quand cette logique est copiée-collée.' },
       code: `import 'package:flutter/material.dart';
 
 class ParallaxImage extends StatefulWidget {
@@ -1620,8 +1620,8 @@ const skeletonLoading: StepMap = {
   react: [
     {
       title: 'Static gray placeholder',
-      description: 'A gray rectangle the same size as the real content. This is already better than a spinner — the user can see that something is coming and where it will appear.',
-      fr: { title: 'Espace réservé gris statique', description: 'Un rectangle gris de la même taille que le vrai contenu. C\'est déjà mieux qu\'un spinner — l\'utilisateur peut voir que quelque chose arrive et où il apparaîtra.' },
+      description: 'Start with a gray rectangle sized to match the *real* content. A **skeleton** beats a spinner because it preserves the page\'s **layout shape** — the user perceives structure, not just "loading". This avoids the jarring **layout shift** that happens when content suddenly pops into an empty space.',
+      fr: { title: 'Espace réservé gris statique', description: 'Commencez par un rectangle gris dimensionné comme le *vrai* contenu. Un **squelette** vaut mieux qu\'un spinner car il préserve la **forme de la mise en page** — l\'utilisateur perçoit une structure, pas seulement « chargement ». Cela évite le **décalage de mise en page** brutal qui survient quand le contenu surgit dans un espace vide.' },
       code: `export function Skeleton() {
   return (
     <div style={{
@@ -1635,8 +1635,8 @@ const skeletonLoading: StepMap = {
     },
     {
       title: 'Add the shimmer animation',
-      description: 'A `motion.div` absolutely positioned inside the skeleton sweeps from left to right using `animate={{ x: ["-100%", "100%"] }}`. The gradient creates the light-catching effect. The parent\'s `overflow: hidden` keeps it clipped.',
-      fr: { title: 'Ajouter l\'animation shimmer', description: 'Un `motion.div` positionné en absolu à l\'intérieur du squelette balaie de gauche à droite avec `animate={{ x: ["-100%", "100%"] }}`. Le dégradé crée l\'effet de lumière captée. Le `overflow: hidden` du parent le garde clipé.' },
+      description: 'A static box reads as *broken* — the **shimmer** signals "actively working". An absolutely-positioned `motion.div` sweeps left to right via `animate={{ x: ["-100%", "100%"] }}`, and its transparent-to-light **gradient** mimics light catching a surface. The parent\'s `overflow: hidden` clips the sweep to the skeleton\'s rounded bounds.',
+      fr: { title: 'Ajouter l\'animation shimmer', description: 'Une boîte statique semble *cassée* — le **shimmer** signale « en cours de traitement ». Un `motion.div` en position absolue balaie de gauche à droite via `animate={{ x: ["-100%", "100%"] }}`, et son **dégradé** transparent-vers-clair imite la lumière captée par une surface. Le `overflow: hidden` du parent rogne le balayage aux bords arrondis du squelette.' },
       code: `import { motion } from 'framer-motion'
 
 export function Skeleton({ width = '100%', height = 16, borderRadius = 6 }) {
@@ -1661,8 +1661,8 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 6 }) {
     },
     {
       title: 'Compose into a card skeleton',
-      description: 'Build the structural skeleton of the real card — same layout, same proportions, but every element is a `<Skeleton>`. A narrow avatar, two short text lines, one long line.',
-      fr: { title: 'Composer en squelette de carte', description: 'Construire le squelette structurel de la vraie carte — même mise en page, mêmes proportions, mais chaque élément est un `<Skeleton>`. Un avatar étroit, deux courtes lignes de texte, une longue ligne.' },
+      description: 'A single bar isn\'t convincing — real skeletons **mirror the final layout**. Compose `<Skeleton>` primitives into the card\'s exact structure: a round avatar, a short name line, and longer body lines. Matching proportions means the swap to real content feels seamless, with *zero* reflow.',
+      fr: { title: 'Composer en squelette de carte', description: 'Une seule barre n\'est pas convaincante — un vrai squelette **reflète la mise en page finale**. Composez des primitives `<Skeleton>` selon la structure exacte de la carte : un avatar rond, une courte ligne de nom et des lignes de corps plus longues. Des proportions identiques rendent le passage au vrai contenu fluide, avec *zéro* redisposition.' },
       code: `import { motion } from 'framer-motion'
 
 function Skeleton({ width = '100%', height = 16, borderRadius = 6 }) {
@@ -1695,8 +1695,8 @@ export function CardSkeleton() {
     },
     {
       title: 'Swap to real content on load',
-      description: '`AnimatePresence mode="wait"` handles the skeleton → content swap. The skeleton fades out, then the real content fades in. `once` state ensures the swap only happens in one direction.',
-      fr: { title: 'Remplacer par le vrai contenu au chargement', description: '`AnimatePresence mode="wait"` gère le remplacement squelette → contenu. Le squelette s\'estompe, puis le vrai contenu s\'estompe. L\'état `once` garantit que le remplacement ne se fait que dans un sens.' },
+      description: 'The final piece is a *graceful* transition — a hard cut feels abrupt. `AnimatePresence mode="wait"` sequences the swap: the skeleton fully fades out **before** the real content fades in, never overlapping. Keying each branch (`key="skeleton"` vs `key="content"`) is what lets Framer Motion detect the change and animate the exit.',
+      fr: { title: 'Remplacer par le vrai contenu au chargement', description: 'La dernière touche est une transition *élégante* — une coupure nette paraît brutale. `AnimatePresence mode="wait"` ordonne le remplacement : le squelette s\'estompe complètement **avant** que le vrai contenu n\'apparaisse, sans chevauchement. C\'est la clé distincte de chaque branche (`key="skeleton"` vs `key="content"`) qui permet à Framer Motion de détecter le changement et d\'animer la sortie.' },
       code: `import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -1734,8 +1734,8 @@ export function UserCard({ userId }) {
   'react-native': [
     {
       title: 'Gray View placeholder',
-      description: 'A plain `View` with a gray `backgroundColor` and the same dimensions as the real content. Already better than nothing — the user sees where content will appear.',
-      fr: { title: 'Placeholder View gris', description: 'Un `View` simple avec un `backgroundColor` gris et les mêmes dimensions que le vrai contenu. Déjà mieux que rien — l\'utilisateur voit où le contenu apparaîtra.' },
+      description: 'Begin with a plain `View` whose `backgroundColor` and dimensions match the real content. On mobile, where lists and cards dominate, a **skeleton** holds the layout in place so nothing jumps when data lands. This `Skeleton` primitive — parameterized by `width`, `height`, and `borderRadius` — becomes the building block for everything that follows.',
+      fr: { title: 'Placeholder View gris', description: 'Commencez par un simple `View` dont le `backgroundColor` et les dimensions correspondent au vrai contenu. Sur mobile, où dominent listes et cartes, un **squelette** maintient la mise en page afin que rien ne saute quand les données arrivent. Cette primitive `Skeleton` — paramétrée par `width`, `height` et `borderRadius` — devient la brique de base de tout ce qui suit.' },
       code: `import { View } from 'react-native'
 
 export function Skeleton({ width, height = 16, borderRadius = 4 }) {
@@ -1751,8 +1751,8 @@ export function Skeleton({ width, height = 16, borderRadius = 4 }) {
     },
     {
       title: 'Add shimmer with useSharedValue',
-      description: '`withRepeat(withTiming(...), -1)` loops the animation indefinitely. `-1` means infinite repeats. The value animates from -1 to 1, mapping to a translateX offset.',
-      fr: { title: 'Ajouter le shimmer avec useSharedValue', description: '`withRepeat(withTiming(...), -1)` boucle l\'animation indéfiniment. `-1` signifie des répétitions infinies. La valeur anime de -1 à 1, correspondant à un décalage translateX.' },
+      description: 'Reanimated runs animations on the **UI thread**, so the shimmer stays smooth even while JS is busy fetching. A `useSharedValue` holds the animated position, and `withRepeat(withTiming(...), -1)` loops it forever — the `-1` is the magic value for *infinite* repeats. Driving this from -1 to 1 gives us a normalized value to map onto `translateX` next.',
+      fr: { title: 'Ajouter le shimmer avec useSharedValue', description: 'Reanimated exécute les animations sur le **thread UI**, donc le shimmer reste fluide même pendant que le JS récupère des données. Un `useSharedValue` conserve la position animée, et `withRepeat(withTiming(...), -1)` la boucle indéfiniment — le `-1` est la valeur magique pour des répétitions *infinies*. Animer de -1 à 1 donne une valeur normalisée à mapper sur `translateX` à l\'étape suivante.' },
       code: `import Animated, { useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated'
 import { useEffect } from 'react'
 
@@ -1772,8 +1772,8 @@ export function Skeleton({ width, height = 16, borderRadius = 4 }) {
     },
     {
       title: 'Apply gradient overlay',
-      description: '`useAnimatedStyle` maps the shimmer value to `translateX`. A `LinearGradient` overlay moves across the surface, creating the light sweep effect.',
-      fr: { title: 'Appliquer le dégradé de surimpression', description: '`useAnimatedStyle` mappe la valeur shimmer vers `translateX`. Une surimpression `LinearGradient` se déplace sur la surface, créant l\'effet de balayage lumineux.' },
+      description: 'Now the shared value becomes motion you can see. `useAnimatedStyle` converts it into a `translateX` transform, and a `LinearGradient` overlay (transparent → light → transparent) slides across the surface to produce the light-sweep effect. The parent\'s `overflow: hidden` masks the gradient so it only appears *inside* the skeleton\'s bounds.',
+      fr: { title: 'Appliquer le dégradé de surimpression', description: 'La valeur partagée devient maintenant un mouvement visible. `useAnimatedStyle` la convertit en transformation `translateX`, et une surimpression `LinearGradient` (transparent → clair → transparent) glisse sur la surface pour produire l\'effet de balayage lumineux. Le `overflow: hidden` du parent masque le dégradé afin qu\'il n\'apparaisse qu\'*à l\'intérieur* des limites du squelette.' },
       code: `import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
 import { View, StyleSheet } from 'react-native'
@@ -1806,8 +1806,8 @@ export function Skeleton({ width, height = 16, borderRadius = 4 }: {
     },
     {
       title: 'Compose and swap to real content',
-      description: 'Build a `CardSkeleton` using `Skeleton` primitives, then conditionally swap to the real `UserCard` when data arrives. Use Reanimated\'s `FadeIn` / `FadeOut` for the swap.',
-      fr: { title: 'Composer et basculer vers le contenu réel', description: 'Construire un `CardSkeleton` avec des primitives `Skeleton`, puis basculer conditionnellement vers le vrai `UserCard` quand les données arrivent. Utiliser `FadeIn` / `FadeOut` de Reanimated pour le basculement.' },
+      description: 'Tie it together: compose the `Skeleton` primitives into a `CardSkeleton` that mirrors the final card, then swap to the real `UserCard` once `user` arrives. Reanimated\'s **layout animations** `FadeIn` / `FadeOut` handle the cross-fade declaratively — just attach `entering` and `exiting`, and the runtime animates the mount/unmount with no manual controller.',
+      fr: { title: 'Composer et basculer vers le contenu réel', description: 'Assemblez le tout : composez les primitives `Skeleton` en un `CardSkeleton` qui reflète la carte finale, puis basculez vers le vrai `UserCard` dès que `user` arrive. Les **animations de mise en page** `FadeIn` / `FadeOut` de Reanimated gèrent le fondu enchaîné de façon déclarative — il suffit d\'attacher `entering` et `exiting`, et le runtime anime le montage/démontage sans contrôleur manuel.' },
       code: `import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
 
 export function CardSkeleton() {
@@ -1843,8 +1843,8 @@ export function UserCard({ user }: { user: User | null }) {
   flutter: [
     {
       title: 'Container placeholder',
-      description: 'A `Container` with a gray `decoration` and the target dimensions. Wrap in a `ClipRRect` for rounded corners — this clips the shimmer gradient we\'ll add next.',
-      fr: { title: 'Placeholder Container', description: 'Un `Container` avec une `decoration` grise et les dimensions cibles. Envelopper dans un `ClipRRect` pour les coins arrondis — cela rognera le dégradé shimmer que nous ajouterons ensuite.' },
+      description: 'Begin with a `Container` sized to the target and filled with a flat gray color. Wrapping it in a `ClipRRect` does double duty: it rounds the corners *and* establishes the **clip boundary** that will contain the shimmer gradient in later steps. Building the static shape first keeps the widget tree simple before we layer in animation.',
+      fr: { title: 'Placeholder Container', description: 'Commencez par un `Container` dimensionné selon la cible et rempli d\'une couleur grise unie. L\'envelopper dans un `ClipRRect` a un double rôle : il arrondit les coins *et* établit la **limite de rognage** qui contiendra le dégradé shimmer aux étapes suivantes. Construire d\'abord la forme statique garde l\'arbre de widgets simple avant d\'ajouter l\'animation.' },
       code: `import 'package:flutter/material.dart';
 
 class Skeleton extends StatelessWidget {
@@ -1871,8 +1871,8 @@ class Skeleton extends StatelessWidget {
     },
     {
       title: 'Add AnimationController for shimmer',
-      description: 'A looping `AnimationController` drives the shimmer position from -1.5 to 2.5 (extending beyond the widget edges so the gradient enters and exits smoothly).',
-      fr: { title: 'Ajouter AnimationController pour le shimmer', description: 'Un `AnimationController` en boucle pilote la position du shimmer de -1.5 à 2.5 (s\'étendant au-delà des bords du widget pour que le dégradé entre et sorte en douceur).' },
+      description: 'Flutter\'s explicit animations need a clock: an `AnimationController` paired with a `TickerProvider` (`SingleTickerProviderStateMixin`). Calling `..repeat()` loops it continuously, and a `Tween` maps progress to a shimmer position from -1.5 to 2.5 — deliberately overshooting the widget\'s edges so the highlight glides fully in and out instead of snapping. Always `dispose()` the controller to avoid leaking the ticker.',
+      fr: { title: 'Ajouter AnimationController pour le shimmer', description: 'Les animations explicites de Flutter ont besoin d\'une horloge : un `AnimationController` associé à un `TickerProvider` (`SingleTickerProviderStateMixin`). Appeler `..repeat()` le boucle en continu, et un `Tween` mappe la progression sur une position de shimmer de -1.5 à 2.5 — débordant volontairement les bords du widget pour que le reflet entre et sorte entièrement au lieu de surgir d\'un coup. Pensez toujours à `dispose()` le contrôleur pour éviter de fuiter le ticker.' },
       code: `class _SkeletonState extends State<Skeleton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
@@ -1895,8 +1895,8 @@ class Skeleton extends StatelessWidget {
     },
     {
       title: 'Paint the gradient with AnimatedBuilder',
-      description: '`AnimatedBuilder` rebuilds only the decorated box on each frame. The `LinearGradient`\'s `begin` and `end` alignments shift with `_shimmer.value`, moving the highlight across the surface.',
-      fr: { title: 'Peindre le dégradé avec AnimatedBuilder', description: '`AnimatedBuilder` reconstruit uniquement la boîte décorée à chaque frame. Les alignements `begin` et `end` du `LinearGradient` se déplacent avec `_shimmer.value`, faisant bouger le reflet sur la surface.' },
+      description: '`AnimatedBuilder` is the **performance** lever here: it rebuilds *only* the decorated box each frame, leaving the rest of the tree untouched. The `LinearGradient`\'s `begin` and `end` alignments are recomputed from `_shimmer.value`, sliding the lighter midpoint color across the surface to read as a moving highlight. This is the idiomatic way to bind a `Listenable` to a small, isolated repaint.',
+      fr: { title: 'Peindre le dégradé avec AnimatedBuilder', description: '`AnimatedBuilder` est ici le levier de **performance** : il ne reconstruit *que* la boîte décorée à chaque frame, laissant le reste de l\'arbre intact. Les alignements `begin` et `end` du `LinearGradient` sont recalculés à partir de `_shimmer.value`, faisant glisser la couleur médiane plus claire sur la surface pour donner un reflet en mouvement. C\'est la façon idiomatique de lier un `Listenable` à un repeint petit et isolé.' },
       code: `@override
 Widget build(BuildContext context) => ClipRRect(
   borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -1921,8 +1921,8 @@ Widget build(BuildContext context) => ClipRRect(
     },
     {
       title: 'Compose and swap with AnimatedSwitcher',
-      description: '`AnimatedSwitcher` handles the skeleton → real content swap with a cross-fade. The key change on the child triggers the transition. No manual `AnimationController` needed.',
-      fr: { title: 'Composer et basculer avec AnimatedSwitcher', description: '`AnimatedSwitcher` gère le basculement squelette → contenu réel avec un fondu enchaîné. Le changement de clé sur l\'enfant déclenche la transition. Pas d\'`AnimationController` manuel nécessaire.' },
+      description: 'Finally, compose the primitives into a `CardSkeleton` that mirrors the real layout, then let `AnimatedSwitcher` cross-fade to `UserCard` when data arrives. The trick is the **key**: `AnimatedSwitcher` only animates when its child\'s `Key` changes, which is why each branch carries a distinct `ValueKey`. No manual `AnimationController` — the framework drives the whole transition for you.',
+      fr: { title: 'Composer et basculer avec AnimatedSwitcher', description: 'Enfin, composez les primitives en un `CardSkeleton` qui reflète la vraie mise en page, puis laissez `AnimatedSwitcher` faire un fondu enchaîné vers `UserCard` quand les données arrivent. L\'astuce, c\'est la **clé** : `AnimatedSwitcher` n\'anime que lorsque la `Key` de son enfant change, d\'où la `ValueKey` distincte sur chaque branche. Aucun `AnimationController` manuel — le framework pilote toute la transition à votre place.' },
       code: `import 'package:flutter/material.dart';
 
 class CardSkeleton extends StatelessWidget {
@@ -1961,8 +1961,8 @@ const staggerList: StepMap = {
   react: [
     {
       title: 'Plain ul/li list',
-      description: 'A regular HTML list. All items render simultaneously with no transition. This is what we\'re improving — the instant pop-in feels abrupt, especially for long lists.',
-      fr: { title: 'Liste ul/li simple', description: 'Une liste HTML ordinaire. Tous les éléments s\'affichent simultanément sans transition. C\'est ce que nous améliorons — l\'apparition instantanée semble abrupte, surtout pour les longues listes.' },
+      description: 'A regular HTML `<ul>`/`<li>` list with no motion at all. Every item paints in the *same frame*, which is exactly what makes the appearance feel abrupt — there is no visual hierarchy guiding the eye down the list. This is our baseline: understanding why the instant render feels cheap is the first step toward fixing it with a **staggered** entrance.',
+      fr: { title: 'Liste ul/li simple', description: 'Une liste HTML `<ul>`/`<li>` ordinaire, sans aucun mouvement. Chaque élément s\'affiche dans la *même frame*, ce qui rend justement l\'apparition abrupte — aucune hiérarchie visuelle ne guide l\'oeil le long de la liste. C\'est notre point de départ : comprendre pourquoi le rendu instantané paraît bon marché est la première étape avant de le corriger avec une entrée **en cascade**.' },
       code: `const items = ['Dashboard', 'Analytics', 'Users', 'Settings', 'Billing']
 
 export function NavList() {
@@ -1978,9 +1978,9 @@ export function NavList() {
 }`,
     },
     {
-      title: 'Add opacity animation to each item',
-      description: 'Swap `li` for `motion.li` with `initial={{ opacity: 0 }}` and `animate={{ opacity: 1 }}`. All items animate — but they all fade in at exactly the same time. Still no cascade.',
-      fr: { title: 'Ajouter l\'animation d\'opacité à chaque élément', description: 'Remplacer `li` par `motion.li` avec `initial={{ opacity: 0 }}` et `animate={{ opacity: 1 }}`. Tous les éléments s\'animent — mais ils s\'estompent tous exactement au même moment. Toujours pas de cascade.' },
+      title: 'Animate each item',
+      description: 'Swap each `li` for a `motion.li` and give it `initial={{ opacity: 0 }}` plus `animate={{ opacity: 1 }}` so Framer Motion tweens the fade for you. The items *do* animate now — but they all start and finish at exactly the same moment, so it looks identical to a single block fading in. This reveals the key insight: **animation alone is not stagger**. To get a cascade we need each child to start at a different time, which the next step solves with the parent.',
+      fr: { title: 'Animer chaque élément', description: 'Remplacez chaque `li` par un `motion.li` et donnez-lui `initial={{ opacity: 0 }}` ainsi que `animate={{ opacity: 1 }}` pour que Framer Motion gère le fondu à votre place. Les éléments s\'animent désormais — mais ils démarrent et finissent tous au même instant, ce qui ressemble à un seul bloc qui apparaît en fondu. D\'où l\'idée clé : **animer ne suffit pas à créer une cascade**. Pour l\'obtenir, chaque enfant doit démarrer à un moment différent, ce que l\'étape suivante résout via le parent.' },
       code: `import { motion } from 'framer-motion'
 
 const items = ['Dashboard', 'Analytics', 'Users', 'Settings', 'Billing']
@@ -2004,9 +2004,9 @@ export function NavList() {
 }`,
     },
     {
-      title: 'Add staggerChildren with variants',
-      description: '`variants` let the parent (`motion.ul`) orchestrate its children. Setting `staggerChildren: 0.07` on the container\'s `transition` tells Framer Motion to delay each child\'s animation start by 70ms. Children don\'t need explicit delays — they inherit from the parent variant.',
-      fr: { title: 'Ajouter staggerChildren avec des variantes', description: '`variants` permettent au parent (`motion.ul`) d\'orchestrer ses enfants. Définir `staggerChildren: 0.07` sur la `transition` du conteneur indique à Framer Motion de retarder chaque animation d\'enfant de 70ms. Les enfants n\'ont pas besoin de délais explicites — ils héritent de la variante parent.' },
+      title: 'Stagger with variants',
+      description: 'Named `variants` let the parent `motion.ul` *orchestrate* its children instead of each item animating independently. Setting `staggerChildren: 0.07` on the container\'s `transition` tells Framer Motion to offset each child\'s start by 70ms, producing the cascade. The elegant part: children only need a `hidden`/`visible` variant — they **inherit the timing from the parent**, so adding or removing items requires no per-item delay math.',
+      fr: { title: 'Cascade avec des variantes', description: 'Des `variants` nommées permettent au parent `motion.ul` d\'*orchestrer* ses enfants au lieu de les animer chacun de façon isolée. Définir `staggerChildren: 0.07` sur la `transition` du conteneur indique à Framer Motion de décaler le démarrage de chaque enfant de 70ms, créant la cascade. Le point élégant : les enfants n\'ont besoin que d\'une variante `hidden`/`visible` — ils **héritent du timing du parent**, donc ajouter ou retirer des éléments ne demande aucun calcul de délai individuel.' },
       code: `import { motion } from 'framer-motion'
 
 const container = {
@@ -2041,9 +2041,9 @@ export function NavList() {
 }`,
     },
     {
-      title: 'Trigger on scroll with useInView',
-      description: '`useInView` on the container controls when the `animate` prop switches from `"hidden"` to `"visible"`. `once: true` prevents replaying on scroll-back. The stagger still runs from the container — no per-item change needed.',
-      fr: { title: 'Déclencher au scroll avec useInView', description: '`useInView` sur le conteneur contrôle quand la prop `animate` passe de `"hidden"` à `"visible"`. `once: true` empêche de rejouer au retour du scroll. Le stagger s\'exécute toujours depuis le conteneur — aucune modification par élément nécessaire.' },
+      title: 'Trigger on scroll',
+      description: 'A cascade is far more impactful when it fires *as the list enters the viewport* rather than on page load where the user may never see it. The `useInView` hook watches the container and flips the `animate` prop from `"hidden"` to `"visible"` at the right moment, with `once: true` so it plays a single time and never replays on scroll-back. Crucially, the stagger logic is untouched — it still lives on the container, so we only changed *when* the entrance starts, not *how* it cascades.',
+      fr: { title: 'Déclencher au scroll', description: 'Une cascade est bien plus marquante lorsqu\'elle se déclenche *au moment où la liste entre dans le viewport* plutôt qu\'au chargement de la page, où l\'utilisateur ne la verra peut-être jamais. Le hook `useInView` observe le conteneur et bascule la prop `animate` de `"hidden"` à `"visible"` au bon instant, avec `once: true` pour qu\'elle ne joue qu\'une fois sans rejouer au retour du scroll. Point essentiel : la logique de cascade reste intacte — elle vit toujours sur le conteneur, on a seulement changé *quand* l\'entrée commence, pas *comment* elle se déroule.' },
       code: `import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 
@@ -2082,9 +2082,9 @@ export function NavList({ items }: { items: string[] }) {
 
   'react-native': [
     {
-      title: 'FlatList with no animation',
-      description: '`FlatList` virtualizes long lists — only renders what\'s visible. Always use it for lists longer than 20 items. Short lists can use a plain `View` + `map`.',
-      fr: { title: 'FlatList sans animation', description: '`FlatList` virtualise les longues listes — affiche uniquement ce qui est visible. Toujours l\'utiliser pour les listes de plus de 20 éléments. Les listes courtes peuvent utiliser un `View` + `map` simple.' },
+      title: 'FlatList baseline',
+      description: '`FlatList` *virtualizes* long lists — it only mounts the rows currently on screen and recycles them as you scroll, which keeps memory and frame times low. That makes it the right container for anything beyond ~20 items, where a plain `View` + `map` would render everything at once and jank. Here it renders with no animation as our starting point; the trade-off to remember is that virtualization recycles rows, so entrance animations must be driven *per row* as each one mounts.',
+      fr: { title: 'FlatList de base', description: '`FlatList` *virtualise* les longues listes — elle ne monte que les lignes visibles à l\'écran et les recycle au défilement, ce qui réduit la mémoire et le temps de rendu. C\'est donc le bon conteneur dès qu\'on dépasse ~20 éléments, là où un simple `View` + `map` afficherait tout d\'un coup et saccaderait. Ici elle s\'affiche sans animation, comme point de départ ; le compromis à retenir est que la virtualisation recycle les lignes, donc les animations d\'entrée doivent être pilotées *par ligne*, au montage de chacune.' },
       code: `import { FlatList, Text, View, StyleSheet } from 'react-native'
 
 const items = ['Dashboard', 'Analytics', 'Users', 'Settings', 'Billing']
@@ -2109,9 +2109,9 @@ const styles = StyleSheet.create({
 })`,
     },
     {
-      title: 'Fade in each item on mount',
-      description: 'Replace the inner `View` with `Animated.View`. Use `withTiming` in `onLayout` — it fires once when each item is first rendered. All items animate simultaneously.',
-      fr: { title: 'Fondre chaque élément au montage', description: 'Remplacer le `View` interne par `Animated.View`. Utiliser `withTiming` dans `onLayout` — il se déclenche une fois quand chaque élément est rendu pour la première fois. Tous les éléments animent simultanément.' },
+      title: 'Fade each item on mount',
+      description: 'Replace the inner `View` with an `Animated.View` driven by a `useSharedValue` for opacity — shared values live on the UI thread, so the fade stays smooth even while JS is busy. Kicking `withTiming` off inside `onLayout` is the trick: that callback fires exactly once when a row is first measured, which is the natural moment to begin its entrance. They all fade together for now, but this per-row mount hook is precisely the hook we\'ll *delay by index* in the next step to build the stagger.',
+      fr: { title: 'Fondre chaque élément au montage', description: 'Remplacez le `View` interne par un `Animated.View` piloté par un `useSharedValue` pour l\'opacité — les shared values vivent sur le thread UI, donc le fondu reste fluide même quand le JS est occupé. L\'astuce est de lancer `withTiming` dans `onLayout` : ce callback se déclenche exactement une fois, quand la ligne est mesurée pour la première fois, le moment naturel pour démarrer son entrée. Ils fondent tous ensemble pour l\'instant, mais ce hook de montage par ligne est précisément celui qu\'on va *retarder selon l\'index* à l\'étape suivante pour construire la cascade.' },
       code: `import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 
 function NavItem({ label }: { label: string }) {
@@ -2127,9 +2127,9 @@ function NavItem({ label }: { label: string }) {
 }`,
     },
     {
-      title: 'Add slide + stagger with withDelay',
-      description: '`withDelay(index * 70, ...)` staggers each item by 70ms × its index. The `index` comes from `FlatList`\'s `renderItem` callback. Both opacity and translateY run in parallel.',
-      fr: { title: 'Ajouter le glissement + cascade avec withDelay', description: '`withDelay(index * 70, ...)` décale chaque élément de 70ms × son index. L\'`index` vient du callback `renderItem` de `FlatList`. opacity et translateY s\'exécutent en parallèle.' },
+      title: 'Slide + stagger with withDelay',
+      description: 'Wrapping each animation in `withDelay(index * 70, ...)` offsets every row by 70ms × its position, which is what finally turns the simultaneous fade into a true cascade. The `index` comes straight from `FlatList`\'s `renderItem` callback, so the math stays declarative and tied to list order. Running opacity *and* `translateY` in parallel adds a subtle slide-up that makes the entrance feel like the content is settling into place rather than merely appearing.',
+      fr: { title: 'Glissement + cascade avec withDelay', description: 'Envelopper chaque animation dans `withDelay(index * 70, ...)` décale chaque ligne de 70ms × sa position, ce qui transforme enfin le fondu simultané en véritable cascade. L\'`index` provient directement du callback `renderItem` de `FlatList`, ce qui garde le calcul déclaratif et lié à l\'ordre de la liste. Faire tourner l\'opacité *et* `translateY` en parallèle ajoute un léger glissement vers le haut qui donne l\'impression que le contenu se met en place plutôt que d\'apparaître simplement.' },
       code: `import Animated, {
   useSharedValue, useAnimatedStyle, withDelay, withTiming, Easing,
 } from 'react-native-reanimated'
@@ -2163,8 +2163,8 @@ renderItem={({ item, index }) => <NavItem label={item} index={index} />}`,
     },
     {
       title: 'Cap delay for long lists',
-      description: 'For lists with many items, an uncapped stagger makes the last item wait too long. Cap the delay at 400ms so the animation feels energetic regardless of list length.',
-      fr: { title: 'Limiter le délai pour les longues listes', description: 'Pour les listes avec beaucoup d\'éléments, une cascade sans limite fait attendre le dernier élément trop longtemps. Limiter le délai à 400ms pour que l\'animation paraisse énergique quelle que soit la longueur de la liste.' },
+      description: 'A linear `index * 70` delay is fine for five items but disastrous for fifty — the last row would wait several seconds, which reads as broken rather than elegant. Clamping with `Math.min(index * 70, 400)` caps the longest wait at 400ms so the cascade stays *energetic* no matter how long the list grows. This is the general rule for stagger: the per-item offset should taper or cap so total duration never scales unbounded with item count.',
+      fr: { title: 'Limiter le délai pour les longues listes', description: 'Un délai linéaire `index * 70` convient pour cinq éléments mais devient désastreux pour cinquante — la dernière ligne attendrait plusieurs secondes, ce qui paraît cassé plutôt qu\'élégant. Borner avec `Math.min(index * 70, 400)` plafonne l\'attente la plus longue à 400ms pour que la cascade reste *énergique* quelle que soit la longueur de la liste. C\'est la règle générale de la cascade : le décalage par élément doit s\'atténuer ou se plafonner afin que la durée totale ne croisse jamais sans limite avec le nombre d\'éléments.' },
       code: `function NavItem({ label, index }: { label: string; index: number }) {
   const opacity    = useSharedValue(0)
   const translateY = useSharedValue(16)
@@ -2196,8 +2196,8 @@ renderItem={({ item, index }) => <NavItem label={item} index={index} />}`,
   flutter: [
     {
       title: 'Column of plain widgets',
-      description: 'A `Column` renders all children simultaneously. Each item is a plain `Container`. This is the baseline — no animation, no cascade.',
-      fr: { title: 'Colonne de widgets simples', description: 'Une `Column` affiche tous les enfants simultanément. Chaque élément est un `Container` simple. C\'est la base — pas d\'animation, pas de cascade.' },
+      description: 'A `Column` lays out and paints all of its children in a single build pass, so every `Container` appears at once with no motion. Because a `StatelessWidget` has no lifecycle ticks, there is simply nowhere for an entrance animation to live yet. This is our baseline, and it frames the central Flutter question we\'ll answer over the next steps: *where does the animation clock come from, and who owns it?*',
+      fr: { title: 'Colonne de widgets simples', description: 'Une `Column` dispose et peint tous ses enfants en une seule passe de build, donc chaque `Container` apparaît d\'un coup, sans mouvement. Comme un `StatelessWidget` n\'a aucun tick de cycle de vie, il n\'existe encore aucun endroit où loger une animation d\'entrée. C\'est notre point de départ, et il pose la question centrale de Flutter à laquelle les prochaines étapes répondent : *d\'où vient l\'horloge d\'animation, et qui la possède ?*' },
       code: `import 'package:flutter/material.dart';
 
 class NavList extends StatelessWidget {
@@ -2219,9 +2219,9 @@ class NavList extends StatelessWidget {
 }`,
     },
     {
-      title: 'Add AnimationController for a single item',
-      description: 'Convert one list item to a `StatefulWidget`. A `SingleTickerProviderStateMixin` gives it access to `vsync`. The controller drives a `FadeTransition` + `SlideTransition`.',
-      fr: { title: 'Ajouter AnimationController pour un seul élément', description: 'Convertir un élément de liste en `StatefulWidget`. Un `SingleTickerProviderStateMixin` lui donne accès à `vsync`. Le contrôleur pilote un `FadeTransition` + `SlideTransition`.' },
+      title: 'AnimationController for one item',
+      description: 'To animate at all in Flutter you need a clock, and that clock is an `AnimationController`. Converting a single item to a `StatefulWidget` gives it the lifecycle to own one, while `SingleTickerProviderStateMixin` supplies the `vsync` that ties the controller to the screen\'s refresh rate (and pauses it off-screen to save battery). Feeding the controller through `FadeTransition` + `SlideTransition` produces a clean entrance — but note one controller per item gets expensive, which motivates sharing a single controller next.',
+      fr: { title: 'AnimationController pour un élément', description: 'Pour animer quoi que ce soit dans Flutter il faut une horloge, et cette horloge est un `AnimationController`. Convertir un seul élément en `StatefulWidget` lui donne le cycle de vie nécessaire pour en posséder un, tandis que `SingleTickerProviderStateMixin` fournit le `vsync` qui relie le contrôleur au taux de rafraîchissement de l\'écran (et le met en pause hors écran pour économiser la batterie). Passer le contrôleur dans `FadeTransition` + `SlideTransition` produit une entrée nette — mais un contrôleur par élément devient coûteux, ce qui justifie de partager un seul contrôleur à l\'étape suivante.' },
       code: `class _NavItemState extends State<NavItem>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
@@ -2249,9 +2249,9 @@ class NavList extends StatelessWidget {
 }`,
     },
     {
-      title: 'Stagger with a single controller + Interval',
-      description: 'Move the `AnimationController` to the parent list widget. Each item uses an `Interval` to define its window within the parent\'s 0–1 timeline — this is Flutter\'s stagger pattern.',
-      fr: { title: 'Cascade avec un seul contrôleur + Interval', description: 'Déplacer l\'`AnimationController` vers le widget de liste parent. Chaque élément utilise un `Interval` pour définir sa fenêtre dans la timeline 0–1 du parent — c\'est le pattern de cascade de Flutter.' },
+      title: 'Stagger with one controller + Interval',
+      description: 'Flutter\'s idiomatic stagger uses a *single* `AnimationController` on the parent driving a normalized 0–1 timeline, rather than one controller per row. Each item then claims a slice of that timeline with an `Interval` curve — item 0 plays over 0.0–0.3, item 1 over 0.07–0.37, and so on — so the controller\'s single forward pass produces the cascade. This is dramatically cheaper than N controllers and keeps all the timing in one place you can reason about.',
+      fr: { title: 'Cascade avec un contrôleur + Interval', description: 'La cascade idiomatique de Flutter utilise un *seul* `AnimationController` sur le parent pour piloter une timeline normalisée 0–1, plutôt qu\'un contrôleur par ligne. Chaque élément réclame ensuite une tranche de cette timeline via une courbe `Interval` — l\'élément 0 joue sur 0.0–0.3, l\'élément 1 sur 0.07–0.37, et ainsi de suite — si bien qu\'une seule passe avant du contrôleur produit la cascade. C\'est nettement moins coûteux que N contrôleurs et garde tout le timing à un seul endroit que l\'on peut raisonner.' },
       code: `class StaggerList extends StatefulWidget {
   final List<String> items;
   const StaggerList({required this.items, super.key});
@@ -2291,9 +2291,9 @@ class _StaggerListState extends State<StaggerList>
 }`,
     },
     {
-      title: 'Add slide + cap delay for long lists',
-      description: 'Add a `SlideTransition` per item using the same `Interval`. Cap the start offset so items beyond index ~5 don\'t wait too long. Remove the raw `AnimationController` from each item — one controller rules them all.',
-      fr: { title: 'Ajouter le glissement + limiter le délai pour les longues listes', description: 'Ajouter un `SlideTransition` par élément en utilisant le même `Interval`. Limiter le décalage de départ pour que les éléments au-delà de l\'index ~5 n\'attendent pas trop longtemps. Supprimer l\'`AnimationController` brut de chaque élément — un seul contrôleur les dirige tous.' },
+      title: 'Slide + cap delay for long lists',
+      description: 'Layering a `SlideTransition` over the same `Interval` curve adds the polished slide-up while reusing the exact timing window each item already owns. The important refinement is clamping the start offset so rows past index ~5 share the final slot instead of pushing the timeline ever longer — the same *cap the delay* principle as the React Native step, expressed through `Interval` bounds. With the per-item controllers gone, one controller now rules them all, giving a cascade that stays snappy on lists of any length.',
+      fr: { title: 'Glissement + limiter le délai pour les longues listes', description: 'Superposer un `SlideTransition` sur la même courbe `Interval` ajoute le glissement vers le haut soigné tout en réutilisant la fenêtre de timing que chaque élément possède déjà. Le raffinement important est de borner le décalage de départ pour que les lignes au-delà de l\'index ~5 partagent le dernier créneau au lieu d\'allonger sans cesse la timeline — le même principe de *plafonnement du délai* que l\'étape React Native, exprimé via les bornes d\'`Interval`. Les contrôleurs par élément ayant disparu, un seul contrôleur les dirige désormais tous, offrant une cascade qui reste vive sur des listes de n\'importe quelle longueur.' },
       code: `class _StaggerListState extends State<StaggerList>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
@@ -2344,8 +2344,8 @@ class _StaggerListState extends State<StaggerList>
 const imageCarouselReact: Step[] = [
   {
     title: 'Static slides',
-    description: 'Render three coloured slides in a relative container. No animation yet — just the layout foundation.',
-    fr: { title: 'Slides statiques', description: 'Afficher trois slides colorées dans un conteneur relatif. Pas encore d\'animation — juste la base de mise en page.' },
+    description: 'Render three coloured slides inside a `position: relative` container with `overflow: hidden`. This step sets the **layout foundation** every later animation builds on: the clipping box defines what stays visible, and a single `useState` index decides which slide shows. Nail the structure first — animation is meaningless without a stable stage to play on.',
+    fr: { title: 'Slides statiques', description: 'Afficher trois slides colorées dans un conteneur `position: relative` avec `overflow: hidden`. Cette étape pose la **base de mise en page** sur laquelle toutes les animations suivantes se construisent : la boîte de découpe définit ce qui reste visible, et un seul index `useState` décide quelle slide s\'affiche. Soigne la structure d\'abord — l\'animation n\'a aucun sens sans une scène stable.' },
     code: `import { useState } from 'react'
 
 const slides = [
@@ -2377,8 +2377,8 @@ export function ImageCarousel() {
   },
   {
     title: 'AnimatePresence + slide',
-    description: 'Wrap slides in AnimatePresence so the outgoing slide exits before the next one enters. Add x-axis enter/exit so cards slide in from the correct edge.',
-    fr: { title: 'AnimatePresence + glissement', description: 'Envelopper les slides dans `AnimatePresence` pour que la slide sortante quitte avant que la suivante entre. Ajouter l\'entrée/sortie sur l\'axe x pour que les cartes glissent depuis le bon bord.' },
+    description: 'Wrap the active slide in `AnimatePresence` so the **outgoing element still animates after React removes it** from the tree — without this, exits are impossible. A changing `key` tells Framer Motion to treat each slide as a distinct element, and a `custom` direction value drives the `initial`/`exit` x-offsets so cards always slide in from the correct edge. This is the core pattern behind almost every page transition.',
+    fr: { title: 'AnimatePresence + glissement', description: 'Envelopper la slide active dans `AnimatePresence` pour que **l\'élément sortant continue de s\'animer après son retrait** de l\'arbre React — sans cela, les sorties sont impossibles. Un `key` qui change indique à Framer Motion de traiter chaque slide comme un élément distinct, et une valeur de direction `custom` pilote les décalages x de `initial`/`exit` pour que les cartes glissent toujours du bon bord. C\'est le motif central derrière presque toutes les transitions de page.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -2426,8 +2426,8 @@ export function ImageCarousel() {
   },
   {
     title: 'Scale depth + dark overlay',
-    description: 'Add scale: 0.92 on enter so slides zoom in as they arrive. Add a sibling motion.div that fades from opacity 0.5 to 0, creating the cinematic dark-reveal effect.',
-    fr: { title: 'Profondeur de scale + overlay sombre', description: 'Ajouter `scale: 0.92` à l\'entrée pour que les slides zooment en arrivant. Ajouter un `motion.div` frère qui s\'estompe de opacity 0.5 à 0, créant l\'effet de révélation cinématique sombre.' },
+    description: 'Refactor the inline props into a `variants` object and add `scale: 0.92` to the enter state so slides **zoom forward as they arrive**, giving a sense of depth rather than a flat slide. A sibling `motion.div` overlay fades from `opacity` 0.5 to 0, darkening the slide during entry and clearing as it settles — the cinematic *dark-reveal* effect. Variants keep the markup readable once states multiply.',
+    fr: { title: 'Profondeur de scale + overlay sombre', description: 'Extraire les props inline dans un objet `variants` et ajouter `scale: 0.92` à l\'état d\'entrée pour que les slides **zooment vers l\'avant en arrivant**, donnant une impression de profondeur plutôt qu\'un glissement plat. Un `motion.div` frère en overlay s\'estompe de `opacity` 0.5 à 0, assombrissant la slide pendant l\'entrée puis s\'éclaircissant — l\'effet de *révélation sombre* cinématique. Les variantes gardent le markup lisible quand les états se multiplient.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -2486,8 +2486,8 @@ export function ImageCarousel() {
   },
   {
     title: 'Drag-to-swipe + spring dots',
-    description: 'Add drag="x" with a velocity/offset threshold so swiping advances the carousel. Replace CSS dot transitions with motion.div animate={{ width }} springs.',
-    fr: { title: 'Glisser pour swiper + pastilles spring', description: 'Ajouter `drag="x"` avec un threshold de vélocité/offset pour que le swipe avance le carrousel. Remplacer les transitions CSS des pastilles par des springs `motion.div animate={{ width }}`.' },
+    description: 'Make the carousel feel native by adding `drag="x"` and reading `offset` and `velocity` in `onDragEnd` — a **flick threshold** means a fast short swipe counts just like a slow long one, matching real touch physics. The pagination dots switch from CSS transitions to `motion.div` springs animating `width`, so they bounce into their pill shape instead of easing linearly. Spring motion is what separates a polished gesture UI from a mechanical one.',
+    fr: { title: 'Glisser pour swiper + pastilles spring', description: 'Rendre le carrousel natif en ajoutant `drag="x"` et en lisant `offset` et `velocity` dans `onDragEnd` — un **seuil de flick** fait qu\'un swipe court et rapide compte comme un long et lent, reproduisant la vraie physique tactile. Les pastilles de pagination passent des transitions CSS à des springs `motion.div` animant `width`, donc elles rebondissent vers leur forme de pilule au lieu d\'un easing linéaire. Le mouvement spring distingue une UI gestuelle soignée d\'une UI mécanique.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -2558,8 +2558,8 @@ export function ImageCarousel() {
 const imageCarouselNextjs: Step[] = [
   {
     title: 'Static slides',
-    description: "Add 'use client' at the top — drag events and useState are browser APIs. Everything else is identical to the React implementation.",
-    fr: { title: 'Slides statiques', description: "Ajouter `'use client'` en haut — les événements de drag et `useState` sont des APIs navigateur. Tout le reste est identique à l'implémentation React." },
+    description: "The single most important line is `'use client'` at the top: this carousel needs `useState` and pointer events, which only exist in the browser, so it **must opt out of Server Components**. Everything below the directive is identical to the plain React version — the App Router difference is purely the client boundary, not the component logic. Forgetting this directive is the most common Next.js animation error.",
+    fr: { title: 'Slides statiques', description: "La ligne la plus importante est `'use client'` en haut : ce carrousel a besoin de `useState` et d\'événements de pointeur, qui n\'existent que dans le navigateur, donc il **doit se retirer des Server Components**. Tout ce qui suit la directive est identique à la version React classique — la différence App Router tient uniquement à la frontière client, pas à la logique du composant. Oublier cette directive est l\'erreur d\'animation Next.js la plus courante." },
     code: `'use client'
 import { useState } from 'react'
 
@@ -2592,8 +2592,8 @@ export function ImageCarousel() {
   },
   {
     title: 'AnimatePresence + slide',
-    description: 'Import framer-motion (already client-safe). The custom prop passes direction through AnimatePresence to the variant functions.',
-    fr: { title: 'AnimatePresence + glissement', description: 'Importer framer-motion (déjà client-safe). La prop `custom` passe la direction à travers `AnimatePresence` vers les fonctions de variantes.' },
+    description: 'Because the component is already a Client Component, `framer-motion` works without extra setup — the library reads layout and animates on the client. The `custom` prop is the key concept here: it **threads the swipe direction through `AnimatePresence`** so the exiting slide (which no longer has access to current state) still knows which edge to leave from. That direction-passing trick is what makes the enter and exit feel like one continuous gesture.',
+    fr: { title: 'AnimatePresence + glissement', description: 'Comme le composant est déjà un Client Component, `framer-motion` fonctionne sans configuration supplémentaire — la librairie lit la mise en page et anime côté client. La prop `custom` est le concept clé ici : elle **fait passer la direction du swipe à travers `AnimatePresence`** pour que la slide sortante (qui n\'a plus accès à l\'état courant) sache de quel bord partir. Cette astuce de transmission de direction fait que l\'entrée et la sortie semblent un seul geste continu.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -2641,8 +2641,8 @@ export function ImageCarousel() {
   },
   {
     title: 'Scale depth + dark overlay',
-    description: 'Add scale: 0.92 on enter and the dark overlay motion.div. Export from components/ImageCarousel.tsx so any Server Component page can import it.',
-    fr: { title: 'Profondeur de scale + overlay sombre', description: 'Ajouter `scale: 0.92` à l\'entrée et le `motion.div` d\'overlay sombre. Exporter depuis `components/ImageCarousel.tsx` pour que n\'importe quelle page Server Component puisse l\'importer.' },
+    description: 'Add the `scale: 0.92` enter state and the fading dark overlay `motion.div` for the same depth-and-reveal polish as the React build. The Next.js-specific insight: a Server Component page **can import and render this client component directly** — the `"use client"` boundary is self-contained, so the rest of your page stays a server-rendered, zero-JS shell. You get rich interactivity in one island without making the whole route client-side.',
+    fr: { title: 'Profondeur de scale + overlay sombre', description: 'Ajouter l\'état d\'entrée `scale: 0.92` et le `motion.div` d\'overlay sombre qui s\'estompe, pour la même finition profondeur-et-révélation que la version React. L\'enseignement propre à Next.js : une page Server Component **peut importer et rendre ce composant client directement** — la frontière `"use client"` est auto-suffisante, donc le reste de la page reste une coquille rendue côté serveur sans JS. Vous obtenez une interactivité riche dans un seul îlot sans rendre toute la route côté client.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -2701,8 +2701,8 @@ export function ImageCarousel() {
   },
   {
     title: 'Drag-to-swipe + spring dots',
-    description: 'Add drag="x" with velocity threshold. In Next.js App Router, place this in app/components/ — no special config needed; the "use client" boundary is self-contained.',
-    fr: { title: 'Glisser pour swiper + pastilles spring', description: 'Ajouter `drag="x"` avec un threshold de vélocité. Dans Next.js App Router, placer dans `app/components/` — aucune configuration spéciale ; la frontière `"use client"` est auto-suffisante.' },
+    description: 'Finish with `drag="x"` plus a velocity/offset flick threshold and spring-animated pagination dots — the same gesture physics as plain React. The deployment takeaway is structural: drop this file under `app/components/` and it just works, because the **`"use client"` boundary travels with the component**, not the route. No webpack tweaks, no dynamic import with `ssr: false` — Framer Motion ships and hydrates inside the island automatically.',
+    fr: { title: 'Glisser pour swiper + pastilles spring', description: 'Terminer avec `drag="x"`, un seuil de flick vélocité/offset et des pastilles de pagination animées en spring — la même physique gestuelle que React pur. L\'enseignement de déploiement est structurel : déposez ce fichier dans `app/components/` et ça marche, car la **frontière `"use client"` voyage avec le composant**, pas avec la route. Aucun ajustement webpack, aucun import dynamique avec `ssr: false` — Framer Motion est livré et hydraté dans l\'îlot automatiquement.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -2772,8 +2772,8 @@ export function ImageCarousel() {
 const imageCarouselVue: Step[] = [
   {
     title: 'Static slides',
-    description: 'Render slides with reactive page state. A basic click handler on the dots updates the page index. No transition yet — just establish the data and template structure.',
-    fr: { title: 'Diapositives statiques', description: 'Afficher les diapositives avec un état de page réactif. Un gestionnaire de clic basique sur les points met à jour l\'index de page. Pas encore de transition — juste établir la structure des données et du template.' },
+    description: 'Set up the carousel with a reactive `ref` for the current page and a clipping `.carousel` container. Clicking a dot simply assigns `page = i`, and Vue\'s **reactivity re-renders the active slide automatically** — no manual DOM updates. Getting the data and template shape right now means every later step only adds transitions, never restructures the markup.',
+    fr: { title: 'Diapositives statiques', description: 'Mettre en place le carrousel avec un `ref` réactif pour la page courante et un conteneur `.carousel` qui découpe le contenu. Cliquer sur un point assigne simplement `page = i`, et la **réactivité de Vue rerend la slide active automatiquement** — aucune mise à jour manuelle du DOM. Bien définir la forme des données et du template maintenant fait que chaque étape suivante ajoute seulement des transitions, sans jamais restructurer le markup.' },
     code: `<template>
   <div class="carousel">
     <div class="slide" :style="{ background: slides[page].color }">
@@ -2812,8 +2812,8 @@ const page = ref(0)
   },
   {
     title: 'Direction-aware TransitionGroup',
-    description: 'Use a computed transition name ("slide-left" or "slide-right") so the incoming slide enters from the correct edge. TransitionGroup with absolute positioning lets enter and exit overlap.',
-    fr: { title: 'TransitionGroup sensible à la direction', description: 'Utiliser un nom de transition calculé ("slide-left" ou "slide-right") pour que la diapositive entrante arrive du bon bord. TransitionGroup avec positionnement absolu permet à l\'entrée et à la sortie de se chevaucher.' },
+    description: 'Vue\'s `<TransitionGroup>` auto-applies enter/leave CSS classes, but it can\'t know swipe direction on its own — so bind its `name` to a computed `"slide-left"` or `"slide-right"` based on the stored `dir`. **Absolute positioning on the active transition classes lets the leaving and entering slides overlap** instead of pushing each other, which is what makes the cross-fade slide read as a single motion. This is Vue\'s declarative answer to React\'s `AnimatePresence`.',
+    fr: { title: 'TransitionGroup sensible à la direction', description: 'Le `<TransitionGroup>` de Vue applique automatiquement les classes CSS d\'entrée/sortie, mais il ne peut pas connaître seul la direction du swipe — donc liez son `name` à un `"slide-left"` ou `"slide-right"` calculé selon le `dir` stocké. **Le positionnement absolu sur les classes de transition actives laisse la slide sortante et entrante se chevaucher** au lieu de se pousser, ce qui fait lire le glissement comme un seul mouvement. C\'est la réponse déclarative de Vue à l\'`AnimatePresence` de React.' },
     code: `<template>
   <div class="carousel">
     <TransitionGroup :name="dir > 0 ? 'slide-left' : 'slide-right'">
@@ -2869,8 +2869,8 @@ function go(d: number) {
   },
   {
     title: 'Dark overlay via keyframe',
-    description: 'Add an .overlay div inside each slide. A CSS @keyframes animation fades it from 0.4 opacity to 0 as the slide settles — the same cinematic reveal as the React version.',
-    fr: { title: 'Surimpression sombre via keyframe', description: 'Ajouter un div .overlay dans chaque diapositive. Une animation CSS @keyframes le fait passer de 0.4 à 0 d\'opacité pendant que la diapositive se stabilise — la même révélation cinématographique que la version React.' },
+    description: 'Add an `.overlay` div per slide driven by a CSS `@keyframes` that fades it from 0.4 to 0 opacity as the slide settles. The lesson is that **not every animation needs JavaScript** — a pure keyframe with `forwards` fill runs entirely on the compositor, costs zero reactivity overhead, and fires automatically each time the slide is freshly mounted by `TransitionGroup`. Reach for CSS first; reserve JS for anything that depends on live state.',
+    fr: { title: 'Surimpression sombre via keyframe', description: 'Ajouter un div `.overlay` par slide piloté par un `@keyframes` CSS qui le fait passer de 0.4 à 0 d\'opacité pendant que la slide se stabilise. La leçon : **toute animation n\'a pas besoin de JavaScript** — un keyframe pur avec remplissage `forwards` tourne entièrement sur le compositeur, sans coût de réactivité, et se déclenche automatiquement à chaque montage de la slide par `TransitionGroup`. Privilégiez le CSS d\'abord ; réservez le JS à ce qui dépend de l\'état en direct.' },
     code: `<template>
   <div class="carousel">
     <TransitionGroup :name="dir > 0 ? 'slide-left' : 'slide-right'">
@@ -2931,8 +2931,8 @@ function go(d: number) {
   },
   {
     title: 'Touch swipe + animated dots',
-    description: 'Listen for touchstart / touchend on the slide div. When the horizontal delta exceeds 50px, call go(). Animate dot width with a CSS cubic-bezier spring for the expanding pill effect.',
-    fr: { title: 'Glissement tactile + points animés', description: 'Écouter touchstart / touchend sur le div de diapositive. Quand le delta horizontal dépasse 50px, appeler go(). Animer la largeur des points avec un ressort CSS cubic-bezier pour l\'effet de pilule expansible.' },
+    description: 'Capture `touchstart` to record the start X and `touchend` to measure the delta; cross a 50px threshold and `go()` advances the carousel. Note `.passive` on `touchstart` — it **promises the browser you won\'t call `preventDefault`**, so scrolling stays smooth and jank-free. The dots use a `cubic-bezier` overshoot curve so their width springs past target and back, giving the pill an elastic, tactile pop without any JS animation loop.',
+    fr: { title: 'Glissement tactile + points animés', description: 'Capturer `touchstart` pour mémoriser le X de départ et `touchend` pour mesurer le delta ; dépasser un seuil de 50px et `go()` avance le carrousel. Notez `.passive` sur `touchstart` — il **promet au navigateur que vous n\'appellerez pas `preventDefault`**, donc le défilement reste fluide et sans saccade. Les points utilisent une courbe `cubic-bezier` avec dépassement pour que leur largeur rebondisse au-delà de la cible puis revienne, donnant à la pilule un pop élastique et tactile sans boucle d\'animation JS.' },
     code: `<template>
   <div class="carousel">
     <TransitionGroup :name="dir > 0 ? 'slide-left' : 'slide-right'">
@@ -3006,8 +3006,8 @@ function onSwipe(e: TouchEvent) {
 const imageCarouselRN: Step[] = [
   {
     title: 'Static slides',
-    description: 'Use a FlatList with horizontal scroll and pagingEnabled for free snap-to-slide behaviour. No animation yet — just the layout foundation.',
-    fr: { title: 'Diapositives statiques', description: 'Utiliser un FlatList avec défilement horizontal et pagingEnabled pour un comportement de capture de diapositive gratuit. Pas encore d\'animation — juste la fondation de layout.' },
+    description: 'Build the base on a horizontal `FlatList` with `pagingEnabled`, which gives you **native snap-to-slide for free** — the OS handles momentum, deceleration, and edge bounce that would be painful to hand-roll. Each slide is sized to the full screen `width` from `Dimensions`, so one item fills the viewport per page. Starting from a virtualized list also means the carousel scales to many slides without rendering them all up front.',
+    fr: { title: 'Diapositives statiques', description: 'Construire la base sur un `FlatList` horizontal avec `pagingEnabled`, qui vous donne **le snap natif vers chaque slide gratuitement** — l\'OS gère l\'inertie, la décélération et le rebond aux bords, pénibles à coder à la main. Chaque slide a la `width` plein écran issue de `Dimensions`, donc un seul élément remplit la fenêtre par page. Partir d\'une liste virtualisée fait aussi que le carrousel passe à l\'échelle sur de nombreuses slides sans toutes les rendre d\'emblée.' },
     code: `import { View, FlatList, Text, StyleSheet, Dimensions } from 'react-native'
 
 const { width: W } = Dimensions.get('window')
@@ -3044,8 +3044,8 @@ const s = StyleSheet.create({
   },
   {
     title: 'Track scrollX with Animated.event',
-    description: 'Swap to Animated.FlatList and pass scrollX to onScroll via Animated.event. useNativeDriver: true keeps everything on the UI thread — no JS bridge bottleneck.',
-    fr: { title: 'Suivre scrollX avec Animated.event', description: 'Passer à Animated.FlatList et transmettre scrollX à onScroll via Animated.event. useNativeDriver: true garde tout sur le thread UI — pas de goulot d\'étranglement du pont JS.' },
+    description: 'Swap in `Animated.FlatList` and feed scroll position into an `Animated.Value` via `Animated.event`. The critical flag is `useNativeDriver: true`: it **serializes the animation to the native UI thread once**, so subsequent frames never cross the JS bridge and stay at 60fps even while JS is busy. This `scrollX` value is the single source of truth that every later interpolation — scale, overlay, dots — will read from.',
+    fr: { title: 'Suivre scrollX avec Animated.event', description: 'Passer à `Animated.FlatList` et injecter la position de défilement dans une `Animated.Value` via `Animated.event`. Le drapeau crucial est `useNativeDriver: true` : il **sérialise l\'animation vers le thread UI natif une seule fois**, donc les frames suivantes ne traversent jamais le pont JS et restent à 60fps même quand le JS est occupé. Cette valeur `scrollX` est l\'unique source de vérité que chaque interpolation suivante — échelle, overlay, points — lira.' },
     code: `import { useRef } from 'react'
 import { Animated, View, Dimensions, StyleSheet, Text } from 'react-native'
 
@@ -3090,8 +3090,8 @@ const s = StyleSheet.create({
   },
   {
     title: 'Scale depth via interpolate',
-    description: 'For each slide, interpolate scrollX over [prev, current, next] page positions → scale [0.92, 1, 0.92]. The Animated.View wraps the slide content and receives the transform.',
-    fr: { title: 'Profondeur d\'échelle via interpolate', description: 'Pour chaque diapositive, interpoler scrollX sur les positions de page [précédente, actuelle, suivante] → échelle [0.92, 1, 0.92]. Animated.View enveloppe le contenu de la diapositive et reçoit la transformation.' },
+    description: 'For each slide, call `scrollX.interpolate()` mapping the input range `[prev, current, next]` page offsets to a `scale` output of `[0.92, 1, 0.92]`. This is the core RN animation idea: instead of triggering animations on events, you **derive style continuously from scroll position**, so the slide is largest exactly when centered and shrinks symmetrically as it leaves. `extrapolate: \'clamp\'` stops the scale from drifting past the end slides.',
+    fr: { title: 'Profondeur d\'échelle via interpolate', description: 'Pour chaque slide, appeler `scrollX.interpolate()` en mappant la plage d\'entrée `[précédente, actuelle, suivante]` vers une sortie `scale` de `[0.92, 1, 0.92]`. C\'est l\'idée centrale de l\'animation RN : au lieu de déclencher des animations sur des événements, vous **dérivez le style en continu depuis la position de défilement**, donc la slide est la plus grande exactement quand elle est centrée et rétrécit symétriquement en partant. `extrapolate: \'clamp\'` empêche l\'échelle de dériver au-delà des slides de bord.' },
     code: `import { useRef } from 'react'
 import { Animated, View, Dimensions, StyleSheet, Text } from 'react-native'
 
@@ -3143,8 +3143,8 @@ const s = StyleSheet.create({
   },
   {
     title: 'Dark overlay + animated dot indicators',
-    description: 'Add an overlay View whose opacity is also interpolated from scrollX — 0.5 on neighbours, 0 on the active slide. Drive the dot width the same way for the expanding pill effect.',
-    fr: { title: 'Surimpression sombre + indicateurs de points animés', description: 'Ajouter un View de surimpression dont l\'opacité est également interpolée depuis scrollX — 0.5 sur les voisins, 0 sur la diapositive active. Piloter la largeur des points de la même façon pour l\'effet de pilule expansible.' },
+    description: 'Reuse the exact same `scrollX` to drive two more interpolations: an overlay `opacity` of `[0.5, 0, 0.5]` and a dot `width` of `[6, 20, 6]`. The takeaway is **composability** — one native-driven scroll value feeds many derived styles, so overlay, scale, and dots all stay perfectly in sync because they read from a single timeline. The dots become a live progress indicator that tracks finger position continuously, not just snapped pages.',
+    fr: { title: 'Surimpression sombre + indicateurs de points animés', description: 'Réutiliser exactement le même `scrollX` pour piloter deux interpolations de plus : une `opacity` d\'overlay de `[0.5, 0, 0.5]` et une `width` de point de `[6, 20, 6]`. L\'enseignement est la **composabilité** — une seule valeur de défilement native alimente de nombreux styles dérivés, donc overlay, échelle et points restent parfaitement synchronisés car ils lisent une même timeline. Les points deviennent un indicateur de progression vivant qui suit la position du doigt en continu, pas seulement les pages snappées.' },
     code: `import { useRef } from 'react'
 import { Animated, View, StyleSheet, Dimensions, Text } from 'react-native'
 
@@ -3211,8 +3211,8 @@ const s = StyleSheet.create({
 const imageCarouselFlutter: Step[] = [
   {
     title: 'Static slides',
-    description: 'Use PageView.builder as the foundation. A simple StatefulWidget tracks the current page via a listener on PageController so dots can reflect position.',
-    fr: { title: 'Diapositives statiques', description: 'Utiliser PageView.builder comme fondation. Un StatefulWidget simple suit la page actuelle via un listener sur PageController pour que les points reflètent la position.' },
+    description: 'Found the carousel on `PageView.builder`, Flutter\'s lazy paging widget that **only builds the slides near the viewport**. A `PageController` is the bridge between gesture and state: attaching a listener lets you read `page` and call `setState` so the UI reflects the current slide. Note the `dispose()` that releases the controller — forgetting it is the classic Flutter memory leak.',
+    fr: { title: 'Diapositives statiques', description: 'Fonder le carrousel sur `PageView.builder`, le widget de pagination paresseux de Flutter qui **ne construit que les slides proches de la fenêtre**. Un `PageController` est le pont entre le geste et l\'état : y attacher un listener permet de lire `page` et d\'appeler `setState` pour que l\'UI reflète la slide courante. Notez le `dispose()` qui libère le contrôleur — l\'oublier est la fuite mémoire classique de Flutter.' },
     code: `import 'package:flutter/material.dart';
 
 class ImageCarousel extends StatefulWidget {
@@ -3257,8 +3257,8 @@ class _State extends State<ImageCarousel> {
   },
   {
     title: 'Dot indicators',
-    description: 'Add a Stack to overlay dot indicators. Use AnimatedContainer so each dot\'s width animates between 6 and 20 as _page changes.',
-    fr: { title: 'Indicateurs de points', description: 'Ajouter un Stack pour superposer les indicateurs de points. Utiliser AnimatedContainer pour que la largeur de chaque point anime entre 6 et 20 quand _page change.' },
+    description: 'Wrap the page view in a `Stack` so dots float above the slides, then build the row with `AnimatedContainer`. This is the **implicit animation** pattern: you just declare the new `width` (6 or 20) and Flutter *tweens* between old and new values over the given `Duration` for you — no controller, no listener. It is the fastest way to make any property change feel smooth instead of snapping.',
+    fr: { title: 'Indicateurs de points', description: 'Envelopper la vue de pages dans un `Stack` pour que les points flottent au-dessus des slides, puis construire la rangée avec `AnimatedContainer`. C\'est le motif d\'**animation implicite** : vous déclarez simplement la nouvelle `width` (6 ou 20) et Flutter *interpole* entre l\'ancienne et la nouvelle valeur sur la `Duration` donnée — sans contrôleur ni listener. C\'est le moyen le plus rapide de rendre tout changement de propriété fluide plutôt que brusque.' },
     code: `import 'package:flutter/material.dart';
 
 class ImageCarousel extends StatefulWidget {
@@ -3321,8 +3321,8 @@ class _State extends State<ImageCarousel> {
   },
   {
     title: 'Scale depth via PageController.page',
-    description: 'Use a fractional PageController listener to get the continuous page value. Compute dist = (page - index).abs() and map it to scale = 1.0 - dist * 0.08 inside itemBuilder.',
-    fr: { title: 'Profondeur d\'échelle via PageController.page', description: 'Utiliser un listener PageController fractionnel pour obtenir la valeur de page continue. Calculer dist = (page - index).abs() et la mapper sur scale = 1.0 - dist * 0.08 dans itemBuilder.' },
+    description: 'Read the **fractional** `_ctrl.page` value (e.g. 1.4 mid-swipe) instead of a rounded index, and in `itemBuilder` compute `dist = (page - index).abs()` to drive `scale = 1.0 - dist * 0.08` via `Transform.scale`. Because the value is continuous, the slide scales smoothly *while you drag*, not just on settle. A `viewportFraction` below 1 reveals peeking neighbours, selling the depth illusion.',
+    fr: { title: 'Profondeur d\'échelle via PageController.page', description: 'Lire la valeur **fractionnaire** `_ctrl.page` (par ex. 1.4 en plein swipe) plutôt qu\'un index arrondi, et dans `itemBuilder` calculer `dist = (page - index).abs()` pour piloter `scale = 1.0 - dist * 0.08` via `Transform.scale`. Comme la valeur est continue, la slide change d\'échelle en douceur *pendant* le glissement, pas seulement à l\'arrêt. Une `viewportFraction` inférieure à 1 laisse entrevoir les voisines, renforçant l\'illusion de profondeur.' },
     code: `import 'package:flutter/material.dart';
 
 class ImageCarousel extends StatefulWidget {
@@ -3394,8 +3394,8 @@ class _State extends State<ImageCarousel> {
   },
   {
     title: 'Dark overlay fading out',
-    description: 'Add a second layer inside each slide — a Container with Colors.black.withOpacity(dist * 0.5). As dist approaches 0 (active slide), the overlay becomes transparent. No extra packages needed.',
-    fr: { title: 'Surimpression sombre qui disparaît', description: 'Ajouter une deuxième couche dans chaque diapositive — un Container avec Colors.black.withOpacity(dist * 0.5). Quand dist approche 0 (diapositive active), la surimpression devient transparente. Pas de packages supplémentaires nécessaires.' },
+    description: 'Layer a `Container` tinted `Colors.black.withOpacity(dist * 0.5)` inside each slide\'s `Stack`. Reusing the same `dist` that drives scale means **one derived value controls two effects in lockstep** — as a slide centers (`dist → 0`) it both grows and clears its shade, focusing the eye on the active card. Tapping a dot now calls `animateToPage`, and the whole effect ships with the SDK, no third-party carousel package.',
+    fr: { title: 'Surimpression sombre qui disparaît', description: 'Superposer un `Container` teinté `Colors.black.withOpacity(dist * 0.5)` dans le `Stack` de chaque slide. Réutiliser le même `dist` qui pilote l\'échelle signifie qu\'**une seule valeur dérivée contrôle deux effets à l\'unisson** — quand une slide se centre (`dist → 0`), elle grandit et s\'éclaircit, attirant l\'œil sur la carte active. Toucher un point appelle désormais `animateToPage`, et tout l\'effet tient avec le SDK, sans package de carrousel tiers.' },
     code: `import 'package:flutter/material.dart';
 
 class ImageCarousel extends StatefulWidget {
@@ -3490,8 +3490,8 @@ const imageCarousel: StepMap = {
 const onboardingFlowReact: Step[] = [
   {
     title: 'Static screens',
-    description: 'Render a single screen with an icon, title, and body. Add a basic step counter and Next button — no animation yet.',
-    fr: { title: 'Écrans statiques', description: 'Afficher un seul écran avec une icône, un titre et un corps. Ajouter un compteur d\'étapes basique et un bouton Suivant — pas encore d\'animation.' },
+    description: 'Build the **stage** before the choreography: a single screen showing an icon, title, and body, driven by a `useState` step index. The pill-shaped dots and the `Next` button render off that same index, so advancing is just `setStep(s => s + 1)`. Getting this state machine right first means every animation you layer on later has **one source of truth** to react to.',
+    fr: { title: 'Écrans statiques', description: 'Construire la **scène** avant la chorégraphie : un seul écran affichant une icône, un titre et un corps, piloté par un index d\'étape `useState`. Les pastilles et le bouton `Next` se basent sur ce même index, donc avancer revient à `setStep(s => s + 1)`. Réussir cette machine à états d\'abord garantit que chaque animation ajoutée ensuite dispose d\'une **source de vérité unique**.' },
     code: `import { useState } from 'react'
 
 const screens = [
@@ -3529,8 +3529,8 @@ export function OnboardingFlow() {
   },
   {
     title: 'AnimatePresence crossfade',
-    description: 'Wrap the screen content in AnimatePresence mode="wait" so the exiting screen fades out before the entering one fades in. Key by step so changing it triggers the animation.',
-    fr: { title: 'Fondu enchaîné AnimatePresence', description: 'Envelopper le contenu de l\'écran dans `AnimatePresence mode="wait"` pour que l\'écran sortant s\'estompe avant que l\'entrant s\'estompe. Clef par étape pour déclencher l\'animation au changement.' },
+    description: 'Wrap the screen in `AnimatePresence` with `mode="wait"` so the **outgoing screen finishes its exit before the next one enters** — no overlap, no flicker. The `key={step}` is what makes it work: when the key changes, Framer Motion treats it as a brand-new element and runs the `exit` then `initial`/`animate` cycle. This is the foundational pattern for animating anything that mounts and unmounts.',
+    fr: { title: 'Fondu enchaîné AnimatePresence', description: 'Envelopper l\'écran dans `AnimatePresence` avec `mode="wait"` pour que **l\'écran sortant termine sa sortie avant l\'entrée du suivant** — aucun chevauchement, aucun scintillement. Le `key={step}` est la clé : quand il change, Framer Motion considère l\'élément comme entièrement nouveau et exécute le cycle `exit` puis `initial`/`animate`. C\'est le motif fondamental pour animer tout ce qui se monte et se démonte.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -3576,8 +3576,8 @@ export function OnboardingFlow() {
   },
   {
     title: 'Slide + icon pop',
-    description: 'Replace the fade with a slide-in from the right and slide-out to the left. Add a delayed scale animation on the icon so it "pops" in after the container settles.',
-    fr: { title: 'Glissement + pop d\'icône', description: 'Remplacer le fondu par un glissement depuis la droite et une sortie vers la gauche. Ajouter une animation de scale retardée sur l\'icône pour qu\'elle "pop" après que le conteneur se stabilise.' },
+    description: 'Swap the flat fade for **directional motion**: screens enter from the right (`x: 32`) and exit left (`x: -32`), giving users a spatial sense of moving *forward* through the flow. A nested `motion.div` on the icon scales up with a `delay: 0.1`, so it **pops in just after the container settles** — staggering child animations like this is what separates a polished sequence from everything moving at once.',
+    fr: { title: 'Glissement + pop d\'icône', description: 'Remplacer le fondu plat par un **mouvement directionnel** : les écrans entrent par la droite (`x: 32`) et sortent par la gauche (`x: -32`), donnant à l\'utilisateur la sensation d\'avancer *vers l\'avant*. Un `motion.div` imbriqué sur l\'icône s\'agrandit avec un `delay: 0.1`, donc il **apparaît juste après que le conteneur se stabilise** — décaler ainsi les animations enfants distingue une séquence soignée d\'un ensemble qui bouge d\'un coup.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -3629,8 +3629,8 @@ export function OnboardingFlow() {
   },
   {
     title: 'Spring dots + Back button',
-    description: 'Replace CSS dot transitions with motion.div spring-animated width. Add the Back button and a whileTap on the Next button for haptic-feel feedback.',
-    fr: { title: 'Pastilles spring + bouton Retour', description: 'Remplacer les transitions CSS des pastilles par une largeur animée en spring avec `motion.div`. Ajouter le bouton Retour et un `whileTap` sur le bouton Suivant pour un retour haptique.' },
+    description: 'Upgrade the dots from linear CSS transitions to `motion.div` with a `spring` so the active pill **stretches with natural momentum** instead of a mechanical ease. The `Back` button makes the flow two-way, and `whileTap={{ scale: 0.97 }}` on `Next` gives a tactile, *haptic-feel* press response. Springs and tap feedback are the small touches that make an interface feel physical rather than scripted.',
+    fr: { title: 'Pastilles spring + bouton Retour', description: 'Faire évoluer les pastilles des transitions CSS linéaires vers un `motion.div` avec un `spring`, pour que la pastille active **s\'étire avec un élan naturel** plutôt qu\'une accélération mécanique. Le bouton `Back` rend le parcours bidirectionnel, et `whileTap={{ scale: 0.97 }}` sur `Next` offre une réponse tactile au toucher. Les springs et le retour au toucher sont les détails qui rendent une interface *physique* plutôt que scriptée.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -3701,8 +3701,8 @@ export function OnboardingFlow() {
 const onboardingFlowNextjs: Step[] = [
   {
     title: "Static screens",
-    description: "Add 'use client' — useState requires the browser. Export from a dedicated component file so it can be imported into any Server Component page.",
-    fr: { title: 'Écrans statiques', description: "Ajouter `'use client'` — `useState` nécessite le navigateur. Exporter depuis un fichier de composant dédié pour pouvoir l'importer dans n'importe quelle page Server Component." },
+    description: "Onboarding is **inherently interactive**, so it must opt out of the App Router's default server rendering with `'use client'` at the top — `useState` only exists in the browser. Keeping it in a dedicated component file means any Server Component page can import `<OnboardingFlow />` without itself becoming a client boundary. Drawing that line deliberately keeps your server tree lean while isolating the stateful island.",
+    fr: { title: 'Écrans statiques', description: "L'onboarding est **intrinsèquement interactif**, il doit donc renoncer au rendu serveur par défaut de l'App Router avec `'use client'` en tête — `useState` n'existe que dans le navigateur. Le garder dans un fichier de composant dédié permet à n'importe quelle page Server Component d'importer `<OnboardingFlow />` sans devenir elle-même une frontière client. Tracer cette ligne délibérément garde l'arbre serveur léger tout en isolant l'îlot avec état." },
     code: `'use client'
 import { useState } from 'react'
 
@@ -3744,8 +3744,8 @@ export function OnboardingFlow() {
   },
   {
     title: 'AnimatePresence crossfade',
-    description: 'AnimatePresence mode="wait" works identically in Next.js — framer-motion is client-safe once the use client boundary is declared.',
-    fr: { title: 'Fondu enchaîné AnimatePresence', description: '`AnimatePresence mode="wait"` fonctionne de manière identique dans Next.js — framer-motion est client-safe une fois la frontière `use client` déclarée.' },
+    description: 'Once the `use client` boundary is in place, `AnimatePresence` with `mode="wait"` behaves **exactly as in plain React** — the old screen fully exits before the next enters, keyed by `step`. The point of this step is reassurance: `framer-motion` is fully client-safe, so you don\'t need Next-specific workarounds to animate mount/unmount transitions. Treat client components as ordinary React once the directive is set.',
+    fr: { title: 'Fondu enchaîné AnimatePresence', description: 'Une fois la frontière `use client` posée, `AnimatePresence` avec `mode="wait"` se comporte **exactement comme en React pur** — l\'ancien écran sort entièrement avant l\'entrée du suivant, clé par `step`. L\'enjeu ici est rassurant : `framer-motion` est totalement compatible client, donc aucun contournement propre à Next n\'est nécessaire pour animer le montage/démontage. Considère les composants client comme du React ordinaire une fois la directive posée.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -3792,8 +3792,8 @@ export function OnboardingFlow() {
   },
   {
     title: 'Slide + icon pop',
-    description: 'Add x-axis slide and the delayed icon scale animation. The cubiz-bezier ease ([0.22,1,0.36,1]) is the same deceleration curve used across the rest of the UI for visual coherence.',
-    fr: { title: 'Glissement + pop d\'icône', description: 'Ajouter le glissement sur l\'axe x et l\'animation de scale retardée de l\'icône. Le cubic-bezier `[0.22,1,0.36,1]` est la même courbe de décélération utilisée dans toute l\'interface pour la cohérence visuelle.' },
+    description: 'Layer in the x-axis slide and the delayed icon `scale` so screens move with direction and the icon pops once it lands. The `ease: [0.22, 1, 0.36, 1]` cubic-bézier is deliberately the **same deceleration curve used everywhere else in the UI** — reusing one easing token across components is what makes motion feel like a single, coherent system rather than a grab-bag of effects.',
+    fr: { title: 'Glissement + pop d\'icône', description: 'Ajouter le glissement sur l\'axe x et le `scale` retardé de l\'icône, pour que les écrans se déplacent avec une direction et que l\'icône surgisse une fois posée. Le cubic-bézier `ease: [0.22, 1, 0.36, 1]` est volontairement la **même courbe de décélération employée partout ailleurs dans l\'interface** — réutiliser un seul jeton d\'easing entre composants donne au mouvement l\'allure d\'un système cohérent plutôt que d\'un assortiment d\'effets.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -3845,8 +3845,8 @@ export function OnboardingFlow() {
   },
   {
     title: 'Spring dots + Back button',
-    description: 'Add motion.div spring-animated dots and the Back button. TypeScript generics work normally inside "use client" components.',
-    fr: { title: 'Pastilles spring + bouton Retour', description: 'Ajouter les pastilles animées en spring `motion.div` et le bouton Retour. Les generics TypeScript fonctionnent normalement dans les composants `"use client"`.' },
+    description: 'Finish the flow with `spring`-animated `motion.div` dots and a `Back` button for two-way navigation. The takeaway for Next.js specifically: **TypeScript generics, hooks, and typed state work exactly as normal inside a `"use client"` file** — the directive changes *where* the component runs, not how you write it. Client islands are first-class React, fully typed and fully interactive.',
+    fr: { title: 'Pastilles spring + bouton Retour', description: 'Terminer le parcours avec des pastilles `motion.div` animées en `spring` et un bouton `Back` pour la navigation bidirectionnelle. L\'enseignement propre à Next.js : **les generics TypeScript, les hooks et l\'état typé fonctionnent exactement comme d\'habitude dans un fichier `"use client"`** — la directive change *où* le composant s\'exécute, pas la façon de l\'écrire. Les îlots client sont du React à part entière, entièrement typés et interactifs.' },
     code: `'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -3914,8 +3914,8 @@ export function OnboardingFlow() {
 const onboardingFlowVue: Step[] = [
   {
     title: 'Static screens',
-    description: 'Render one screen at a time using v-if or computed properties. Use reactive step state and a basic button to advance.',
-    fr: { title: 'Écrans statiques', description: 'Afficher un écran à la fois en utilisant v-if ou des propriétés calculées. Utiliser un état d\'étape réactif et un bouton basique pour avancer.' },
+    description: 'Lay the reactive foundation: a `ref(0)` step and a `computed` that derives the current screen, so the template re-renders automatically whenever step changes. The icon, dots, and `Next` button all read from that single `current` computed — **derive, don\'t duplicate**. Establishing this clean reactive data flow first means the later `<Transition>` steps only need to wrap markup, not rework logic.',
+    fr: { title: 'Écrans statiques', description: 'Poser la base réactive : un `ref(0)` pour l\'étape et un `computed` qui dérive l\'écran courant, pour que le template se re-rende automatiquement à chaque changement d\'étape. L\'icône, les pastilles et le bouton `Next` lisent tous ce même `computed` `current` — **dériver, ne pas dupliquer**. Établir ce flux de données réactif propre d\'abord fait que les étapes `<Transition>` suivantes n\'ont qu\'à envelopper le balisage, sans retravailler la logique.' },
     code: `<template>
   <div class="ob">
     <div class="content">
@@ -3966,8 +3966,8 @@ p        { margin: 0; font-size: 13px; color: #666; text-align: center; max-widt
   },
   {
     title: 'Transition mode="out-in" crossfade',
-    description: 'Wrap the screen content in <Transition mode="out-in"> and key it by step. Vue unmounts the old screen completely before mounting the new one — identical to AnimatePresence mode="wait".',
-    fr: { title: 'Transition mode="out-in" fondu enchaîné', description: 'Envelopper le contenu de l\'écran dans <Transition mode="out-in"> et le clé par étape. Vue démonte complètement l\'ancien écran avant de monter le nouveau — identique à AnimatePresence mode="wait".' },
+    description: 'Vue ships transitions in the framework itself: wrap the screen in `<Transition>` and set `mode="out-in"` so the **old screen fully leaves before the new one enters**, keyed by `step`. You only declare the `.fade-enter-*` / `.fade-leave-*` classes in CSS and Vue orchestrates the timing — this is the direct conceptual twin of React\'s `AnimatePresence mode="wait"`, with no extra library required.',
+    fr: { title: 'Transition mode="out-in" fondu enchaîné', description: 'Vue intègre les transitions dans le framework lui-même : envelopper l\'écran dans `<Transition>` avec `mode="out-in"` pour que **l\'ancien écran parte entièrement avant l\'entrée du nouveau**, clé par `step`. Tu ne déclares que les classes `.fade-enter-*` / `.fade-leave-*` en CSS et Vue orchestre le timing — c\'est le jumeau conceptuel direct de `AnimatePresence mode="wait"` de React, sans aucune librairie supplémentaire.' },
     code: `<template>
   <div class="ob">
     <div class="content-wrap">
@@ -4020,8 +4020,8 @@ p             { margin: 0; font-size: 13px; color: #666; text-align: center; max
   },
   {
     title: 'Slide direction + icon pop',
-    description: 'Switch from fade to a slide transition. Track the direction in a ref and update it before changing step so the transition name picks the correct CSS class.',
-    fr: { title: 'Direction de glissement + explosion d\'icône', description: 'Passer du fondu à une transition par glissement. Suivre la direction dans un ref et la mettre à jour avant de changer d\'étape pour que le nom de transition sélectionne la bonne classe CSS.' },
+    description: 'Make the motion **directional** by swapping the `<Transition>` `name` between `slide-left` and `slide-right` based on whether the user moved forward or back. The trick is a `dir` ref updated *before* `step` inside `go()`, so the correct CSS class is bound on the very render that triggers the transition. A separate keyed icon replays its `pop` keyframe each step — order of state updates matters here.',
+    fr: { title: 'Direction de glissement + pop d\'icône', description: 'Rendre le mouvement **directionnel** en alternant le `name` de `<Transition>` entre `slide-left` et `slide-right` selon que l\'utilisateur avance ou recule. L\'astuce : un ref `dir` mis à jour *avant* `step` dans `go()`, pour que la bonne classe CSS soit liée sur le rendu même qui déclenche la transition. Une icône clé séparée rejoue son keyframe `pop` à chaque étape — l\'ordre des mises à jour d\'état compte ici.' },
     code: `<template>
   <div class="ob">
     <div class="content-wrap">
@@ -4099,8 +4099,8 @@ p             { margin: 0; font-size: 13px; color: #666; text-align: center; max
   },
   {
     title: 'Animated pill dots',
-    description: 'The active dot already transitions width via CSS. Match the dot color to the active screen color reactively — bind :style with the current color when active.',
-    fr: { title: 'Points pilule animés', description: 'Le point actif passe déjà à une largeur via CSS. Faire correspondre la couleur du point à la couleur de l\'écran actif de façon réactive — lier :style avec la couleur actuelle quand actif.' },
+    description: 'The active dot already grows its width through a CSS `transition`, so the final polish is **tying its color to the live screen color** via a reactive `:style` binding that only applies `s.color` when the dot is active. Because the binding reads reactive state, Vue updates it for free on every step. This shows how much expressive animation you can get from plain CSS transitions plus reactive style bindings — no JS animation loop needed.',
+    fr: { title: 'Points pilule animés', description: 'Le point actif élargit déjà sa largeur via une `transition` CSS, la finition consiste donc à **lier sa couleur à la couleur de l\'écran en direct** via un `:style` réactif qui n\'applique `s.color` que lorsque le point est actif. Comme le binding lit l\'état réactif, Vue le met à jour gratuitement à chaque étape. Cela montre toute l\'expressivité atteignable avec de simples transitions CSS et des bindings de style réactifs — sans boucle d\'animation JS.' },
     code: `<template>
   <div class="ob">
     <div class="content-wrap">
@@ -4187,8 +4187,8 @@ p             { margin: 0; font-size: 13px; color: #666; text-align: center; max
 const onboardingFlowRN: Step[] = [
   {
     title: 'Static screens',
-    description: 'Show one screen at a time using state. Use StyleSheet.absoluteFillObject so screens overlap in the same parent View — this is the container we will animate into.',
-    fr: { title: 'Écrans statiques', description: 'Afficher un écran à la fois en utilisant l\'état. Utiliser StyleSheet.absoluteFillObject pour que les écrans se superposent dans le même View parent — c\'est le conteneur dans lequel nous animerons.' },
+    description: 'Render one screen at a time from a `useState` index, but set up the layout with intent: `StyleSheet.absoluteFillObject` makes every screen **stack in the same parent `View`** rather than flow below it. That overlap is essential — for outgoing and incoming screens to crossfade or slide *over* each other later, they have to occupy the same space now. This step is really about preparing the stage for Reanimated.',
+    fr: { title: 'Écrans statiques', description: 'Afficher un écran à la fois depuis un index `useState`, mais préparer la mise en page avec intention : `StyleSheet.absoluteFillObject` fait **empiler chaque écran dans le même `View` parent** au lieu de les enchaîner. Ce chevauchement est essentiel — pour que les écrans sortant et entrant se fondent ou glissent *l\'un sur l\'autre* plus tard, ils doivent occuper le même espace dès maintenant. Cette étape prépare en réalité la scène pour Reanimated.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 
@@ -4237,8 +4237,8 @@ const st = StyleSheet.create({
   },
   {
     title: 'FadeIn / FadeOut from Reanimated',
-    description: 'Add the Animated.View key prop — Reanimated detects the key change, runs FadeOut on the old screen, then FadeIn on the new one. No explicit AnimatePresence equivalent needed.',
-    fr: { title: 'FadeIn / FadeOut depuis Reanimated', description: 'Ajouter la prop key à Animated.View — Reanimated détecte le changement de clé, exécute FadeOut sur l\'ancien écran, puis FadeIn sur le nouveau. Pas d\'équivalent explicite à AnimatePresence nécessaire.' },
+    description: 'Reanimated\'s **layout animations** make crossfades almost free: hand `Animated.View` an `entering={FadeIn}` and `exiting={FadeOut}`, then just change its `key`. The library detects the key change, plays `FadeOut` on the old screen and `FadeIn` on the new — **there\'s no `AnimatePresence` to wrap with**, the entering/exiting props carry that behavior themselves. These transitions also run on the UI thread, so they stay smooth even under JS load.',
+    fr: { title: 'FadeIn / FadeOut depuis Reanimated', description: 'Les **layout animations** de Reanimated rendent les fondus quasi gratuits : donner à `Animated.View` un `entering={FadeIn}` et un `exiting={FadeOut}`, puis simplement changer sa `key`. La librairie détecte le changement de clé, joue `FadeOut` sur l\'ancien écran et `FadeIn` sur le nouveau — **aucun `AnimatePresence` à envelopper**, les props entering/exiting portent ce comportement elles-mêmes. Ces transitions s\'exécutent aussi sur le thread UI, restant fluides même sous charge JS.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
@@ -4294,8 +4294,8 @@ const st = StyleSheet.create({
   },
   {
     title: 'Slide direction + icon scale',
-    description: 'Replace FadeIn with SlideInRight / SlideOutLeft (and the reverse on Back). Chain with .springify() to match the ease curve. Add a separate ScaleIn on the icon with a 100ms delay.',
-    fr: { title: 'Direction de glissement + mise à l\'échelle d\'icône', description: 'Remplacer FadeIn par SlideInRight / SlideOutLeft (et l\'inverse sur Retour). Chaîner avec .springify() pour correspondre à la courbe d\'accélération. Ajouter un ScaleIn séparé sur l\'icône avec un délai de 100ms.' },
+    description: 'Make motion directional by choosing the preset from a `dir` state: `SlideInRight`/`SlideOutLeft` going forward, the mirror going back. Chaining `.springify().damping(20)` swaps the default timing for **spring physics**, giving the slide weight and a touch of overshoot. A separately keyed icon uses `ZoomIn.delay(100)` so it pops *after* the screen lands — composing entering animations from these chainable builders is Reanimated\'s signature.',
+    fr: { title: 'Direction de glissement + mise à l\'échelle d\'icône', description: 'Rendre le mouvement directionnel en choisissant le preset depuis un état `dir` : `SlideInRight`/`SlideOutLeft` en avançant, le miroir en reculant. Chaîner `.springify().damping(20)` remplace le timing par défaut par une **physique de ressort**, donnant au glissement du poids et un léger dépassement. Une icône clé séparée utilise `ZoomIn.delay(100)` pour surgir *après* l\'arrivée de l\'écran — composer les animations d\'entrée avec ces builders chaînables est la signature de Reanimated.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Animated, {
@@ -4371,8 +4371,8 @@ const st = StyleSheet.create({
   },
   {
     title: 'Animated pill dots',
-    description: 'Replace the static dot width with useSharedValue + useAnimatedStyle so the active dot springs to 24px. Pass the current screen color as a shared value so the dot color also transitions.',
-    fr: { title: 'Points pilule animés', description: 'Remplacer la largeur statique du point par useSharedValue + useAnimatedStyle pour que le point actif rebondisse à 24px. Passer la couleur de l\'écran actuel comme valeur partagée pour que la couleur du point soit également en transition.' },
+    description: 'Drive the dots imperatively with Reanimated\'s core hooks: a `useSharedValue` for width, animated via `withSpring`, and a `useAnimatedStyle` that maps that value onto the `View`. Pulling each dot into its own `Dot` component keeps one shared value per dot so they animate independently. This is the **shared-value model** under the layout-animation presets you used earlier — values live on the UI thread, so springs stay buttery regardless of JS work.',
+    fr: { title: 'Points pilule animés', description: 'Piloter les pastilles de façon impérative avec les hooks centraux de Reanimated : un `useSharedValue` pour la largeur, animé via `withSpring`, et un `useAnimatedStyle` qui reporte cette valeur sur le `View`. Extraire chaque pastille dans son propre composant `Dot` garde une valeur partagée par pastille pour qu\'elles s\'animent indépendamment. C\'est le **modèle de valeurs partagées** sous-jacent aux presets de layout animation vus plus tôt — les valeurs vivent sur le thread UI, donc les springs restent fluides quel que soit le travail JS.' },
     code: `import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import Animated, {
@@ -4461,8 +4461,8 @@ const st = StyleSheet.create({
 const onboardingFlowFlutter: Step[] = [
   {
     title: 'Static screens',
-    description: 'Use an IndexedStack or switch on _step to show one screen at a time. Store step state in a StatefulWidget and advance it with setState.',
-    fr: { title: 'Écrans statiques', description: 'Utiliser un IndexedStack ou un switch sur _step pour afficher un écran à la fois. Stocker l\'état des étapes dans un StatefulWidget et l\'avancer avec setState.' },
+    description: 'In Flutter, mutable UI state lives in a `StatefulWidget`: hold `_step` in the `State` class and call `setState` to advance, which schedules a rebuild of `build()`. Indexing into a `const` list of record screens keeps the data declarative while the widget tree stays a pure function of `_step`. Internalizing this **state-triggers-rebuild** loop is the prerequisite for every animation step that follows.',
+    fr: { title: 'Écrans statiques', description: 'En Flutter, l\'état d\'interface mutable vit dans un `StatefulWidget` : conserver `_step` dans la classe `State` et appeler `setState` pour avancer, ce qui planifie une reconstruction de `build()`. Indexer une liste `const` d\'écrans (records) garde les données déclaratives tandis que l\'arbre de widgets reste une fonction pure de `_step`. Intérioriser cette boucle **état déclenche reconstruction** est le prérequis de chaque étape d\'animation suivante.' },
     code: `import 'package:flutter/material.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -4518,8 +4518,8 @@ class _State extends State<OnboardingFlow> {
   },
   {
     title: 'AnimatedSwitcher crossfade',
-    description: 'Wrap the screen content in AnimatedSwitcher. The key drives the swap — when _step changes, AnimatedSwitcher fades out the old widget and fades in the new one.',
-    fr: { title: 'Fondu enchaîné AnimatedSwitcher', description: 'Envelopper le contenu de l\'écran dans AnimatedSwitcher. La clé pilote le basculement — quand _step change, AnimatedSwitcher fait disparaître l\'ancien widget et apparaître le nouveau.' },
+    description: 'Wrap the screen `Column` in an `AnimatedSwitcher` and give it a `ValueKey(_step)`. The **key is what signals a swap**: when `_step` changes the key differs, so `AnimatedSwitcher` cross-fades the outgoing child out and the incoming one in. `FadeTransition` is the default builder — spelled out here for clarity. This is Flutter\'s built-in answer to animating *between* two discrete widgets without managing controllers yourself.',
+    fr: { title: 'Fondu enchaîné AnimatedSwitcher', description: 'Envelopper le `Column` de l\'écran dans un `AnimatedSwitcher` et lui donner une `ValueKey(_step)`. La **clé signale le basculement** : quand `_step` change, la clé diffère, donc `AnimatedSwitcher` fait disparaître l\'enfant sortant et apparaître l\'entrant en fondu. `FadeTransition` est le builder par défaut — explicité ici pour la clarté. C\'est la réponse intégrée de Flutter pour animer *entre* deux widgets distincts sans gérer soi-même de contrôleurs.' },
     code: `import 'package:flutter/material.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -4583,8 +4583,8 @@ class _State extends State<OnboardingFlow> {
   },
   {
     title: 'Slide direction + icon pop',
-    description: 'Add a custom SlideTransition to AnimatedSwitcher. Track direction to flip the slide axis. The icon gets its own AnimatedSwitcher so it can pop in independently with a scale + fade.',
-    fr: { title: 'Direction de glissement + explosion d\'icône', description: 'Ajouter un SlideTransition personnalisé à AnimatedSwitcher. Suivre la direction pour inverser l\'axe de glissement. L\'icône obtient son propre AnimatedSwitcher pour pouvoir apparaître indépendamment avec une mise à l\'échelle + fondu.' },
+    description: 'Replace the default fade by passing a custom `transitionBuilder` that wraps the child in a `SlideTransition` (plus a fade), with a `_forward` flag flipping the `Offset` so screens slide the way the user is heading. Nesting a second `AnimatedSwitcher` around the icon — keyed by `icon-$_step` — lets it **pop in independently** with its own scale+fade. Composing transition builders this way is how you get layered, staggered motion in Flutter.',
+    fr: { title: 'Direction de glissement + pop d\'icône', description: 'Remplacer le fondu par défaut en passant un `transitionBuilder` personnalisé qui enveloppe l\'enfant dans un `SlideTransition` (plus un fondu), avec un drapeau `_forward` qui inverse l\'`Offset` pour que les écrans glissent dans le sens du déplacement. Imbriquer un second `AnimatedSwitcher` autour de l\'icône — clé par `icon-$_step` — la fait **surgir indépendamment** avec son propre scale+fondu. Composer ainsi les builders de transition donne un mouvement en couches et décalé en Flutter.' },
     code: `import 'package:flutter/material.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -4677,8 +4677,8 @@ class _State extends State<OnboardingFlow> {
   },
   {
     title: 'Animated pill dots',
-    description: 'Wrap each dot in AnimatedContainer. The active dot expands its width from 8 to 24 using the spring-like easeOut curve. Animate color too by passing the screen color conditionally.',
-    fr: { title: 'Points pilule animés', description: 'Envelopper chaque point dans AnimatedContainer. Le point actif élargit sa largeur de 8 à 24 en utilisant la courbe easeOut similaire à un ressort. Animer aussi la couleur en passant la couleur de l\'écran conditionnellement.' },
+    description: 'Swap each static dot for an `AnimatedContainer` — an **implicitly animated widget** that tweens whenever its properties change. Toggling `width` between 8 and 24 and `color` based on `_step` makes the active pill stretch and recolor over the `easeOut` curve, no controller required. This implicit-animation pattern is Flutter\'s lowest-effort tool: describe the target values, hand it a `duration`, and it interpolates the rest for you.',
+    fr: { title: 'Points pilule animés', description: 'Remplacer chaque point statique par un `AnimatedContainer` — un **widget implicitement animé** qui interpole dès que ses propriétés changent. Basculer `width` entre 8 et 24 et `color` selon `_step` fait que la pastille active s\'étire et change de couleur sur la courbe `easeOut`, sans contrôleur. Ce motif d\'animation implicite est l\'outil le moins coûteux de Flutter : décrire les valeurs cibles, fournir une `duration`, et il interpole le reste pour toi.' },
     code: `import 'package:flutter/material.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -4784,8 +4784,8 @@ const onboardingFlow: StepMap = {
 const sharedElementReact: Step[] = [
   {
     title: 'List + static overlay',
-    description: 'Render a list of items and a detail overlay that appears when an item is clicked. No animation yet — just the state machine.',
-    fr: { title: 'Liste + overlay statique', description: 'Afficher une liste d\'éléments et un overlay de détail qui apparaît au clic. Pas encore d\'animation — juste la machine à états.' },
+    description: 'Before animating anything, get the *structure* right: a list of items plus a detail overlay that mounts when an item is clicked. A single `selected` state value drives everything — the overlay renders only when an id is set. Nailing this state machine first means the animation work later is purely visual, with no logic to untangle.',
+    fr: { title: 'Liste + overlay statique', description: 'Avant d\'animer quoi que ce soit, il faut poser la *structure* : une liste d\'éléments plus un overlay de détail qui se monte au clic. Une seule valeur d\'état `selected` pilote tout — l\'overlay ne s\'affiche que si un id est défini. Bien établir cette machine à états rend le travail d\'animation purement visuel, sans logique à démêler.' },
     code: `import { useState } from 'react'
 
 const items = [
@@ -4834,8 +4834,8 @@ export function SharedElementDemo() {
   },
   {
     title: 'Animated backdrop + sheet',
-    description: 'Wrap the overlay in AnimatePresence so the backdrop fades in/out and the bottom sheet slides up from below.',
-    fr: { title: 'Backdrop animé + sheet', description: 'Envelopper l\'overlay dans `AnimatePresence` pour que le backdrop s\'estompe et que la bottom sheet glisse depuis le bas.' },
+    description: 'Wrap the overlay in `AnimatePresence` so it can animate *out* as well as in — without it, React would unmount the overlay instantly and you\'d never see an exit. The backdrop fades via `opacity`, and a `spring` transition slides the bottom sheet up from below. This gives the modal real physical presence before any shared element is involved.',
+    fr: { title: 'Backdrop animé + sheet', description: 'Envelopper l\'overlay dans `AnimatePresence` pour qu\'il puisse s\'animer *en sortie* aussi bien qu\'en entrée — sans cela, React démonterait l\'overlay instantanément et la sortie ne serait jamais visible. Le backdrop s\'estompe via `opacity`, et une transition `spring` fait glisser la bottom sheet depuis le bas. Cela donne au modal une vraie présence physique avant même d\'introduire l\'élément partagé.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -4892,8 +4892,8 @@ export function SharedElementDemo() {
   },
   {
     title: 'layoutId on thumbnail',
-    description: 'Add layoutId to the list thumbnail. Framer Motion detects the matching layoutId in the detail sheet and FLIP-animates the element between positions automatically.',
-    fr: { title: 'layoutId sur la miniature', description: 'Ajouter `layoutId` à la miniature de la liste. Framer Motion détecte le `layoutId` correspondant dans la sheet de détail et anime l\'élément entre les positions automatiquement avec FLIP.' },
+    description: 'This is the heart of the shared-element effect. Give the list thumbnail and the detail banner the *same* `layoutId`, and Framer Motion treats them as one element — when one unmounts and the other mounts, it FLIP-animates between their positions and sizes automatically. *FLIP* (First, Last, Invert, Play) means it measures both rects and transforms between them, so a 48×48 thumbnail morphs smoothly into a full-width hero with zero manual math.',
+    fr: { title: 'layoutId sur la miniature', description: 'C\'est le cœur de l\'effet d\'élément partagé. Donner à la miniature et à la bannière de détail le *même* `layoutId`, et Framer Motion les traite comme un seul élément — quand l\'un se démonte et l\'autre se monte, il anime entre leurs positions et tailles automatiquement avec FLIP. *FLIP* (First, Last, Invert, Play) mesure les deux rects et transforme entre eux, donc une miniature 48×48 se transforme en douceur en un héros pleine largeur sans aucun calcul manuel.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -4954,8 +4954,8 @@ export function SharedElementDemo() {
   },
   {
     title: 'Polish — spring + list reflow',
-    description: 'Add a layout prop to every list row so siblings reflow smoothly when the overlay unmounts. Tune the layoutId spring for a slower, more cinematic morph.',
-    fr: { title: 'Polissage — spring + reflow de la liste', description: 'Ajouter une prop `layout` à chaque ligne de la liste pour que les frères se repositionnent en douceur quand l\'overlay se démonte. Ajuster le spring du `layoutId` pour un morph plus lent et cinématique.' },
+    description: 'The details separate a prototype from a shipped feature. Add the `layout` prop to every row so siblings glide into place instead of jumping when the overlay mounts and unmounts. Then tune the `layoutId` spring — lowering `stiffness` and `damping` gives the morph a slower, more cinematic feel that reads as deliberate rather than abrupt.',
+    fr: { title: 'Polissage — spring + reflow de la liste', description: 'Ce sont les détails qui séparent un prototype d\'une fonctionnalité aboutie. Ajouter la prop `layout` à chaque ligne pour que les frères se replacent en douceur au lieu de sauter quand l\'overlay se monte et se démonte. Puis ajuster le spring du `layoutId` — baisser `stiffness` et `damping` donne au morph un rythme plus lent et cinématique, qui paraît délibéré plutôt que brusque.' },
     code: `import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
