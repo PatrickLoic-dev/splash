@@ -592,10 +592,13 @@ function FilteredView({
                 }}
               >
                 {filtered.map((anim, i) => (
-                  <motion.button
+                  <motion.div
                     key={anim.slug}
                     layout
                     onClick={() => onSelect(anim.slug, platform)}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(anim.slug, platform) } }}
+                    role="button"
+                    tabIndex={0}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
@@ -684,7 +687,7 @@ function FilteredView({
                         {t('filt_cta')}
                       </div>
                     </div>
-                  </motion.button>
+                  </motion.div>
                 ))}
               </motion.div>
             )}
