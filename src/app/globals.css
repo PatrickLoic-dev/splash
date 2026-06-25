@@ -76,9 +76,9 @@
   --bg-nav: rgba(10,10,10,0.85);
   --bg-secondary: #121212;
   --bg-tertiary: #1C1C1C;
-  --text-primary: #F5F5F0;
-  --text-secondary: #9A9A92;
-  --text-tertiary: #5A5A54;
+  --text-primary: #FFFFFF;
+  --text-secondary: #C0C0BC;
+  --text-tertiary: #707068;
   --border: rgba(255,255,255,0.06);
   --border-strong: rgba(255,255,255,0.12);
   --accent: #7F77DD;
@@ -91,6 +91,14 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Re-enable selection only on code blocks */
+pre, code, pre *, code * {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 html {

@@ -974,6 +974,26 @@ function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, cur
                 ))}
               </div>
             )}
+            {/* ── Per-implementation inline preview ── */}
+            <div style={{
+              borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)',
+              background: 'var(--bg-secondary)', padding: '16px 20px',
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+              pointerEvents: 'none',
+            }}>
+              {context === 'web' ? (
+                <div style={{ width: '100%' }}>
+                  <BrowserFrame>
+                    <AnimationPreview slug={anim.slug} context="web" stepIndex={stepIndex} />
+                  </BrowserFrame>
+                </div>
+              ) : (
+                <PhoneFrame>
+                  <AnimationPreview slug={anim.slug} context="mobile" stepIndex={stepIndex} />
+                </PhoneFrame>
+              )}
+            </div>
+
             {steps.length > 0 && currentStep ? (
               <StepperBlock steps={steps} stepIndex={stepIndex} accentColor={accentColor} onStepChange={onStepChange} currentStep={currentStep} lang={lang} />
             ) : (
@@ -1070,7 +1090,7 @@ function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep
               </span>
             </div>
             <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.75, margin: 0 }}>
-              {localizeStep(currentStep, lang).description}
+              <Inline text={localizeStep(currentStep, lang).description} />
             </p>
           </div>
           <CodeBlock code={currentStep.code} />
@@ -1127,18 +1147,18 @@ function CodeBlock({ code }: { code: string }) {
 }
 
 function Inline({ text }: { text: string }) {
-  const parts = text.split(/(`[^`]+`)/)
+  const tokens = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/)
   return (
     <>
-      {parts.map((part, i) =>
-        part.startsWith('`') && part.endsWith('`') ? (
-          <code key={i} style={{
-            fontFamily: 'ui-monospace, monospace', fontSize: '0.87em',
-            background: 'var(--bg-tertiary)', padding: '1px 5px',
-            borderRadius: 4, color: 'var(--accent-light)',
-          }}>{part.slice(1, -1)}</code>
-        ) : <span key={i}>{part}</span>
-      )}
+      {tokens.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**'))
+          return <strong key={i} style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{part.slice(2, -2)}</strong>
+        if (part.startsWith('*') && part.endsWith('*'))
+          return <em key={i} style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>{part.slice(1, -1)}</em>
+        if (part.startsWith('`') && part.endsWith('`'))
+          return <code key={i} style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.87em', background: 'var(--bg-tertiary)', padding: '1px 5px', borderRadius: 4, color: 'var(--accent-light)' }}>{part.slice(1, -1)}</code>
+        return <span key={i}>{part}</span>
+      })}
     </>
   )
 }
