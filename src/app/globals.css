@@ -1,60 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,500,400,300&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400,300&display=swap');
 @import "tailwindcss";
 @import "./responsive.css";
 
-@font-face {
-  font-family: 'PowerGrotesk';
-  src: url('/fonts/PowerGroteskTrial-UltraLight.ttf') format('truetype');
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'PowerGrotesk';
-  src: url('/fonts/PowerGroteskTrial-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'PowerGrotesk';
-  src: url('/fonts/PowerGroteskTrial-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'PowerGrotesk';
-  src: url('/fonts/PowerGroteskTrial-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'PowerGrotesk';
-  src: url('/fonts/PowerGroteskTrial-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'PowerGrotesk';
-  src: url('/fonts/PowerGroteskTrial-UltraBold.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'PowerGrotesk';
-  src: url('/fonts/PowerGroteskTrial-Black.ttf') format('truetype');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
-  --font-power: 'PowerGrotesk', system-ui, sans-serif;
-  --font-outfit: 'Outfit', system-ui, sans-serif;
+  --font-power: 'Cabinet Grotesk', system-ui, sans-serif;
+  --font-outfit: 'Satoshi', system-ui, sans-serif;
 
   --bg: #FFFFFF;
   --bg-nav: rgba(255,255,255,0.85);
