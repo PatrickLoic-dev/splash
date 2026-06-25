@@ -32,6 +32,15 @@ export interface PlatformImpl {
   code: string
 }
 
+export interface AnimationFr {
+  title?: string
+  tagline?: string
+  concept?: string
+  howItWorks?: string[]
+  useCases?: UseCase[]
+  tips?: string[]
+}
+
 export interface Animation {
   slug: string
   title: string
@@ -43,6 +52,30 @@ export interface Animation {
   implementations: PlatformImpl[]
   useCases: UseCase[]
   tips: string[]
+  fr?: AnimationFr
+}
+
+export function localizeAnim(anim: Animation, lang: 'en' | 'fr'): Animation {
+  if (lang === 'en' || !anim.fr) return anim
+  const fr = anim.fr
+  return {
+    ...anim,
+    title:      fr.title      ?? anim.title,
+    tagline:    fr.tagline    ?? anim.tagline,
+    concept:    fr.concept    ?? anim.concept,
+    howItWorks: fr.howItWorks ?? anim.howItWorks,
+    useCases:   fr.useCases   ?? anim.useCases,
+    tips:       fr.tips       ?? anim.tips,
+  }
+}
+
+export function localizeStep(step: import('./steps').Step, lang: 'en' | 'fr'): import('./steps').Step {
+  if (lang === 'en' || !step.fr) return step
+  return {
+    ...step,
+    title:       step.fr.title       ?? step.title,
+    description: step.fr.description ?? step.description,
+  }
 }
 
 export const ANIMATIONS: Animation[] = [
@@ -299,6 +332,27 @@ class _RevealOnMountState extends State<RevealOnMount>
       'Keep Y offset between 20–40px. Larger values feel dramatic on first view but become exhausting on repeated visits.',
       'Always implement `prefers-reduced-motion`. If the media query matches, skip the animation and show the `visible` state immediately — never gate content behind motion.',
     ],
+    fr: {
+      title: 'Révélation à l\'entrée',
+      tagline: 'Fondu + glissement des éléments à l\'apparition lors du défilement',
+      concept: 'Une révélation à l\'entrée anime le contenu de invisible à visible au fur et à mesure qu\'il entre dans la fenêtre. Plutôt que d\'afficher tout d\'un coup, les éléments glissent depuis le bas et s\'estompent — guidant l\'œil de l\'utilisateur à travers la page de manière éditoriale. C\'est le pattern d\'animation le plus courant sur le web, et avec le bon easing et timing, il donne une sensation de soin à n\'importe quelle mise en page.',
+      howItWorks: [
+        'Suivre si l\'élément a franchi la limite de la fenêtre avec un Intersection Observer (ou le wrapper du framework).',
+        'Quand `isVisible` passe à true, transition de `opacity: 0, translateY: 32px` à `opacity: 1, translateY: 0` avec un easing cubic-bezier qui démarre vite et décélère.',
+        'Utiliser `once: true` pour que l\'animation ne se joue qu\'au premier défilement. Le re-déclenchement au retour est perturbant.',
+        'Pour les listes, décaler les enfants de 60–80ms chacun pour qu\'ils cascadent plutôt que d\'apparaître tous simultanément.',
+      ],
+      useCases: [
+        { label: 'Titres de section', example: 'Les titres H2 qui glissent vers le haut quand l\'utilisateur défile dans chaque section. Cadence la lecture et donne à chaque section un sentiment d\'arrivée.' },
+        { label: 'Grille de fonctionnalités', example: '6 cartes de fonctionnalités décalées de 70ms chacune. La cascade suggère que la grille se construit en temps réel.' },
+        { label: 'Contenu d\'article', example: 'Paragraphes et images dans un article long. Des révélations subtiles (petit décalage Y, courte durée) préservent le flux de lecture.' },
+        { label: 'Ligne de statistiques', example: 'Grands chiffres qui s\'estompent individuellement. Chaque statistique atterrit avec son propre rythme.' },
+      ],
+      tips: [
+        'Garder le décalage Y entre 20–40px. Des valeurs plus grandes semblent dramatiques au premier coup d\'œil mais deviennent fatigantes à la longue.',
+        'Toujours implémenter `prefers-reduced-motion`. Si la media query correspond, sauter l\'animation et afficher l\'état `visible` immédiatement.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -527,6 +581,27 @@ Navigator.push(context, FadeSlideRoute(page: const DetailScreen()));
       'Keep transitions under 350ms. Users navigate with intent — long transitions feel like lag. Reserve slower animations for initial page load only.',
       'In Next.js App Router, `AnimatePresence` must be a Client Component. The exiting page\'s subtree is unmounted immediately by the router, so the `exit` animation window is very short — test it.',
     ],
+    fr: {
+      title: 'Transitions de page',
+      tagline: 'Animez entre les routes pour que la navigation soit spatiale',
+      concept: 'Les transitions de page remplacent le "flash blanc" par défaut du navigateur entre les routes avec un transfert animé délibéré. La page sortante quitte pendant que la page entrante arrive, préservant le modèle mental de l\'utilisateur. La direction du mouvement peut impliquer une hiérarchie spatiale — glisser à gauche pour aller plus profond, à droite pour revenir.',
+      howItWorks: [
+        'Envelopper le composant de route dans `AnimatePresence` pour que React puisse animer la sortie avant de démonter.',
+        'Chaque page reçoit des variantes `initial`, `animate` et `exit`. La combinaison `initial: { x: "100%" }` + `exit: { x: "-100%" }` crée un effet de glissement naturel.',
+        'Utiliser `mode="wait"` sur `AnimatePresence` pour s\'assurer que la page sortante finit son exit avant que l\'entrante commence à apparaître.',
+        'Lire la route précédente depuis un contexte ou un état global pour déterminer la direction — gauche/droite ou haut/bas selon la hiérarchie.',
+      ],
+      useCases: [
+        { label: 'Portfolio', example: 'Navigation de la grille de projets à la page de détail. Un scale-up (0.96 → 1) implique un zoom sur le projet sélectionné.' },
+        { label: 'Onboarding', example: 'Un onboarding en 4 étapes avec glissement gauche sur "Suivant" et droite sur "Retour". La direction dit aux utilisateurs où ils sont.' },
+        { label: 'Onglets de tableau de bord', example: 'Onglets Aperçu / Analytique / Paramètres. Utiliser un fondu simple — les interfaces complexes ont besoin de transitions rapides.' },
+        { label: 'Navigation mobile', example: 'Navigation principale d\'une app mobile. Glisse vers le haut à l\'entrée, vers le bas au retour. Correspond à la direction du geste physique.' },
+      ],
+      tips: [
+        'Garder les transitions sous 350ms. Les utilisateurs naviguent avec intention — les longues transitions semblent être du lag.',
+        'Dans Next.js App Router, `AnimatePresence` doit être un Client Component. Le sous-arbre de la page sortante est démonté immédiatement par le routeur — testez la fenêtre `exit`.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -791,6 +866,27 @@ Dismissible(
       'Spring stiffness 300–500, damping 15–20 is the sweet spot for buttons. Below 300 feels sluggish; above 600 feels jittery. The "elastic" feel comes from damping under 15.',
       'On mobile, always run animations on the UI thread (Reanimated\'s `useAnimatedStyle`, Flutter\'s `AnimationController`). JS-thread animations stutter during scroll or heavy renders.',
     ],
+    fr: {
+      title: 'Retour gestuel',
+      tagline: 'Réponses de pression spring, swipe et hover',
+      concept: 'Le retour gestuel transforme chaque interaction en une confirmation physique. Un bouton qui se comprime légèrement à la pression, une carte qui lévite au survol, une liste qui se glisse pour révéler des actions — tous ces micros-comportements communiquent l\'état sans mots. Le spring physique (pas une courbe de Bézier) rend le retour authentique car il rebondit naturellement.',
+      howItWorks: [
+        '`whileTap={{ scale: 0.94 }}` déclenche une animation spring dès que l\'utilisateur appuie. Framer Motion calcule le rebond automatiquement selon `stiffness` et `damping`.',
+        '`whileHover={{ y: -4, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}` simule la lévitation physique — l\'ombre s\'intensifie à mesure que l\'objet s\'élève.',
+        'Pour le swipe, `useDrag` (Framer) ou `PanGestureHandler` (Reanimated) suivent la vélocité. Un threshold de vitesse détermine si le glissement aboutit ou rebondit.',
+        'Sur les appareils mobiles, utiliser toujours le thread UI (Reanimated `useAnimatedStyle`) pour éviter les saccades pendant le scroll.',
+      ],
+      useCases: [
+        { label: 'Boutons CTA', example: 'Compression spring sur "Acheter" ou "S\'inscrire". Le 6% de compression confirme que l\'appui a été enregistré avant la réponse réseau.' },
+        { label: 'Actions sur liste', example: 'Glisser-pour-supprimer sur des éléments d\'e-mail ou de tâches. Le geste + threshold de vitesse reproduit le comportement iOS Mail.' },
+        { label: 'Cartes interactives', example: 'Lévitation au survol (y: -4, augmentation d\'ombre) sur des cartes produit. Le décalage d\'ombre 3D implique que la carte se soulève physiquement.' },
+        { label: 'Confirmation d\'icône', example: 'Icônes Like, Favori, Partager qui s\'agrandissent à 1.2× au tap. Petit mais impactant — rend l\'app plus premium.' },
+      ],
+      tips: [
+        'Stiffness 300–500, damping 15–20 est le sweet spot pour les boutons. En dessous de 300, ça semble lent ; au-dessus de 600, c\'est saccadé.',
+        'Sur mobile, toujours exécuter les animations sur le thread UI. Les animations sur le thread JS saccadent lors du scroll ou des rendus lourds.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -1077,6 +1173,27 @@ class _ManualParallaxState extends State<ManualParallax> {
       'Disable parallax on mobile web (`@media (hover: none)`) and offer a reduced-motion alternative. The combination of browser chrome resizing and parallax motion is nauseating on touch devices.',
       'Use `will-change: transform` on parallax layers to promote them to their own compositor layer — prevents painting during scroll. Remove it after mount if the element becomes static.',
     ],
+    fr: {
+      title: 'Parallaxe',
+      tagline: 'Des vitesses de défilement en couches créent une profondeur perçue',
+      concept: 'Le parallaxe déplace différentes couches à différentes vitesses par rapport à la position de défilement. Les éléments d\'arrière-plan bougent lentement ; le contenu de premier plan plus vite. Le décalage entre les couches suggère un espace tridimensionnel sur un écran plat. Bien utilisé, il donne l\'impression de traverser un environnement physique. Mal utilisé, il provoque le mal des transports.',
+      howItWorks: [
+        '`useScroll({ target: sectionRef, offset: ["start end", "end start"] })` produit un `scrollYProgress` de 0 (entrée) à 1 (sortie).',
+        '`useTransform(scrollYProgress, [0, 1], [-60, 60])` mappe ce 0–1 à un décalage Y en pixels. Les couches d\'arrière-plan ont une petite plage (±40px) ; le texte au premier plan une grande (±80px).',
+        'Appliquer chaque décalage avec `style={{ y: bgY }}` sur des wrappers `motion.div`. Framer Motion gère la boucle rAF.',
+        'Clipper la section avec `overflow: hidden` pour éviter que les couches décalées débordent de leur conteneur.',
+      ],
+      useCases: [
+        { label: 'Hero de landing', example: 'Image d\'arrière-plan qui bouge à 0.3× la vitesse de défilement. Donne l\'impression de "voler" au-dessus du contenu.' },
+        { label: 'Galerie de portfolio', example: 'Chaque projet a des éléments d\'illustration en parallaxe. Le défilement révèle progressivement le détail de chaque œuvre.' },
+        { label: 'Storytelling', example: 'Récits avec couches d\'arrière-plan, personnages et texte à vitesses différentes. Crée une narration immersive.' },
+        { label: 'Section de témoignages', example: 'Fond texturé à vitesse lente, citation au premier plan à vitesse normale. La séparation visuelle met en valeur le contenu.' },
+      ],
+      tips: [
+        'Désactiver le parallaxe sur mobile web (`@media (hover: none)`) et proposer une alternative. La combinaison Chrome mobile + parallaxe provoque des nausées.',
+        'Utiliser `will-change: transform` sur les couches parallaxe pour les promouvoir sur leur propre couche compositor — évite le repaint pendant le défilement.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -1390,6 +1507,27 @@ class CardSkeleton extends StatelessWidget {
       'Match skeleton proportions precisely to your real content. A skeleton that\'s the wrong size causes layout shift when content loads — arguably worse than a spinner.',
       'Don\'t animate the shimmer in reduced-motion mode. A static gray placeholder is perfectly acceptable and respects the user\'s system preference.',
     ],
+    fr: {
+      title: 'Chargement squelette',
+      tagline: 'Espaces réservés shimmer qui correspondent à la forme de votre contenu',
+      concept: 'Les écrans squelettes montrent la structure du contenu avant l\'arrivée des données. Au lieu d\'un spinner (qui dit "attendez"), un squelette dit "voici exactement où votre contenu va apparaître." L\'effet shimmer — une vague de lumière balayant de gauche à droite — signale un chargement actif sans monopoliser l\'attention. Les squelettes réduisent drastiquement le temps de chargement perçu.',
+      howItWorks: [
+        'Créer des éléments de substitution qui reflètent les dimensions de votre contenu réel — un rectangle pour les images, des rectangles plus courts pour les lignes de texte, un cercle pour les avatars.',
+        'Superposer un dégradé qui se déplace de gauche à droite avec `translateX` de -100% à 100% en boucle infinie.',
+        'Synchroniser l\'animation shimmer sur tous les squelettes de la page avec `animationDelay: 0s` uniforme — un décalage crée une apparence "brisée".',
+        'Remplacer le squelette par le vrai contenu en douceur avec `AnimatePresence` + opacité — évite le flash brutal de substitution.',
+      ],
+      useCases: [
+        { label: 'Fil d\'actualité', example: 'Les cartes de publication apparaissent comme des squelettes lors du premier chargement. Les utilisateurs voient immédiatement le layout avant les données.' },
+        { label: 'Tableau de bord', example: 'Graphiques et widgets qui se chargent en parallèle. Chaque bloc squelette a les bonnes dimensions pour prévenir le décalage de mise en page.' },
+        { label: 'Page de profil', example: 'Avatar circulaire + lignes de texte rectangulaires reflétant le nom et la bio. Familier et rassurant.' },
+        { label: 'Résultats de recherche', example: 'Résultats squelettes apparaissant instantanément au tap, remplacés par les vrais résultats quand l\'API répond.' },
+      ],
+      tips: [
+        'Correspondre précisément les proportions du squelette à votre contenu réel. Un squelette mal dimensionné cause un décalage de mise en page au chargement.',
+        'Ne pas animer le shimmer en mode mouvement réduit. Un simple gris statique est parfaitement acceptable.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -1690,6 +1828,27 @@ class _StaggerListState extends State<StaggerList>
       'Keep stagger delay at or below 80ms per item. At 100ms+, users wait for the last item — the cascade becomes a loading screen rather than an animation.',
       'For long lists (20+ items), cap the total stagger delay at ~400ms and compress the per-item delay accordingly. Nobody needs to wait 2 seconds for a list of 30 items to finish.',
     ],
+    fr: {
+      title: 'Liste en cascade',
+      tagline: 'Faire cascader les enfants avec un timing décalé',
+      concept: 'Une liste en cascade fait entrer les éléments un par un, chacun démarrant légèrement après le précédent. L\'œil suit naturellement la cascade — c\'est comme lire une liste à voix haute avec une pause entre chaque point. Ce pattern est particulièrement efficace pour les interfaces de navigation, menus, et résultats de recherche.',
+      howItWorks: [
+        'Définir des variantes `container` et `item`. Le container orchestre via `staggerChildren` ; chaque item hérite automatiquement du délai calculé.',
+        'Le container déclenche ses enfants avec `staggerChildren: 0.07` — chaque enfant démarre 70ms après le précédent.',
+        'Coupler avec `useInView` pour déclencher la cascade au défilement, pas au montage — les éléments hors-écran ne devraient pas animer.',
+        'La cascade de sortie (`staggerDirection: -1`) inverse l\'ordre pour une sortie élégante.',
+      ],
+      useCases: [
+        { label: 'Menu de navigation', example: 'Liens du menu qui apparaissent en cascade à l\'ouverture. Ajoute du caractère à un composant normalement statique.' },
+        { label: 'Grille de résultats', example: 'Cartes de recherche ou produits qui cascadent à l\'apparition. Suggère que les résultats arrivent en temps réel.' },
+        { label: 'Liste de tâches', example: 'Éléments qui glissent à leur apparition initiale. Établit la "physique" de l\'interface pour les insertions futures.' },
+        { label: 'Notifications', example: 'Toast ou badge qui entrent en cascade. La hiérarchie temporelle indique l\'ordre de priorité.' },
+      ],
+      tips: [
+        'Garder le délai de cascade à 80ms par élément maximum. Au-delà, les utilisateurs attendent le dernier item — la cascade devient un écran de chargement.',
+        'Pour les longues listes (20+ éléments), plafonner le délai total à ~400ms et compresser le délai par élément en conséquence.',
+      ],
+    },
   },
 
   /* ── 7. Image Carousel ── */
@@ -2104,6 +2263,27 @@ class _State extends State<ImageCarousel> {
       'Always pair scale with the dark overlay — without the overlay the scale-zoom looks like a glitch. Together they create a "depth pull" that reads as intentional.',
       'Set dragElastic to 0.2 not 1. Full elasticity lets the card drift far enough that users think they can swipe to nowhere — a small elastic feels responsive but bounded.',
     ],
+    fr: {
+      title: 'Carrousel d\'images',
+      tagline: 'Slides swipables avec profondeur de scale et overlay sombre',
+      concept: 'Un carrousel directionnel utilise `AnimatePresence` pour glisser les cartes depuis le bon bord. Un transform scale (0.92 → 1) ajoute de la profondeur à l\'entrée des slides, et un overlay sombre qui s\'estompe signale quelle slide "arrive". Des pastilles animées s\'étendent et se contractent pour indiquer la position.',
+      howItWorks: [
+        'Stocker `[page, direction]` dans un seul `useState`. La direction (+1/-1) est passée aux variantes via la prop `custom` d\'`AnimatePresence`.',
+        'Les variantes `enter`/`exit` utilisent la direction pour choisir le bord d\'entrée/sortie. `enter: (d) => ({ x: d > 0 ? "100%" : "-100%", scale: 0.92 })`.',
+        'L\'overlay sombre passe de `opacity: 0.4` (entrée) à `opacity: 0` (centre) pour chaque slide entrant — crée l\'effet de "surface s\'illuminant".',
+        'Activer `drag="x"` avec `dragConstraints={{ left: 0, right: 0 }}` et un threshold `onDragEnd` pour le swipe mobile.',
+      ],
+      useCases: [
+        { label: 'Galerie de produits', example: 'Photos du produit navigables gauche/droite. L\'animation directionnelle ancre l\'utilisateur dans l\'espace de la galerie.' },
+        { label: 'Témoignages', example: 'Citations clients en rotation. Les transitions douces maintiennent le focus sur le contenu, pas sur le mécanisme.' },
+        { label: 'Slides hero', example: 'Section hero en plein écran avec slides de contenu. Les pastilles donnent une navigation sans surcharger visuellement.' },
+        { label: 'App mobile', example: 'Photo feed swipable à la Instagram. Le swipe avec élasticité imite le comportement natif attendu.' },
+      ],
+      tips: [
+        'Toujours associer le scale avec l\'overlay sombre — sans l\'overlay, le zoom scale ressemble à un glitch. Ensemble, ils créent un "effet de profondeur".',
+        'Mettre `dragElastic` à 0.2 et non 1. Une élasticité complète laisse la carte dériver trop loin et confuse l\'utilisateur.',
+      ],
+    },
   },
 
   /* ── 8. Onboarding Flow ── */
@@ -2559,6 +2739,27 @@ class _State extends State<OnboardingFlow> {
       'Keep onboarding to 3 screens maximum. Research consistently shows completion rates drop sharply after slide 3 — every screen you add costs conversions.',
       'Animate the dot color to match the active screen\'s accent color. This tiny detail makes the dots feel thematically tied to the content rather than decorative.',
     ],
+    fr: {
+      title: 'Flux d\'onboarding',
+      tagline: 'Écrans step-through avec indicateurs de pastilles animées',
+      concept: 'Un flux d\'onboarding fait défiler 2–5 écrans avec `AnimatePresence`. La signature est la rangée de pastilles : la pastille active élargit sa largeur via un spring de 8px à 24px pendant que les inactives se contractent — donnant aux utilisateurs un sens spatial de leur position sans numéros. La dernière étape remplace "Suivant" par un CTA.',
+      howItWorks: [
+        'Stocker l\'index d\'étape actuel dans un `useState`. `AnimatePresence` + variantes de slide gèrent les transitions entre les écrans.',
+        'La rangée de pastilles mappe chaque index à un `motion.div`. La pastille active a `width: 24` (spring), les inactives `width: 8`.',
+        'Utiliser `layoutId` sur les pastilles pour que Framer Motion anime la largeur en douceur lors de la navigation.',
+        'Le bouton "Suivant" devient conditionnellement "Commencer" ou votre CTA final sur la dernière étape.',
+      ],
+      useCases: [
+        { label: 'Onboarding app', example: '3 écrans expliquant les fonctionnalités clés. Les pastilles indiquent la progression sans compter à voix haute.' },
+        { label: 'Configuration initiale', example: 'Étapes de configuration (profil, préférences, notifications). L\'animation directionnelle ancre l\'utilisateur dans la séquence.' },
+        { label: 'Tour de fonctionnalité', example: 'Présenter une nouvelle fonctionnalité post-mise à jour. Les slides ciblées informent sans submerger.' },
+        { label: 'Tutoriel interactif', example: 'Guide d\'utilisation avec animations d\'illustration par étape. Le progrès visuel des pastilles maintient la motivation.' },
+      ],
+      tips: [
+        'Garder l\'onboarding à 3 écrans maximum. Les taux de complétion chutent fortement après le slide 3.',
+        'Animer la couleur des pastilles pour correspondre à l\'accent de l\'écran actif. Ce détail les rend thématiquement liées au contenu.',
+      ],
+    },
   },
 
   /* ── 9. Shared Element Transitions ── */
@@ -3017,6 +3218,27 @@ class ItemDetail extends StatelessWidget {
       'Never put layoutId on a component that is conditionally rendered by the same parent at the same time — two matching layoutIds visible simultaneously causes a teleport glitch.',
       'Add layout to sibling elements adjacent to the shared element so they reflow smoothly rather than snapping when the hero expands.',
     ],
+    fr: {
+      title: 'Transitions d\'élément partagé',
+      tagline: 'Éléments héros qui se morphent entre liste et détail',
+      concept: 'Une transition d\'élément partagé donne l\'impression que le même élément visuel voyage physiquement de sa position dans une liste à sa position dans une vue détail. Dans Framer Motion, c\'est fait avec `layoutId` — la même chaîne sur deux `motion` éléments différents indique au moteur d\'animer entre eux plutôt que démonter/remonter.',
+      howItWorks: [
+        '`layoutId="hero-{id}"` sur l\'image dans la grille ET sur l\'image dans la vue détail. Framer Motion calcule automatiquement les deltas de position et taille.',
+        'Envelopper la liste ET la vue détail dans un `<LayoutGroup>` pour que les animations de layout se coordonnent correctement.',
+        'Utiliser `AnimatePresence mode="popLayout"` autour de la vue détail pour que les cartes de liste se recalculent quand le détail entre/sort.',
+        'Les éléments frères avec `layout` se repositionnent en douceur quand le héros s\'expand — sans ça, ils snappent brutalement.',
+      ],
+      useCases: [
+        { label: 'Grille vers détail', example: 'Vignette de photo qui se morphe en image plein écran. La continuité visuelle maintient le contexte de l\'utilisateur.' },
+        { label: 'Liste de produits', example: 'Carte produit qui s\'expand en vue détail. L\'animation "d\'où ça vient" élimine la désorientation spatiale.' },
+        { label: 'Article de blog', example: 'Image d\'en-tête en miniature dans le feed qui grandit à la taille complète dans l\'article.' },
+        { label: 'App de musique', example: 'Cover album du mini-lecteur qui s\'expand vers le lecteur plein écran — signature de l\'app Apple Music.' },
+      ],
+      tips: [
+        'Ne jamais mettre `layoutId` sur un composant rendu conditionnellement par le même parent en même temps — deux `layoutId` identiques visibles simultanément cause un glitch de téléportation.',
+        'Ajouter `layout` aux éléments frères adjacents à l\'élément partagé pour qu\'ils se réorganisent en douceur quand le héros s\'expand.',
+      ],
+    },
   },
 
   /* ── 10. Collapsing Header ── */
@@ -3449,5 +3671,26 @@ class CollapsingHeaderPage extends StatelessWidget {
       'Never use a spring for scroll-driven transforms — springs lag behind the finger because they have momentum. Use linear or a fast ease curve (e.g., [0.25, 0.1, 0.25, 1]) so the header tracks 1:1 with scroll.',
       'Cap the scroll distance at 80–150px. If the header takes 300px to collapse, the user has already scrolled past two screens of content before it finishes — the effect goes unnoticed.',
     ],
+    fr: {
+      title: 'En-tête réductible',
+      tagline: 'Le défilement réduit l\'en-tête, scale l\'avatar et masque la barre de recherche en parfaite synchronisation',
+      concept: 'Un en-tête réductible lie la position de défilement à plusieurs valeurs de transform simultanément. `useScroll` suit le `scrollY` du conteneur, et `useTransform` mappe ce progrès à des propriétés CSS indépendantes — padding de l\'en-tête, scale de l\'avatar, taille du titre, opacité de la barre de recherche — s\'animant en parallèle depuis une seule valeur de défilement.',
+      howItWorks: [
+        '`useScroll({ container: scrollRef })` produit un `scrollY` MotionValue qui change à chaque frame de défilement sans re-render React.',
+        '`useTransform(scrollY, [0, 80], [80, 50])` mappe 0–80px de scroll à une hauteur de 80px–50px. Chaque propriété a sa propre plage cible.',
+        'Lier toutes les MotionValues transformées directement au `style` des éléments — Framer Motion met à jour le DOM en dehors de React pour les performances.',
+        'L\'avatar scale de 1 à 0.6 pendant que le padding réduit — les deux se terminent au même point de défilement pour une chorégraphie serrée.',
+      ],
+      useCases: [
+        { label: 'App mobile', example: 'En-tête de profil qui se réduit pendant que l\'utilisateur défile dans le contenu — pattern signature d\'Instagram et Twitter.' },
+        { label: 'Page e-commerce', example: 'Barre de navigation sticky avec logo et recherche qui se contractent après quelques pixels de défilement.' },
+        { label: 'Dashboard', example: 'En-tête avec résumé de stats qui se réduit pour donner plus d\'espace au contenu du tableau de bord.' },
+        { label: 'Article/blog', example: 'Barre de progression de lecture qui apparaît dans l\'en-tête réductible. Combine deux patterns scroll en un.' },
+      ],
+      tips: [
+        'Ne jamais utiliser un spring pour les transforms pilotés par le scroll — les springs ont de l\'inertie et lagent derrière le doigt. Utiliser linear ou une courbe d\'ease rapide.',
+        'Plafonner la distance de scroll à 80–150px. Si l\'en-tête met 300px à se réduire, l\'effet passe inaperçu.',
+      ],
+    },
   },
 ]

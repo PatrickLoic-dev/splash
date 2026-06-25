@@ -2,8 +2,12 @@ import type { PlatformId } from './learnContent'
 
 export interface Step {
   title: string
-  description: string
+  description: string  /* EN explanation of WHY this step matters */
   code: string
+  fr?: {
+    title?: string
+    description?: string
+  }
 }
 
 export type StepMap = Partial<Record<PlatformId, Step[]>>
@@ -17,6 +21,10 @@ const entranceReveal: StepMap = {
     {
       title: 'Render the element',
       description: 'Start with a plain `div`. Get the layout right before adding any animation. The element renders immediately at full opacity — this is the baseline we\'ll animate from.',
+      fr: {
+        title: 'Rendre l\'élément',
+        description: 'Commencer avec un `div` simple. Obtenir la mise en page correcte avant d\'ajouter des animations. L\'élément s\'affiche immédiatement en opacité totale — c\'est la base depuis laquelle nous allons animer.',
+      },
       code: `function RevealOnScroll({ children }) {
   return (
     <div className="section">
@@ -28,6 +36,10 @@ const entranceReveal: StepMap = {
     {
       title: 'Swap to motion.div',
       description: 'Replace `div` with `motion.div` and set `initial` → `animate`. The element now fades from invisible to visible on every mount. No scroll awareness yet — it plays immediately.',
+      fr: {
+        title: 'Passer à motion.div',
+        description: 'Remplacer `div` par `motion.div` et définir `initial` → `animate`. L\'élément s\'estompe maintenant de invisible à visible à chaque montage. Pas encore de conscience du scroll — il se joue immédiatement.',
+      },
       code: `import { motion } from 'framer-motion'
 
 function RevealOnScroll({ children }) {
@@ -45,6 +57,10 @@ function RevealOnScroll({ children }) {
     {
       title: 'Add a slide direction',
       description: 'Add `y: 32` to `initial` so the element slides up as it fades in. The cubic-bezier `[0.22, 1, 0.36, 1]` starts fast and decelerates — it matches how objects fall, which reads as natural.',
+      fr: {
+        title: 'Ajouter une direction de glissement',
+        description: 'Ajouter `y: 32` à `initial` pour que l\'élément glisse vers le haut en s\'estompant. Le cubic-bezier `[0.22, 1, 0.36, 1]` démarre vite et décélère — il imite la façon dont les objets tombent, ce qui paraît naturel.',
+      },
       code: `import { motion } from 'framer-motion'
 
 function RevealOnScroll({ children }) {
@@ -65,6 +81,10 @@ function RevealOnScroll({ children }) {
     {
       title: 'Trigger on scroll + stagger',
       description: '`useInView` wraps an IntersectionObserver. When the element crosses `margin: \'-80px\'` (80px before the viewport edge), `inView` flips true and the animation runs once. Pass a `delay` prop to stagger multiple sibling elements.',
+      fr: {
+        title: 'Déclencher au scroll + cascade',
+        description: '`useInView` enveloppe un IntersectionObserver. Quand l\'élément franchit `margin: \'-80px\'` (80px avant le bord de la fenêtre), `inView` passe à true et l\'animation se joue une fois. Passer une prop `delay` pour décaler plusieurs éléments frères.',
+      },
       code: `import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 

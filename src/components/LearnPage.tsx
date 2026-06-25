@@ -5,6 +5,7 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import {
   ANIMATIONS, PLATFORMS, WEB_PLATFORMS, MOBILE_PLATFORMS,
+  localizeAnim, localizeStep,
   type Animation, type PlatformId, type Context,
 } from '@/lib/learnContent'
 import { getSteps, type Step } from '@/lib/steps'
@@ -554,9 +555,11 @@ function DetailView({
   onBack: () => void; onContextSwitch: (ctx: Context) => void; onPlatformChange: (p: PlatformId) => void
   onNavigate: (slug: string, ctx: Context) => void; onReplay: () => void; onStepChange: (i: number) => void
 }) {
-  const { t } = useI18n()
-  const { isMobile, isTablet } = useBreakpoint()
-  const anim        = ANIMATIONS.find(a => a.slug === slug)!
+  const { t, lang } = useI18n()
+  const { isMobile } = useBreakpoint()
+  const [activeTab, setActiveTab] = useState<'preview' | 'learn'>('preview')
+  const rawAnim     = ANIMATIONS.find(a => a.slug === slug)!
+  const anim        = localizeAnim(rawAnim, lang)
   const accentColor = CAT_COLORS[anim.category] ?? '#534AB7'
   const pool        = context === 'web' ? WEB_PLATFORMS : MOBILE_PLATFORMS
   const impl        = anim.implementations.find(i => i.platform === platform)
@@ -568,303 +571,354 @@ function DetailView({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Top bar */}
+
+      {/* ── Top bar ── */}
       <div style={{
         height: 50, padding: isMobile ? '0 12px' : '0 20px', flexShrink: 0,
         display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 12,
         borderBottom: '1px solid var(--border)', background: 'var(--bg)',
-        overflowX: isMobile ? 'auto' : 'visible',
+        overflowX: 'auto',
       }}>
         <button onClick={onBack} style={{
           fontSize: 12, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)',
-          background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6,
+          background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6, flexShrink: 0,
         }}
           onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
           onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
         >{t('det_back')}</button>
 
         {!isMobile && <span style={{ color: 'var(--border-strong)', fontSize: 16 }}>|</span>}
-
         {!isMobile && (
-          <span style={{ fontFamily: 'var(--font-power)', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+          <span style={{ fontFamily: 'var(--font-power)', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
             {anim.title}
           </span>
         )}
         {!isMobile && (
-          <span style={{
-            padding: '2px 8px', borderRadius: 5,
-            background: accentColor + '18', color: accentColor,
-            fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-          }}>{anim.category}</span>
+          <span style={{ padding: '2px 8px', borderRadius: 5, background: accentColor + '18', color: accentColor, fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+            {anim.category}
+          </span>
         )}
         {!isMobile && (
-          <span style={{
-            padding: '2px 8px', borderRadius: 5,
-            background: 'var(--bg-tertiary)', color: DIFF_COLORS[anim.difficulty],
-            fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 500, letterSpacing: '0.04em',
-          }}>{t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}</span>
+          <span style={{ padding: '2px 8px', borderRadius: 5, background: 'var(--bg-tertiary)', color: DIFF_COLORS[anim.difficulty], fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 500, letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+            {t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}
+          </span>
         )}
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, flexShrink: 0 }}>
           {(['web', 'mobile'] as Context[]).map(ctx => (
             <button key={ctx} onClick={() => onContextSwitch(ctx)} style={{
               padding: '5px 14px', borderRadius: 7,
               background: context === ctx ? accentColor : 'var(--bg-secondary)',
               border: `1px solid ${context === ctx ? accentColor : 'var(--border)'}`,
               color: context === ctx ? '#fff' : 'var(--text-secondary)',
-              fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-outfit)', fontWeight: 500, transition: 'all 0.15s ease',
+              fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-outfit)', fontWeight: 500, transition: 'all 0.15s ease', whiteSpace: 'nowrap',
             }}>{ctx === 'web' ? t('det_web') : t('det_mobile')}</button>
           ))}
         </div>
-        {!isMobile && <div style={{ display: 'flex', gap: 2 }}>
-          <button onClick={() => prev && onNavigate(prev.slug, context)} disabled={!prev} style={{
-            padding: '4px 10px', borderRadius: 6, fontSize: 11,
-            border: '1px solid var(--border)', background: 'var(--bg-secondary)',
-            color: prev ? 'var(--text-secondary)' : 'var(--border-strong)',
-            cursor: prev ? 'pointer' : 'default', fontFamily: 'var(--font-outfit)',
-          }}>←</button>
-          <button onClick={() => next && onNavigate(next.slug, context)} disabled={!next} style={{
-            padding: '4px 10px', borderRadius: 6, fontSize: 11,
-            border: '1px solid var(--border)', background: 'var(--bg-secondary)',
-            color: next ? 'var(--text-secondary)' : 'var(--border-strong)',
-            cursor: next ? 'pointer' : 'default', fontFamily: 'var(--font-outfit)',
-          }}>→</button>
-        </div>}
+        {!isMobile && (
+          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+            <button onClick={() => prev && onNavigate(prev.slug, context)} disabled={!prev} style={{
+              padding: '4px 10px', borderRadius: 6, fontSize: 11,
+              border: '1px solid var(--border)', background: 'var(--bg-secondary)',
+              color: prev ? 'var(--text-secondary)' : 'var(--border-strong)',
+              cursor: prev ? 'pointer' : 'default', fontFamily: 'var(--font-outfit)',
+            }}>←</button>
+            <button onClick={() => next && onNavigate(next.slug, context)} disabled={!next} style={{
+              padding: '4px 10px', borderRadius: 6, fontSize: 11,
+              border: '1px solid var(--border)', background: 'var(--bg-secondary)',
+              color: next ? 'var(--text-secondary)' : 'var(--border-strong)',
+              cursor: next ? 'pointer' : 'default', fontFamily: 'var(--font-outfit)',
+            }}>→</button>
+          </div>
+        )}
       </div>
 
-      {/* Body */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: (isMobile || isTablet) ? 'column' : 'row', overflow: (isMobile || isTablet) ? 'auto' : 'hidden' }}>
-        {/* Preview panel */}
-        <div style={{
-          width: (isMobile || isTablet) ? '100%' : 380,
-          flexShrink: 0,
-          borderRight: (isMobile || isTablet) ? 'none' : '1px solid var(--border)',
-          borderBottom: (isMobile || isTablet) ? '1px solid var(--border)' : 'none',
-          background: 'var(--bg-secondary)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: isMobile ? 16 : 24, gap: 16, overflowY: 'auto',
-          minHeight: (isMobile || isTablet) ? 300 : undefined,
-        }}>
-          <AnimatePresence mode="wait">
+      {/* ── Tab bar ── */}
+      <div style={{
+        display: 'flex', flexShrink: 0,
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg)',
+        padding: '0 20px',
+      }}>
+        {(['preview', 'learn'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: '10px 18px', border: 'none', background: 'transparent',
+              cursor: 'pointer', fontFamily: 'var(--font-outfit)', fontSize: 13, fontWeight: activeTab === tab ? 600 : 400,
+              color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              borderBottom: `2px solid ${activeTab === tab ? accentColor : 'transparent'}`,
+              marginBottom: -1, transition: 'all 0.15s ease',
+            }}
+          >
+            {tab === 'preview' ? t('det_tab_preview') : t('det_tab_learn')}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Tab content ── */}
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        <AnimatePresence mode="wait" initial={false}>
+
+          {/* PREVIEW TAB */}
+          {activeTab === 'preview' && (
             <motion.div
-              key={`${slug}-${context}-${replayKey}`}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+              key="preview"
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                position: 'absolute', inset: 0, overflowY: 'auto',
+                background: 'var(--bg-secondary)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: isMobile ? 16 : 28, gap: 16,
+              }}
             >
-              {context === 'web' ? (
-                <BrowserFrame>
-                  <AnimationPreview key={`${replayKey}-${stepIndex}`} slug={slug} context="web" stepIndex={stepIndex} />
-                </BrowserFrame>
-              ) : (
-                <PhoneFrame>
-                  <AnimationPreview key={`${replayKey}-${stepIndex}`} slug={slug} context="mobile" stepIndex={stepIndex} />
-                </PhoneFrame>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${slug}-${context}-${replayKey}`}
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+                >
+                  {context === 'web' ? (
+                    <BrowserFrame>
+                      <AnimationPreview key={`${replayKey}-${stepIndex}`} slug={slug} context="web" stepIndex={stepIndex} />
+                    </BrowserFrame>
+                  ) : (
+                    <PhoneFrame>
+                      <AnimationPreview key={`${replayKey}-${stepIndex}`} slug={slug} context="mobile" stepIndex={stepIndex} />
+                    </PhoneFrame>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Step dots */}
+              {steps.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 20, background: accentColor + '12', border: `1px solid ${accentColor}30` }}>
+                  {steps.map((_, i) => (
+                    <button key={i} onClick={() => { onStepChange(i); setActiveTab('learn') }} style={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                      background: stepIndex === i ? accentColor : 'var(--bg-tertiary)',
+                      color: stepIndex === i ? '#fff' : 'var(--text-tertiary)',
+                      border: `1px solid ${stepIndex === i ? accentColor : 'var(--border)'}`,
+                      fontSize: 9, fontWeight: 700, cursor: 'pointer',
+                      fontFamily: 'var(--font-outfit)', transition: 'all 0.15s',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{i + 1}</button>
+                  ))}
+                  <button onClick={onReplay} style={{
+                    marginLeft: 4, padding: '2px 8px', borderRadius: 10,
+                    border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-tertiary)',
+                    fontSize: 10, fontFamily: 'var(--font-outfit)', cursor: 'pointer',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.color = accentColor }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-tertiary)' }}
+                  >{t('det_replay')}</button>
+                </div>
+              )}
+              {steps.length === 0 && (
+                <button onClick={onReplay} style={{
+                  padding: '7px 20px', borderRadius: 8, border: '1px solid var(--border)',
+                  background: 'var(--bg)', color: 'var(--text-secondary)',
+                  fontSize: 12, fontFamily: 'var(--font-outfit)', cursor: 'pointer',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.color = accentColor }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+                >{t('det_replay')}</button>
+              )}
+
+              {/* Concept blurb */}
+              <div style={{ width: '100%', maxWidth: 520, padding: '14px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)' }}>
+                <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+                  {anim.concept}
+                </p>
+              </div>
+
+              {/* Prompt to switch tab */}
+              {steps.length > 0 && (
+                <button onClick={() => setActiveTab('learn')} style={{
+                  padding: '9px 22px', borderRadius: 9,
+                  background: accentColor, color: '#fff',
+                  border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-outfit)', fontSize: 13, fontWeight: 600,
+                  letterSpacing: '-0.01em',
+                }}>
+                  {t('det_tab_learn')} →
+                </button>
               )}
             </motion.div>
-          </AnimatePresence>
-
-          {steps.length > 0 && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '5px 12px', borderRadius: 20,
-              background: accentColor + '12', border: `1px solid ${accentColor}30`,
-            }}>
-              {steps.map((_, i) => (
-                <button key={i} onClick={() => onStepChange(i)} style={{
-                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                  background: stepIndex === i ? accentColor : 'var(--bg-tertiary)',
-                  color: stepIndex === i ? '#fff' : 'var(--text-tertiary)',
-                  border: `1px solid ${stepIndex === i ? accentColor : 'var(--border)'}`,
-                  fontSize: 9, fontWeight: 700, cursor: 'pointer',
-                  fontFamily: 'var(--font-outfit)', transition: 'all 0.15s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{i + 1}</button>
-              ))}
-              <button onClick={onReplay} style={{
-                marginLeft: 4, padding: '2px 8px', borderRadius: 10,
-                border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-tertiary)',
-                fontSize: 10, fontFamily: 'var(--font-outfit)', cursor: 'pointer',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.color = accentColor }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-tertiary)' }}
-              >{t('det_replay')}</button>
-            </div>
           )}
 
-          {steps.length === 0 && (
-            <button onClick={onReplay} style={{
-              padding: '7px 20px', borderRadius: 8, border: '1px solid var(--border)',
-              background: 'var(--bg)', color: 'var(--text-secondary)',
-              fontSize: 12, fontFamily: 'var(--font-outfit)', cursor: 'pointer',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.color = accentColor }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-            >{t('det_replay')}</button>
-          )}
-
-          <div style={{ width: '100%', padding: '14px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)' }}>
-            <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-              {anim.concept}
-            </p>
-          </div>
-        </div>
-
-        {/* Right content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '24px 16px 60px' : isTablet ? '28px 28px 60px' : '36px 48px 80px' }}>
-          <Section title={t('det_how')} color={accentColor}>
-            <ol style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {anim.howItWorks.map((step, i) => (
-                <li key={i} style={{ display: 'flex', gap: 14 }}>
-                  <span style={{
-                    flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
-                    background: accentColor, color: '#fff',
-                    fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1,
-                  }}>{i + 1}</span>
-                  <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-                    <Inline text={step} />
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </Section>
-          <Divider />
-          <Section title={t('det_impl')} color={accentColor}>
-            <div style={{
-              display: 'flex', gap: 2, background: 'var(--bg-secondary)',
-              borderRadius: '10px 10px 0 0', border: '1px solid var(--border)',
-              borderBottom: 'none', padding: '8px 8px 0',
-              overflowX: 'auto',
-            }}>
-              {PLATFORMS.filter(p => pool.includes(p.id)).map(p => {
-                const hasImpl  = anim.implementations.some(i => i.platform === p.id)
-                const isActive = platform === p.id
-                const LComp    = PLATFORM_LOGOS[p.id]
-                return (
-                  <button key={p.id}
-                    onClick={() => hasImpl && onPlatformChange(p.id)}
-                    disabled={!hasImpl}
-                    style={{
-                      padding: '5px 14px 7px', border: 'none', borderRadius: '7px 7px 0 0',
-                      background: isActive ? 'var(--bg-tertiary)' : 'transparent',
-                      cursor: hasImpl ? 'pointer' : 'default', opacity: hasImpl ? 1 : 0.3,
-                      position: 'relative', minWidth: 90, transition: 'background 0.15s',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                    }}
-                  >
-                    <span style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)', display: 'flex' }}>
-                      {LComp && <LComp size={p.id === 'nextjs' ? 28 : 16} />}
-                    </span>
-                    <div style={{ fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: isActive ? 600 : 400, color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                      {p.label}
-                    </div>
-                    {isActive && (
-                      <motion.div layoutId={`tab-${context}`} style={{
-                        position: 'absolute', bottom: 0, left: 6, right: 6,
-                        height: 2, borderRadius: 2, background: accentColor,
-                      }} transition={{ type: 'spring', stiffness: 500, damping: 30 }} />
+          {/* LEARN TAB */}
+          {activeTab === 'learn' && (
+            <motion.div
+              key="learn"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 12 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: isMobile ? '24px 16px 60px' : '32px 40px 80px' }}
+            >
+              <Section title={t('det_how')} color={accentColor}>
+                <ol style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {anim.howItWorks.map((step, i) => (
+                    <li key={i} style={{ display: 'flex', gap: 14 }}>
+                      <span style={{
+                        flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
+                        background: accentColor, color: '#fff',
+                        fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1,
+                      }}>{i + 1}</span>
+                      <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+                        <Inline text={step} />
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </Section>
+              <Divider />
+              <Section title={t('det_impl')} color={accentColor}>
+                <div style={{
+                  display: 'flex', gap: 2, background: 'var(--bg-secondary)',
+                  borderRadius: '10px 10px 0 0', border: '1px solid var(--border)',
+                  borderBottom: 'none', padding: '8px 8px 0', overflowX: 'auto',
+                }}>
+                  {PLATFORMS.filter(p => pool.includes(p.id)).map(p => {
+                    const hasImpl  = rawAnim.implementations.some(i => i.platform === p.id)
+                    const isActive = platform === p.id
+                    const LComp    = PLATFORM_LOGOS[p.id]
+                    return (
+                      <button key={p.id}
+                        onClick={() => hasImpl && onPlatformChange(p.id)}
+                        disabled={!hasImpl}
+                        style={{
+                          padding: '5px 14px 7px', border: 'none', borderRadius: '7px 7px 0 0',
+                          background: isActive ? 'var(--bg-tertiary)' : 'transparent',
+                          cursor: hasImpl ? 'pointer' : 'default', opacity: hasImpl ? 1 : 0.3,
+                          position: 'relative', minWidth: 90, transition: 'background 0.15s',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        }}
+                      >
+                        <span style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)', display: 'flex' }}>
+                          {LComp && <LComp size={p.id === 'nextjs' ? 28 : 16} />}
+                        </span>
+                        <div style={{ fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: isActive ? 600 : 400, color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                          {p.label}
+                        </div>
+                        {isActive && (
+                          <motion.div layoutId={`tab-${context}`} style={{
+                            position: 'absolute', bottom: 0, left: 6, right: 6,
+                            height: 2, borderRadius: 2, background: accentColor,
+                          }} transition={{ type: 'spring', stiffness: 500, damping: 30 }} />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                {impl ? (
+                  <div>
+                    {impl.notes && (
+                      <div style={{
+                        padding: '9px 14px', background: accentColor + '10',
+                        border: `1px solid ${accentColor}28`, borderTop: 'none',
+                        fontFamily: 'var(--font-outfit)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6,
+                      }}>
+                        <Inline text={impl.notes} />
+                      </div>
                     )}
-                  </button>
-                )
-              })}
-            </div>
-            {impl ? (
-              <div>
-                {impl.notes && (
-                  <div style={{
-                    padding: '9px 14px', background: accentColor + '10',
-                    border: `1px solid ${accentColor}28`, borderTop: 'none',
-                    fontFamily: 'var(--font-outfit)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6,
-                  }}>
-                    <Inline text={impl.notes} />
+                    {impl.deps.length > 0 && (
+                      <div style={{
+                        padding: '8px 12px', background: 'var(--bg-secondary)',
+                        borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)',
+                        display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+                      }}>
+                        <span style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.08em' }}>{t('det_deps')}</span>
+                        {impl.deps.map(dep => (
+                          <span key={dep} style={{
+                            padding: '2px 7px', borderRadius: 4,
+                            background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+                            fontFamily: 'ui-monospace, monospace', fontSize: 11, color: 'var(--accent-light)',
+                          }}>{dep}</span>
+                        ))}
+                      </div>
+                    )}
+                    {steps.length > 0 && currentStep ? (
+                      <StepperBlock steps={steps} stepIndex={stepIndex} accentColor={accentColor} onStepChange={onStepChange} currentStep={currentStep} lang={lang} />
+                    ) : (
+                      <CodeBlock code={impl.code} />
+                    )}
                   </div>
-                )}
-                {impl.deps.length > 0 && (
-                  <div style={{
-                    padding: '8px 12px', background: 'var(--bg-secondary)',
-                    borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)',
-                    display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-                  }}>
-                    <span style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.08em' }}>{t('det_deps')}</span>
-                    {impl.deps.map(dep => (
-                      <span key={dep} style={{
-                        padding: '2px 7px', borderRadius: 4,
-                        background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
-                        fontFamily: 'ui-monospace, monospace', fontSize: 11, color: 'var(--accent-light)',
-                      }}>{dep}</span>
-                    ))}
-                  </div>
-                )}
-                {steps.length > 0 && currentStep ? (
-                  <StepperBlock steps={steps} stepIndex={stepIndex} accentColor={accentColor} onStepChange={onStepChange} currentStep={currentStep} />
                 ) : (
-                  <CodeBlock code={impl.code} />
+                  <div style={{
+                    padding: '24px', borderRadius: '0 0 10px 10px',
+                    border: '1px solid var(--border)', borderTop: 'none', background: 'var(--bg-secondary)',
+                    textAlign: 'center', fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-tertiary)',
+                  }}>
+                    {t('det_no_impl')}
+                  </div>
                 )}
-              </div>
-            ) : (
-              <div style={{
-                padding: '24px', borderRadius: '0 0 10px 10px',
-                border: '1px solid var(--border)', borderTop: 'none', background: 'var(--bg-secondary)',
-                textAlign: 'center', fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-tertiary)',
-              }}>
-                {t('det_no_impl')}
-              </div>
-            )}
-          </Section>
-          <Divider />
-          <Section title={t('det_cases')} color={accentColor}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {anim.useCases.map((uc, i) => (
-                <div key={i} style={{
-                  padding: '14px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', gap: 14,
-                }}>
-                  <span style={{
-                    flexShrink: 0, padding: '2px 8px', borderRadius: 16,
-                    background: accentColor + '1a', color: accentColor,
-                    fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600,
-                    letterSpacing: '0.04em', height: 'fit-content', marginTop: 2, whiteSpace: 'nowrap',
-                  }}>{uc.label}</span>
-                  <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{uc.example}</p>
+              </Section>
+              <Divider />
+              <Section title={t('det_cases')} color={accentColor}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {anim.useCases.map((uc, i) => (
+                    <div key={i} style={{
+                      padding: '14px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', gap: 14,
+                    }}>
+                      <span style={{
+                        flexShrink: 0, padding: '2px 8px', borderRadius: 16,
+                        background: accentColor + '1a', color: accentColor,
+                        fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600,
+                        letterSpacing: '0.04em', height: 'fit-content', marginTop: 2, whiteSpace: 'nowrap',
+                      }}>{uc.label}</span>
+                      <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{uc.example}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </Section>
-          <Divider />
-          <Section title={t('det_tips')} color={accentColor}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {anim.tips.map((tip, i) => (
-                <div key={i} style={{
-                  padding: '13px 16px', borderRadius: 9, border: `1px solid ${accentColor}33`, background: accentColor + '0a', display: 'flex', gap: 10,
-                }}>
-                  <div style={{ flexShrink: 0, width: 5, borderRadius: 3, background: accentColor, opacity: 0.5, marginTop: 3, alignSelf: 'stretch' }} />
-                  <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>
-                    <Inline text={tip} />
-                  </p>
+              </Section>
+              <Divider />
+              <Section title={t('det_tips')} color={accentColor}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {anim.tips.map((tip, i) => (
+                    <div key={i} style={{
+                      padding: '13px 16px', borderRadius: 9, border: `1px solid ${accentColor}33`, background: accentColor + '0a', display: 'flex', gap: 10,
+                    }}>
+                      <div style={{ flexShrink: 0, width: 5, borderRadius: 3, background: accentColor, opacity: 0.5, marginTop: 3, alignSelf: 'stretch' }} />
+                      <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>
+                        <Inline text={tip} />
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </Section>
-        </div>
+              </Section>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
       </div>
     </div>
   )
 }
 
 /* ── Stepper ── */
-function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep }: {
-  steps: Step[]; stepIndex: number; accentColor: string; onStepChange: (i: number) => void; currentStep: Step
+function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep, lang }: {
+  steps: Step[]; stepIndex: number; accentColor: string; onStepChange: (i: number) => void; currentStep: Step; lang: 'en' | 'fr'
 }) {
   return (
     <div>
-      <div style={{ display: 'flex', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+      {/* Step tabs — scrollable on mobile */}
+      <div style={{ display: 'flex', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)', background: 'var(--bg-secondary)', overflowX: 'auto' }}>
         {steps.map((s, i) => {
+          const ls       = localizeStep(s, lang)
           const isActive = stepIndex === i
           return (
             <button key={i} onClick={() => onStepChange(i)} style={{
-              flex: 1, padding: '10px 12px', border: 'none',
+              flex: '0 0 auto', minWidth: 80, padding: '10px 12px', border: 'none',
               borderBottom: `2px solid ${isActive ? accentColor : 'transparent'}`,
               borderRight: i < steps.length - 1 ? '1px solid var(--border)' : 'none',
               background: isActive ? accentColor + '0e' : 'transparent',
@@ -882,7 +936,8 @@ function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep
                 <span style={{
                   fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: isActive ? 600 : 400,
                   color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)', lineHeight: 1.3,
-                }}>{s.title}</span>
+                  whiteSpace: 'nowrap',
+                }}>{ls.title}</span>
               </div>
             </button>
           )
@@ -890,9 +945,25 @@ function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep
       </div>
       <AnimatePresence mode="wait">
         <motion.div key={stepIndex} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18 }}>
-          <div style={{ padding: '11px 16px', background: accentColor + '08', borderLeft: `1px solid ${accentColor}28`, borderRight: `1px solid ${accentColor}28` }}>
-            <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-              {currentStep.description}
+          {/* Step description — why this step matters */}
+          <div style={{
+            padding: '14px 18px',
+            background: accentColor + '08',
+            borderLeft: `1px solid ${accentColor}28`,
+            borderRight: `1px solid ${accentColor}28`,
+            borderBottom: `1px solid ${accentColor}18`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+              <span style={{
+                fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 700,
+                color: accentColor, letterSpacing: '0.06em', textTransform: 'uppercase',
+              }}>Step {stepIndex + 1} / {steps.length}</span>
+              <span style={{ fontSize: 13, fontFamily: 'var(--font-outfit)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {localizeStep(currentStep, lang).title}
+              </span>
+            </div>
+            <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.75, margin: 0 }}>
+              {localizeStep(currentStep, lang).description}
             </p>
           </div>
           <CodeBlock code={currentStep.code} />
