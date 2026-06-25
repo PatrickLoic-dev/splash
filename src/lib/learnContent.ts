@@ -3693,4 +3693,1120 @@ class CollapsingHeaderPage extends StatelessWidget {
       ],
     },
   },
+
+  /* ─────────────────────────────────────────────── */
+  /*  11. Pan Dismiss                                */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'pan-dismiss',
+    title: 'Pan Dismiss',
+    category: 'Feedback',
+    difficulty: 'Intermediate',
+    tagline: 'Drag a card or sheet off-screen to dismiss it with native gesture feel',
+    concept:
+      'Pan dismiss tracks a drag gesture and maps the drag distance to opacity and scale transforms in real time. When the gesture exceeds a velocity or distance threshold, the element is animated off-screen and removed from the tree. Below the threshold it springs back to its origin. The result is a dismissal interaction that feels physically connected to the user\'s finger — the defining pattern of native mobile UIs.',
+    howItWorks: [
+      'Attach a gesture handler (`PanResponder` on React Native, `GestureDetector` on Flutter, or Framer Motion `drag` on web) to the element.',
+      'On each drag event, update a `translateY` animated value. Simultaneously interpolate opacity and scale so the card visually fades as it moves away.',
+      'In the gesture release handler, check `dy` (distance) and `vy` (velocity). If either exceeds the threshold, animate the card to off-screen and call the dismiss callback.',
+      'If below the threshold, spring the animated value back to 0 using a stiff spring so it snaps home satisfyingly.',
+    ],
+    implementations: [
+      {
+        platform: 'react-native',
+        deps: [],
+        notes: 'Uses the built-in `PanResponder` API — no extra dependencies required. For complex gesture scenarios consider `react-native-gesture-handler`.',
+        code: `import { useRef, useState } from 'react'
+import { Animated, PanResponder, View, Text, StyleSheet } from 'react-native'
+
+export function DismissableCard({ onDismiss }) {
+  const translateY = useRef(new Animated.Value(0)).current
+  const opacity    = translateY.interpolate({ inputRange: [0, 180], outputRange: [1, 0] })
+  const scale      = translateY.interpolate({ inputRange: [0, 180], outputRange: [1, 0.88] })
+
+  const pan = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 8,
+    onPanResponderMove: (_, g) => {
+      if (g.dy > 0) translateY.setValue(g.dy)
+    },
+    onPanResponderRelease: (_, g) => {
+      if (g.dy > 80 || g.vy > 0.5) {
+        Animated.timing(translateY, { toValue: 400, duration: 220, useNativeDriver: true }).start(onDismiss)
+      } else {
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start()
+      }
+    },
+  })).current
+
+  return (
+    <Animated.View
+      {...pan.panHandlers}
+      style={[styles.card, { transform: [{ translateY }, { scale }], opacity }]}
+    >
+      <Text style={styles.title}>Notification</Text>
+      <Text style={styles.sub}>Drag down to dismiss</Text>
+    </Animated.View>
+  )
+}
+
+const styles = StyleSheet.create({
+  card:  { backgroundColor: '#fff', borderRadius: 16, padding: 20, margin: 16, elevation: 4 },
+  title: { fontSize: 16, fontWeight: '600' },
+  sub:   { fontSize: 13, color: '#888', marginTop: 4 },
+})`,
+      },
+      {
+        platform: 'flutter',
+        deps: [],
+        notes: 'Uses `GestureDetector` + `AnimationController`. No packages required — everything is built into the Flutter SDK.',
+        code: `import 'package:flutter/material.dart';
+
+class DismissableCard extends StatefulWidget {
+  final VoidCallback onDismiss;
+  const DismissableCard({super.key, required this.onDismiss});
+  @override State<DismissableCard> createState() => _State();
+}
+
+class _State extends State<DismissableCard> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  double _dy = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  void _onEnd(DragEndDetails d) {
+    if (_dy > 80 || d.velocity.pixelsPerSecond.dy > 500) {
+      _ctrl.forward().then((_) => widget.onDismiss());
+    } else {
+      setState(() => _dy = 0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = (_dy / 180).clamp(0.0, 1.0);
+    return GestureDetector(
+      onVerticalDragUpdate: (d) => setState(() => _dy = (_dy + d.delta.dy).clamp(0, 400)),
+      onVerticalDragEnd:    _onEnd,
+      child: Transform.translate(
+        offset: Offset(0, _dy),
+        child: Opacity(
+          opacity: (1 - t).clamp(0.0, 1.0),
+          child: Transform.scale(
+            scale: 1 - t * 0.12,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+                  Text('Notification', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 4),
+                  Text('Drag down to dismiss', style: TextStyle(color: Colors.grey)),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}`,
+      },
+      {
+        platform: 'react',
+        deps: ['framer-motion'],
+        code: `import { useMotionValue, useTransform, animate, motion } from 'framer-motion'
+
+export function DismissableCard({ onDismiss }) {
+  const y       = useMotionValue(0)
+  const opacity = useTransform(y, [0, 180], [1, 0])
+  const scale   = useTransform(y, [0, 180], [1, 0.88])
+
+  return (
+    <motion.div
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.6}
+      style={{ y, opacity, scale }}
+      onDragEnd={(_, { offset, velocity }) => {
+        if (offset.y > 80 || velocity.y > 500) {
+          animate(y, 400, { duration: 0.22, ease: 'easeIn' }).then(onDismiss)
+        } else {
+          animate(y, 0, { type: 'spring', stiffness: 400, damping: 30 })
+        }
+      }}
+      className="card"
+    >
+      <h3>Notification</h3>
+      <p>Drag down to dismiss</p>
+    </motion.div>
+  )
+}`,
+      },
+      {
+        platform: 'nextjs',
+        deps: ['framer-motion'],
+        notes: 'Add `\'use client\'` — all drag and animation hooks require a browser environment.',
+        code: `'use client'
+import { useMotionValue, useTransform, animate, motion } from 'framer-motion'
+
+export function DismissableCard({ onDismiss }: { onDismiss: () => void }) {
+  const y       = useMotionValue(0)
+  const opacity = useTransform(y, [0, 180], [1, 0])
+  const scale   = useTransform(y, [0, 180], [1, 0.88])
+
+  return (
+    <motion.div
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.6}
+      style={{ y, opacity, scale, touchAction: 'none' }}
+      onDragEnd={(_, { offset, velocity }) => {
+        if (offset.y > 80 || velocity.y > 500) {
+          animate(y, 400, { duration: 0.22, ease: 'easeIn' }).then(onDismiss)
+        } else {
+          animate(y, 0, { type: 'spring', stiffness: 400, damping: 30 })
+        }
+      }}
+      className="card"
+    >
+      <h3>Notification</h3>
+      <p>Drag down to dismiss</p>
+    </motion.div>
+  )
+}`,
+      },
+      {
+        platform: 'vue',
+        deps: ['@vueuse/gesture'],
+        notes: '`@vueuse/gesture` wraps pointer events. Alternatively wire up `@vue-use/pointer` or raw `pointermove` listeners.',
+        code: `<template>
+  <div
+    v-gesture.drag="onDrag"
+    :style="{
+      transform: \`translateY(\${dy}px) scale(\${cardScale})\`,
+      opacity: cardOpacity,
+      touchAction: 'none',
+    }"
+    class="card"
+  >
+    <h3>Notification</h3>
+    <p>Drag down to dismiss</p>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+
+const emit = defineEmits(['dismiss'])
+const dy = ref(0)
+
+const cardOpacity = computed(() => Math.max(0, 1 - dy.value / 180))
+const cardScale   = computed(() => Math.max(0.88, 1 - (dy.value / 180) * 0.12))
+
+function onDrag({ delta, velocityY, last }) {
+  if (!last) {
+    dy.value = Math.max(0, dy.value + delta[1])
+    return
+  }
+  if (dy.value > 80 || velocityY > 0.5) {
+    emit('dismiss')
+  } else {
+    dy.value = 0
+  }
+}
+</script>`,
+      },
+    ],
+    useCases: [
+      { label: 'Notification tray',  example: 'Pull down a notification card to dismiss it — the native iOS/Android interaction replicated in-app.' },
+      { label: 'Bottom sheet',       example: 'A modal sheet the user can drag down to close instead of tapping a close button.' },
+      { label: 'Swipe-to-delete',    example: 'Swipe a list item horizontally to reveal a delete action — standard pattern in mail and todo apps.' },
+      { label: 'Story viewer',       example: 'Drag down to exit a full-screen story or image viewer, matching the Instagram/Snapchat interaction model.' },
+    ],
+    tips: [
+      'Use `dragConstraints={{ top: 0, bottom: 0 }}` in Framer Motion so the card springs back automatically when released below the threshold — you only need to override this in `onDragEnd` when dismissing.',
+      'Apply `touch-action: none` on the draggable element to prevent the browser from intercepting the gesture for scroll.',
+      'Combine translateY with opacity and scale transforms for a rich dismiss feel — a card that only translates looks flat.',
+      'Keep the dismiss threshold between 60–100px and velocity threshold around 500px/s. Too low = accidental dismissal; too high = the gesture feels broken.',
+    ],
+    fr: {
+      title: 'Balayage pour fermer',
+      tagline: 'Faites glisser une carte ou une feuille hors de l\'écran pour la fermer avec un geste natif fluide',
+      concept:
+        'Le balayage pour fermer suit un geste de glissement et mappe la distance de glissement à des transformations d\'opacité et d\'échelle en temps réel. Quand le geste dépasse un seuil de vitesse ou de distance, l\'élément est animé hors de l\'écran et retiré de l\'arbre. En dessous du seuil, il revient à son origine avec un ressort. Le résultat est une interaction de fermeture qui semble physiquement liée au doigt de l\'utilisateur — le pattern signature des interfaces mobiles natives.',
+      howItWorks: [
+        'Attacher un gestionnaire de gestes (`PanResponder` sur React Native, `GestureDetector` sur Flutter, ou `drag` de Framer Motion sur le web) à l\'élément.',
+        'À chaque événement de glissement, mettre à jour une valeur animée `translateY`. Interpoler simultanément l\'opacité et l\'échelle pour que la carte s\'estompe visuellement au fur et à mesure qu\'elle s\'éloigne.',
+        'Dans le gestionnaire de fin de geste, vérifier `dy` (distance) et `vy` (vitesse). Si l\'un dépasse le seuil, animer la carte hors de l\'écran et appeler le callback de fermeture.',
+        'En dessous du seuil, ramener la valeur animée à 0 avec un ressort rigide pour qu\'elle revienne à sa place de façon satisfaisante.',
+      ],
+      useCases: [
+        { label: 'Barre de notifications', example: 'Tirer vers le bas une carte de notification pour la fermer — l\'interaction native iOS/Android reproduite dans l\'application.' },
+        { label: 'Feuille inférieure',     example: 'Une feuille modale que l\'utilisateur peut faire glisser vers le bas pour fermer au lieu de taper sur un bouton de fermeture.' },
+        { label: 'Glisser pour supprimer', example: 'Glisser un élément de liste horizontalement pour révéler une action de suppression — pattern standard dans les applications mail et todo.' },
+        { label: 'Visionneuse de stories', example: 'Faire glisser vers le bas pour quitter une visionneuse d\'images plein écran, correspondant au modèle d\'interaction Instagram/Snapchat.' },
+      ],
+      tips: [
+        'Utiliser `dragConstraints={{ top: 0, bottom: 0 }}` dans Framer Motion pour que la carte revienne automatiquement quand relâchée en dessous du seuil — override uniquement dans `onDragEnd` lors de la fermeture.',
+        'Appliquer `touch-action: none` sur l\'élément draggable pour éviter que le navigateur intercepte le geste pour le scroll.',
+        'Combiner translateY avec des transformations d\'opacité et d\'échelle pour une fermeture riche — une carte qui se translate seulement paraît plate.',
+        'Garder le seuil de fermeture entre 60–100px et le seuil de vitesse autour de 500px/s. Trop bas = fermeture accidentelle ; trop haut = le geste semble cassé.',
+      ],
+    },
+  },
+
+  /* ─────────────────────────────────────────────── */
+  /*  12. Flutter Hero                               */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'flutter-hero',
+    title: 'Flutter Hero',
+    category: 'Navigation',
+    difficulty: 'Intermediate',
+    tagline: 'A shared element morphs seamlessly between two screens during navigation',
+    concept:
+      'The Hero pattern animates a shared visual element — an image, avatar, or card — from its position on one screen to its position on another. Instead of the two screens cutting or crossfading independently, the shared element flies through space while the rest of the UI transitions around it. Flutter\'s `Hero` widget and Framer Motion\'s `layoutId` both implement this idea: they snapshot the element in its origin state, then FLIP-animate it to its destination position during the route change.',
+    howItWorks: [
+      'Mark the same element on both screens with a matching identifier (`tag` in Flutter, `layoutId` in Framer Motion, `sharedElementTransition` in React Navigation).',
+      'On navigation, the framework detects the matching pair and creates an animation overlay — the element is rendered above both screens during the transition.',
+      'The element interpolates from its origin bounding box to its destination bounding box. Border-radius, size, and position all animate smoothly.',
+      'The rest of the UI (non-hero content) crossfades or slides independently, providing context that a navigation has occurred.',
+    ],
+    implementations: [
+      {
+        platform: 'flutter',
+        deps: [],
+        notes: 'Flutter\'s `Hero` widget is built into the SDK — zero configuration required. Just wrap the shared element with `Hero(tag: ...)` on both routes.',
+        code: `import 'package:flutter/material.dart';
+
+// List screen
+class PhotoGrid extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 3,
+      children: photos.map((photo) => GestureDetector(
+        onTap: () => Navigator.push(context, MaterialPageRoute(
+          builder: (_) => PhotoDetail(photo: photo),
+        )),
+        child: Hero(
+          tag: 'photo-\${photo.id}',          // matching tag
+          child: Image.network(photo.url, fit: BoxFit.cover),
+        ),
+      )).toList(),
+    );
+  }
+}
+
+// Detail screen
+class PhotoDetail extends StatelessWidget {
+  final Photo photo;
+  const PhotoDetail({required this.photo});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(children: [
+        Hero(
+          tag: 'photo-\${photo.id}',          // same tag = shared element
+          child: Image.network(photo.url, width: double.infinity, height: 320, fit: BoxFit.cover),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(photo.title, style: Theme.of(context).textTheme.headlineMedium),
+        ),
+      ]),
+    );
+  }
+}`,
+      },
+      {
+        platform: 'react-native',
+        deps: ['react-native-reanimated', '@react-navigation/native', 'react-native-shared-element'],
+        notes: '`react-native-shared-element` + the React Navigation bindings provide the closest equivalent to Flutter\'s Hero widget on React Native.',
+        code: `import { createSharedElementStackNavigator } from 'react-navigation-shared-element'
+import Animated, { useSharedValue, withSpring } from 'react-native-reanimated'
+
+const Stack = createSharedElementStackNavigator()
+
+// List item
+function PhotoCard({ photo, navigation }) {
+  return (
+    <TouchableOpacity onPress={() => navigation.push('Detail', { photo })}>
+      <SharedElement id={\`photo.\${photo.id}\`}>
+        <Image source={{ uri: photo.url }} style={styles.thumbnail} />
+      </SharedElement>
+    </TouchableOpacity>
+  )
+}
+
+// Detail screen
+function PhotoDetail({ route }) {
+  const { photo } = route.params
+  return (
+    <View>
+      <SharedElement id={\`photo.\${photo.id}\`}>
+        <Image source={{ uri: photo.url }} style={styles.hero} />
+      </SharedElement>
+      <Text style={styles.title}>{photo.title}</Text>
+    </View>
+  )
+}
+
+// Register shared elements on the screen component
+PhotoDetail.sharedElements = (route) => [
+  { id: \`photo.\${route.params.photo.id}\`, animation: 'move' },
+]
+
+export function App() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="List"   component={PhotoGrid} />
+      <Stack.Screen name="Detail" component={PhotoDetail} />
+    </Stack.Navigator>
+  )
+}`,
+      },
+      {
+        platform: 'react',
+        deps: ['framer-motion'],
+        notes: 'Framer Motion\'s `layoutId` is the React equivalent of Flutter\'s Hero tag. Wrap both instances of the element in a `<LayoutGroup>` for cross-component coordination.',
+        code: `import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { useState } from 'react'
+
+const photos = [
+  { id: 'a', color: '#534AB7', title: 'Aurora' },
+  { id: 'b', color: '#1D9E75', title: 'Forest' },
+  { id: 'c', color: '#D85A30', title: 'Ember'  },
+]
+
+export function Gallery() {
+  const [selected, setSelected] = useState(null)
+  const photo = photos.find(p => p.id === selected)
+
+  return (
+    <LayoutGroup>
+      <div className="grid">
+        {photos.map(p => (
+          <motion.div
+            key={p.id}
+            layoutId={\`hero-\${p.id}\`}
+            onClick={() => setSelected(p.id)}
+            style={{ background: p.color, borderRadius: 12 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+          />
+        ))}
+      </div>
+
+      <AnimatePresence>
+        {selected && photo && (
+          <>
+            <motion.div className="backdrop"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSelected(null)}
+            />
+            <motion.div
+              layoutId={\`hero-\${selected}\`}
+              style={{ background: photo.color, borderRadius: 16 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+              className="detail"
+              onClick={() => setSelected(null)}
+            >
+              <h2>{photo.title}</h2>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </LayoutGroup>
+  )
+}`,
+      },
+      {
+        platform: 'nextjs',
+        deps: ['framer-motion'],
+        notes: 'Add `\'use client\'` — `layoutId` and `AnimatePresence` require browser APIs. Wrap the page layout in `<LayoutGroup>` if the hero spans different Server Components.',
+        code: `'use client'
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { useState } from 'react'
+
+const photos = [
+  { id: 'a', color: '#534AB7', title: 'Aurora' },
+  { id: 'b', color: '#1D9E75', title: 'Forest' },
+]
+
+export function Gallery() {
+  const [selected, setSelected] = useState<string | null>(null)
+  const photo = photos.find(p => p.id === selected)
+
+  return (
+    <LayoutGroup>
+      <div className="grid">
+        {photos.map(p => (
+          <motion.div
+            key={p.id}
+            layoutId={\`photo-\${p.id}\`}
+            onClick={() => setSelected(p.id)}
+            style={{ background: p.color, borderRadius: 12 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+          />
+        ))}
+      </div>
+
+      <AnimatePresence>
+        {selected && photo && (
+          <motion.div
+            layoutId={\`photo-\${selected}\`}
+            style={{ background: photo.color, borderRadius: 20, position: 'fixed', inset: '5%', zIndex: 50 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+            onClick={() => setSelected(null)}
+          >
+            <h2 style={{ color: '#fff', padding: 24 }}>{photo.title}</h2>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </LayoutGroup>
+  )
+}`,
+      },
+      {
+        platform: 'vue',
+        deps: [],
+        notes: 'Vue doesn\'t have a built-in Hero API. This implementation uses manual FLIP — reading the element\'s bounding box before and after navigation and interpolating with CSS transitions.',
+        code: `<template>
+  <div>
+    <!-- Grid view -->
+    <div v-if="!selected" class="grid">
+      <div
+        v-for="photo in photos"
+        :key="photo.id"
+        :ref="el => thumbRefs[photo.id] = el"
+        :style="{ background: photo.color }"
+        class="thumb"
+        @click="open(photo)"
+      />
+    </div>
+
+    <!-- Detail view — animates from thumb position using FLIP -->
+    <Transition name="hero" @before-enter="onBeforeEnter">
+      <div v-if="selected" :style="detailStyle" class="detail" @click="selected = null">
+        <h2>{{ selected.title }}</h2>
+      </div>
+    </Transition>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive } from 'vue'
+
+const photos    = [{ id: 'a', color: '#534AB7', title: 'Aurora' }, { id: 'b', color: '#1D9E75', title: 'Forest' }]
+const selected  = ref(null)
+const thumbRefs = reactive({})
+const firstRect = ref(null)
+
+function open(photo) {
+  firstRect.value = thumbRefs[photo.id]?.getBoundingClientRect()
+  selected.value  = photo
+}
+
+const detailStyle = computed(() => ({ background: selected.value?.color }))
+
+function onBeforeEnter(el) {
+  if (!firstRect.value) return
+  const r = firstRect.value
+  el.style.transform = \`translate(\${r.left}px, \${r.top}px) scale(\${r.width / 400})\`
+  el.style.opacity   = '0.8'
+  requestAnimationFrame(() => {
+    el.style.transform = ''
+    el.style.opacity   = '1'
+  })
+}
+</script>`,
+      },
+    ],
+    useCases: [
+      { label: 'Photo gallery',    example: 'A thumbnail expands into a full-screen detail view — the image itself flies across while metadata fades in below it.' },
+      { label: 'Product listing',  example: 'A product card\'s image morphs into the hero image on the product detail page, maintaining visual continuity.' },
+      { label: 'Card to modal',    example: 'A compact dashboard card expands in-place to a full detail overlay without a jarring cut.' },
+      { label: 'List to profile',  example: 'An avatar in a contacts list flies to the top of the profile screen when the user taps a row.' },
+    ],
+    tips: [
+      'In Flutter, the `Hero` tag must be unique per page pair — avoid using array indices as tags since they can collide.',
+      'In Framer Motion, always pair `layoutId` with a `<LayoutGroup>` when the hero spans different component trees; without it the animation may not fire.',
+      'Keep the spring stiffness ≤ 250 and damping ≥ 25 for hero transitions — too fast looks like a layout glitch, not a morph.',
+      'Border-radius changes during the hero fly are often jarring. Interpolate from the source radius to the destination radius explicitly using a style transition.',
+    ],
+    fr: {
+      title: 'Héros Flutter',
+      tagline: 'Un élément partagé se transforme en douceur entre deux écrans pendant la navigation',
+      concept:
+        'Le pattern Héros anime un élément visuel partagé — image, avatar ou carte — depuis sa position sur un écran vers sa position sur un autre. Au lieu que les deux écrans se coupent ou s\'estompent indépendamment, l\'élément partagé traverse l\'espace pendant que le reste de l\'interface transite autour. Le widget `Hero` de Flutter et le `layoutId` de Framer Motion implémentent tous deux cette idée : ils capturent l\'état d\'origine de l\'élément, puis l\'animent en FLIP vers sa position de destination pendant le changement de route.',
+      howItWorks: [
+        'Marquer le même élément sur les deux écrans avec un identifiant correspondant (`tag` dans Flutter, `layoutId` dans Framer Motion, `sharedElementTransition` dans React Navigation).',
+        'À la navigation, le framework détecte la paire correspondante et crée une couche d\'animation — l\'élément est rendu au-dessus des deux écrans pendant la transition.',
+        'L\'élément interpole depuis sa boîte de délimitation d\'origine vers sa boîte de délimitation de destination. Le rayon de bordure, la taille et la position s\'animent en douceur.',
+        'Le reste de l\'interface (contenu non-héros) s\'estompe ou glisse indépendamment, fournissant le contexte qu\'une navigation a eu lieu.',
+      ],
+      useCases: [
+        { label: 'Galerie photos',    example: 'Une vignette s\'agrandit en vue détail plein écran — l\'image elle-même vole pendant que les métadonnées s\'affichent en dessous.' },
+        { label: 'Liste de produits', example: 'L\'image d\'une carte produit se transforme en image héros sur la page détail, maintenant la continuité visuelle.' },
+        { label: 'Carte vers modal',  example: 'Une carte de tableau de bord compacte s\'agrandit en une superposition de détail complète sans coupure brutale.' },
+        { label: 'Liste vers profil', example: 'Un avatar dans une liste de contacts vole vers le haut de l\'écran de profil quand l\'utilisateur appuie sur une ligne.' },
+      ],
+      tips: [
+        'Dans Flutter, le tag `Hero` doit être unique par paire de pages — éviter d\'utiliser des indices de tableau comme tags car ils peuvent entrer en conflit.',
+        'Dans Framer Motion, toujours associer `layoutId` à un `<LayoutGroup>` quand le héros s\'étend sur différents arbres de composants ; sans cela, l\'animation peut ne pas se déclencher.',
+        'Garder la rigidité du ressort ≤ 250 et l\'amortissement ≥ 25 pour les transitions héros — trop rapide ressemble à un problème de mise en page, pas à une transformation.',
+        'Les changements de rayon de bordure pendant le vol héros sont souvent choquants. Interpoler explicitement du rayon source au rayon destination via une transition de style.',
+      ],
+    },
+  },
+
+  /* ─────────────────────────────────────────────── */
+  /*  13. View Transitions                           */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'view-transitions',
+    title: 'View Transitions',
+    category: 'Navigation',
+    difficulty: 'Intermediate',
+    tagline: 'Morph between pages using the browser\'s native View Transitions API',
+    concept:
+      'The View Transitions API is a browser-native way to animate between any two DOM states — including full page navigations in SPAs. The browser captures a screenshot of the current state, makes the DOM change, then animates from the snapshot to the new state using CSS. Named view-transition elements morph individually, enabling smooth shared-element effects without a JavaScript animation library. In Next.js, `document.startViewTransition()` wraps any router push; in frameworks with built-in support, it\'s a single flag.',
+    howItWorks: [
+      'Call `document.startViewTransition(() => { /* make DOM change */ })`. The browser takes a snapshot before the callback and another after, then cross-fades between them.',
+      'Assign `view-transition-name: my-hero` (in CSS) to elements that should morph individually. The browser will independently animate those elements from their old to new position and size.',
+      'Customize the crossfade duration and easing via `::view-transition-old(root)` and `::view-transition-new(root)` pseudo-elements — they behave like regular animation keyframes.',
+      'In Next.js App Router, intercept `router.push()` inside `document.startViewTransition()`. Add `view-transition-name` CSS via a `className` or inline style on the shared element.',
+    ],
+    implementations: [
+      {
+        platform: 'nextjs',
+        deps: [],
+        notes: 'No external packages required — the API is available in all major browsers (Chrome 111+, Safari 18+, Firefox 133+). The `useRouter` from `next/navigation` is used to trigger navigation inside the transition.',
+        code: `'use client'
+import { useRouter } from 'next/navigation'
+
+export function ArticleCard({ article }) {
+  const router = useRouter()
+
+  function navigate() {
+    // Wrap the navigation in startViewTransition
+    if (!document.startViewTransition) {
+      router.push(\`/article/\${article.id}\`)
+      return
+    }
+    document.startViewTransition(() => {
+      router.push(\`/article/\${article.id}\`)
+    })
+  }
+
+  return (
+    <div onClick={navigate} style={{ cursor: 'pointer' }}>
+      {/* Give the hero image a view-transition-name */}
+      <img
+        src={article.cover}
+        style={{ viewTransitionName: \`article-cover-\${article.id}\` }}
+      />
+      <h2>{article.title}</h2>
+    </div>
+  )
+}
+
+// On the detail page, use the SAME view-transition-name
+// app/article/[id]/page.tsx
+export default function ArticlePage({ params }) {
+  return (
+    <div>
+      <img
+        src={article.cover}
+        style={{ viewTransitionName: \`article-cover-\${params.id}\` }}
+      />
+      <h1>{article.title}</h1>
+    </div>
+  )
+}`,
+      },
+      {
+        platform: 'react',
+        deps: [],
+        notes: 'Uses `document.startViewTransition` directly — no library needed. Pair with `react-router-dom` v6.28+ which has experimental built-in support via `unstable_viewTransition`.',
+        code: `import { useNavigate } from 'react-router-dom'
+
+function ArticleCard({ article }) {
+  const navigate = useNavigate()
+
+  function handleClick() {
+    if (!document.startViewTransition) {
+      navigate(\`/article/\${article.id}\`)
+      return
+    }
+    document.startViewTransition(() => {
+      navigate(\`/article/\${article.id}\`)
+    })
+  }
+
+  return (
+    <div onClick={handleClick}>
+      <img
+        src={article.cover}
+        style={{ viewTransitionName: \`cover-\${article.id}\` }}
+      />
+      <h2>{article.title}</h2>
+    </div>
+  )
+}
+
+// Customize the crossfade in CSS:
+// ::view-transition-old(root) { animation-duration: 300ms; }
+// ::view-transition-new(root) { animation-duration: 300ms; }`,
+      },
+      {
+        platform: 'vue',
+        deps: [],
+        notes: 'Vue Router 4.4+ has built-in View Transitions support via the `viewTransition` option — the cleanest integration across any framework.',
+        code: `// router/index.ts
+import { createRouter, createWebHistory } from 'vue-router'
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [ /* ... */ ],
+})
+
+// Enable View Transitions globally
+router.beforeEach((to, from) => {
+  if (!document.startViewTransition) return true
+  return new Promise(resolve => {
+    document.startViewTransition(() => { resolve(true) })
+  })
+})
+
+export default router
+
+<!-- ArticleCard.vue -->
+<template>
+  <div @click="router.push(\`/article/\${article.id}\`)" style="cursor: pointer">
+    <img :src="article.cover" :style="{ viewTransitionName: \`cover-\${article.id}\` }" />
+    <h2>{{ article.title }}</h2>
+  </div>
+</template>
+
+<!-- ArticleDetail.vue -->
+<template>
+  <img :src="article.cover" :style="{ viewTransitionName: \`cover-\${article.id}\` }" />
+  <h1>{{ article.title }}</h1>
+</template>`,
+      },
+      {
+        platform: 'react-native',
+        deps: ['react-native-reanimated', '@react-navigation/native', '@react-navigation/stack'],
+        notes: 'React Native doesn\'t support the browser View Transitions API. The equivalent is a custom `cardStyleInterpolator` in React Navigation — a function that receives the animation progress and maps it to card styles.',
+        code: `import { createStackNavigator } from '@react-navigation/stack'
+import Animated from 'react-native-reanimated'
+
+const Stack = createStackNavigator()
+
+// Custom crossfade transition — equivalent to the browser's default view transition
+const fadeTransition = {
+  cardStyleInterpolator: ({ current, next }) => ({
+    cardStyle: {
+      opacity: current.progress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+      }),
+    },
+    overlayStyle: {
+      opacity: next?.progress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 0.6],
+      }),
+    },
+  }),
+  transitionSpec: {
+    open:  { animation: 'timing', config: { duration: 300 } },
+    close: { animation: 'timing', config: { duration: 300 } },
+  },
+}
+
+export function AppNavigator() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="List"   component={ListScreen} />
+      <Stack.Screen name="Detail" component={DetailScreen} options={fadeTransition} />
+    </Stack.Navigator>
+  )
+}`,
+      },
+      {
+        platform: 'flutter',
+        deps: [],
+        notes: 'Flutter uses `PageRouteBuilder` with a custom `transitionsBuilder` — the equivalent of `::view-transition-*` pseudo-element animations.',
+        code: `import 'package:flutter/material.dart';
+
+// Custom fade+scale transition (equivalent to a crossfade view transition)
+class FadeScaleRoute extends PageRouteBuilder {
+  final Widget page;
+  FadeScaleRoute({required this.page}) : super(
+    pageBuilder: (_, __, ___) => page,
+    transitionsBuilder: (_, animation, __, child) {
+      return FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.96, end: 1.0).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          ),
+          child: child,
+        ),
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 300),
+  );
+}
+
+// Usage
+Navigator.of(context).push(FadeScaleRoute(page: const DetailPage()))`,
+      },
+    ],
+    useCases: [
+      { label: 'Article list → detail',   example: 'The article cover image morphs from the card thumbnail to the full-width hero on the detail page.' },
+      { label: 'E-commerce PDP',          example: 'Product images transition from the listing grid to the product detail page without a white-flash cut.' },
+      { label: 'Dashboard → report',      example: 'A summary card expands into a full report page, preserving the visual context of which card was tapped.' },
+      { label: 'Settings section expand', example: 'A settings group header morphs as its detail screen slides in, confirming to the user which section they\'re entering.' },
+    ],
+    tips: [
+      'Always provide a `document.startViewTransition` feature-check fallback — the API is not available in all browsers yet.',
+      'Each `view-transition-name` must be unique in the DOM at any given time. Duplicate names during a transition cause the morph to break silently.',
+      'The default crossfade is 250ms. Match your spring/easing to this duration if you\'re mixing library-based animations (like Framer Motion) on the same page.',
+      'Use `will-change: transform` on named view-transition elements to promote them to their own compositor layer before the transition fires, reducing jank on lower-end devices.',
+    ],
+    fr: {
+      title: 'Transitions de vue',
+      tagline: 'Morphez entre les pages en utilisant l\'API View Transitions native du navigateur',
+      concept:
+        'L\'API View Transitions est un moyen natif du navigateur d\'animer entre deux états DOM — y compris les navigations de pages complètes dans les SPA. Le navigateur capture une capture d\'écran de l\'état actuel, effectue le changement DOM, puis anime de la capture vers le nouvel état via CSS. Les éléments de transition nommés se morphent individuellement, permettant des effets d\'éléments partagés fluides sans bibliothèque d\'animation JavaScript. Dans Next.js, `document.startViewTransition()` enveloppe n\'importe quel push du routeur.',
+      howItWorks: [
+        'Appeler `document.startViewTransition(() => { /* changement DOM */ })`. Le navigateur prend un snapshot avant le callback et un autre après, puis effectue un fondu croisé entre eux.',
+        'Assigner `view-transition-name: mon-hero` (en CSS) aux éléments qui doivent se morpher individuellement. Le navigateur animera indépendamment ces éléments de leur ancienne à leur nouvelle position et taille.',
+        'Personnaliser la durée et l\'easing du fondu via les pseudo-éléments `::view-transition-old(root)` et `::view-transition-new(root)` — ils se comportent comme des keyframes d\'animation réguliers.',
+        'Dans Next.js App Router, intercepter `router.push()` à l\'intérieur de `document.startViewTransition()`. Ajouter le CSS `view-transition-name` via un `className` ou un style inline sur l\'élément partagé.',
+      ],
+      useCases: [
+        { label: 'Article liste → détail', example: 'L\'image de couverture de l\'article se transforme de la vignette de la carte vers le héros pleine largeur sur la page de détail.' },
+        { label: 'E-commerce PDP',          example: 'Les images de produits transitent de la grille de liste à la page de détail du produit sans coupure blanche.' },
+        { label: 'Tableau de bord → rapport', example: 'Une carte de résumé s\'agrandit en page de rapport complète, préservant le contexte visuel de la carte touchée.' },
+        { label: 'Extension de section paramètres', example: 'Un en-tête de groupe de paramètres se morphe lorsque son écran de détail glisse, confirmant à l\'utilisateur quelle section il entre.' },
+      ],
+      tips: [
+        'Toujours fournir un fallback de vérification de fonctionnalité `document.startViewTransition` — l\'API n\'est pas encore disponible dans tous les navigateurs.',
+        'Chaque `view-transition-name` doit être unique dans le DOM à tout moment. Les noms dupliqués pendant une transition font échouer le morphing silencieusement.',
+        'Le fondu croisé par défaut est de 250ms. Faire correspondre votre spring/easing à cette durée si vous mélangez des animations basées sur des bibliothèques (comme Framer Motion) sur la même page.',
+        'Utiliser `will-change: transform` sur les éléments de transition de vue nommés pour les promouvoir sur leur propre couche de compositeur avant le déclenchement de la transition, réduisant les saccades sur les appareils moins puissants.',
+      ],
+    },
+  },
+
+  /* ─────────────────────────────────────────────── */
+  /*  14. FLIP List                                  */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'flip-list',
+    title: 'FLIP List',
+    category: 'List',
+    difficulty: 'Intermediate',
+    tagline: 'Items animate to their new positions when the list is filtered, sorted, or reordered',
+    concept:
+      'FLIP stands for First, Last, Invert, Play. When a list changes (filter, sort, add, remove), record each item\'s position before and after the change. The difference between First and Last positions is the Invert — a transform that makes the item appear not to have moved. Then Play the animation by transitioning the inverted transform to identity. The result is items that appear to glide to their new positions rather than jumping. Vue\'s `<TransitionGroup>` automates this, Framer Motion uses `layout`, and Flutter uses `AnimatedList`.',
+    howItWorks: [
+      'Before the state change, snapshot the bounding box of every visible item (the "First" position).',
+      'After the state change, let the DOM update and read each item\'s new bounding box (the "Last" position).',
+      'Apply a CSS transform to each item that offsets it back to its First position — this is the "Invert" step. The user sees no jump.',
+      'Remove (or transition) the inverted transform to zero — this is the "Play" step. The item appears to animate from where it was to where it now is. Vue and Framer Motion handle steps 1–4 automatically via their layout animation APIs.',
+    ],
+    implementations: [
+      {
+        platform: 'vue',
+        deps: [],
+        notes: 'Vue\'s `<TransitionGroup>` performs the full FLIP calculation for free when you add the `move-class` attribute — no library or manual measurement needed.',
+        code: `<template>
+  <div>
+    <div class="filters">
+      <button @click="filter = 'all'">All</button>
+      <button @click="filter = 'web'">Web</button>
+      <button @click="shuffle">Shuffle</button>
+    </div>
+
+    <TransitionGroup
+      name="flip"
+      tag="ul"
+      class="list"
+    >
+      <li v-for="item in filtered" :key="item.id" class="item">
+        {{ item.label }}
+      </li>
+    </TransitionGroup>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+
+const filter = ref('all')
+const items  = ref([
+  { id: 'a', label: 'React',   type: 'web'    },
+  { id: 'b', label: 'Vue',     type: 'web'    },
+  { id: 'c', label: 'Flutter', type: 'mobile' },
+  { id: 'd', label: 'Kotlin',  type: 'mobile' },
+])
+
+const filtered = computed(() =>
+  filter.value === 'all' ? items.value : items.value.filter(i => i.type === filter.value)
+)
+
+function shuffle() {
+  items.value = [...items.value].sort(() => Math.random() - 0.5)
+}
+</script>
+
+<style>
+/* Enter/leave transitions */
+.flip-enter-active, .flip-leave-active { transition: all 0.3s ease; }
+.flip-enter-from, .flip-leave-to      { opacity: 0; transform: translateY(12px); }
+.flip-leave-active                    { position: absolute; }  /* critical for FLIP */
+
+/* Move transition — this IS the FLIP */
+.flip-move { transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+</style>`,
+      },
+      {
+        platform: 'react',
+        deps: ['framer-motion'],
+        notes: 'Add `layout` to each item and wrap in `<AnimatePresence mode="popLayout">`. Framer Motion performs the FLIP measurement automatically on every re-render.',
+        code: `import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useMemo } from 'react'
+
+const items = [
+  { id: 'a', label: 'React',   type: 'web'    },
+  { id: 'b', label: 'Vue',     type: 'web'    },
+  { id: 'c', label: 'Flutter', type: 'mobile' },
+  { id: 'd', label: 'Kotlin',  type: 'mobile' },
+]
+
+export function FlipList() {
+  const [filter, setFilter] = useState('all')
+  const [order,  setOrder]  = useState(items)
+
+  const visible = useMemo(
+    () => order.filter(i => filter === 'all' || i.type === filter),
+    [order, filter]
+  )
+
+  return (
+    <div>
+      <div className="filters">
+        <button onClick={() => setFilter('all')}>All</button>
+        <button onClick={() => setFilter('web')}>Web</button>
+        <button onClick={() => setOrder(o => [...o].reverse())}>Flip ↕</button>
+      </div>
+
+      <motion.ul layout style={{ padding: 0, listStyle: 'none' }}>
+        <AnimatePresence mode="popLayout">
+          {visible.map(item => (
+            <motion.li
+              key={item.id}
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {item.label}
+            </motion.li>
+          ))}
+        </AnimatePresence>
+      </motion.ul>
+    </div>
+  )
+}`,
+      },
+      {
+        platform: 'nextjs',
+        deps: ['framer-motion'],
+        notes: 'Add `\'use client\'` at the top. The `layout` prop requires DOM measurements which are browser-only.',
+        code: `'use client'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useMemo } from 'react'
+
+const items = [
+  { id: 'a', label: 'React',   type: 'web'    },
+  { id: 'b', label: 'Vue',     type: 'web'    },
+  { id: 'c', label: 'Flutter', type: 'mobile' },
+]
+
+export function FlipList() {
+  const [filter, setFilter] = useState('all')
+  const [order,  setOrder]  = useState(items)
+
+  const visible = useMemo(
+    () => order.filter(i => filter === 'all' || i.type === filter),
+    [order, filter]
+  )
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        {['all', 'web', 'mobile'].map(f => (
+          <button key={f} onClick={() => setFilter(f)}>{f}</button>
+        ))}
+        <button onClick={() => setOrder(o => [...o].reverse())}>Flip ↕</button>
+      </div>
+      <motion.ul layout style={{ padding: 0, listStyle: 'none' }}>
+        <AnimatePresence mode="popLayout">
+          {visible.map(item => (
+            <motion.li key={item.id} layout
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              style={{ padding: '10px 14px', borderRadius: 8, marginBottom: 6, border: '1px solid #ddd' }}
+            >
+              {item.label}
+            </motion.li>
+          ))}
+        </AnimatePresence>
+      </motion.ul>
+    </div>
+  )
+}`,
+      },
+      {
+        platform: 'react-native',
+        deps: [],
+        notes: 'React Native\'s `LayoutAnimation` performs the FLIP calculation natively — call `LayoutAnimation.configureNext()` before the state change.',
+        code: `import { LayoutAnimation, Platform, UIManager, View, Text, TouchableOpacity } from 'react-native'
+import { useState } from 'react'
+
+if (Platform.OS === 'android') {
+  UIManager.setLayoutAnimationEnabledExperimental?.(true)
+}
+
+const items = [
+  { id: 'a', label: 'React Native', type: 'mobile' },
+  { id: 'b', label: 'Flutter',      type: 'mobile' },
+  { id: 'c', label: 'React',        type: 'web'    },
+  { id: 'd', label: 'Vue',          type: 'web'    },
+]
+
+export function FlipList() {
+  const [filter, setFilter] = useState('all')
+
+  const visible = items.filter(i => filter === 'all' || i.type === filter)
+
+  function changeFilter(f) {
+    // Trigger layout animation BEFORE the state change
+    LayoutAnimation.configureNext(
+      LayoutAnimation.create(300, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity)
+    )
+    setFilter(f)
+  }
+
+  return (
+    <View>
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+        <TouchableOpacity onPress={() => changeFilter('all')}><Text>All</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => changeFilter('web')}><Text>Web</Text></TouchableOpacity>
+      </View>
+      {visible.map(item => (
+        <View key={item.id} style={{ padding: 14, marginBottom: 8, borderRadius: 10, borderWidth: 1, borderColor: '#ddd' }}>
+          <Text>{item.label}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}`,
+      },
+      {
+        platform: 'flutter',
+        deps: [],
+        notes: 'Flutter\'s `AnimatedList` + `AnimatedSwitcher` handle entry/exit. For reorder animations, use `ReorderableListView` or the `animated_list` package for more control.',
+        code: `import 'package:flutter/material.dart';
+
+class FlipList extends StatefulWidget {
+  @override State<FlipList> createState() => _FlipListState();
+}
+
+class _FlipListState extends State<FlipList> {
+  String _filter = 'all';
+  final _listKey = GlobalKey<AnimatedListState>();
+  final _items   = ['React', 'Vue', 'Flutter', 'Kotlin'];
+  List<String> get _visible =>
+      _filter == 'all' ? _items : _items.where((i) => i == 'Flutter' || i == 'Kotlin').toList();
+
+  void _setFilter(String f) => setState(() => _filter = f);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Row(children: [
+        TextButton(onPressed: () => _setFilter('all'),    child: const Text('All')),
+        TextButton(onPressed: () => _setFilter('mobile'), child: const Text('Mobile')),
+      ]),
+      AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: Column(
+          key: ValueKey(_filter),
+          children: _visible.map((item) => AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve:    Curves.easeOutCubic,
+            margin:   const EdgeInsets.only(bottom: 8),
+            padding:  const EdgeInsets.all(14),
+            decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(10)),
+            child: Text(item),
+          )).toList(),
+        ),
+      ),
+    ]);
+  }
+}`,
+      },
+    ],
+    useCases: [
+      { label: 'Filter UI',        example: 'A product grid filtered by category — items smoothly slide to fill gaps rather than snapping into a new layout.' },
+      { label: 'Sort order',       example: 'A data table sorted by column — rows animate to their new sorted positions on click.' },
+      { label: 'Drag & drop',      example: 'A kanban board where dropping a card in a new column triggers the surrounding cards to FLIP into their new positions.' },
+      { label: 'Tag/chip removal', example: 'A tag pill removed from a list causes the remaining tags to animate and fill the gap smoothly.' },
+    ],
+    tips: [
+      'The critical trick in Vue\'s `<TransitionGroup>` is `position: absolute` on `.flip-leave-active` — without it, leaving items still occupy space and prevent siblings from moving.',
+      'In Framer Motion, `mode="popLayout"` in `<AnimatePresence>` immediately removes leaving items from the layout flow, letting remaining items start their FLIP animation without waiting.',
+      'Only add `layout` to items that actually change position — animating every element on a large list can cause frame drops. Use `layoutId` only for items that persist between renders.',
+      'Avoid mixing FLIP animations with CSS transitions on the same element — they fight each other. Use one or the other per element.',
+    ],
+    fr: {
+      title: 'Liste FLIP',
+      tagline: 'Les éléments s\'animent vers leurs nouvelles positions quand la liste est filtrée, triée ou réordonnée',
+      concept:
+        'FLIP signifie First, Last, Invert, Play. Quand une liste change (filtre, tri, ajout, suppression), enregistrez la position de chaque élément avant et après le changement. La différence entre les positions Première et Dernière est l\'Inverse — une transform qui fait paraître l\'élément immobile. Puis Jouez l\'animation en transitionnant la transform inversée vers l\'identité. Le résultat : des éléments qui semblent glisser vers leurs nouvelles positions. Le `<TransitionGroup>` de Vue automatise cela, Framer Motion utilise `layout`, et Flutter utilise `AnimatedList`.',
+      howItWorks: [
+        'Avant le changement d\'état, capturer la boîte de délimitation de chaque élément visible (la position "Première").',
+        'Après le changement d\'état, laisser le DOM se mettre à jour et lire la nouvelle boîte de délimitation de chaque élément (la position "Dernière").',
+        'Appliquer une transform CSS à chaque élément qui le repositionne à sa position Première — c\'est l\'étape "Inverse". L\'utilisateur ne voit aucun saut.',
+        'Supprimer (ou transitionner) la transform inversée vers zéro — c\'est l\'étape "Jouer". L\'élément semble s\'animer de là où il était vers là où il est maintenant. Vue et Framer Motion gèrent automatiquement les étapes 1–4 via leurs APIs d\'animation de mise en page.',
+      ],
+      useCases: [
+        { label: 'Interface de filtre', example: 'Une grille de produits filtrée par catégorie — les éléments glissent doucement pour remplir les espaces plutôt que de sauter dans une nouvelle disposition.' },
+        { label: 'Ordre de tri',        example: 'Un tableau de données trié par colonne — les lignes s\'animent vers leurs nouvelles positions triées au clic.' },
+        { label: 'Glisser-déposer',     example: 'Un tableau kanban où déposer une carte dans une nouvelle colonne déclenche l\'animation FLIP des cartes environnantes.' },
+        { label: 'Suppression de tags', example: 'Un tag supprimé d\'une liste provoque l\'animation des tags restants pour combler le vide en douceur.' },
+      ],
+      tips: [
+        'L\'astuce critique dans le `<TransitionGroup>` de Vue est `position: absolute` sur `.flip-leave-active` — sans cela, les éléments qui partent occupent toujours de l\'espace et empêchent les frères de bouger.',
+        'Dans Framer Motion, `mode="popLayout"` dans `<AnimatePresence>` supprime immédiatement les éléments qui partent du flux de mise en page, permettant aux éléments restants de démarrer leur animation FLIP sans attendre.',
+        'N\'ajouter `layout` qu\'aux éléments qui changent réellement de position — animer chaque élément d\'une grande liste peut causer des chutes de frames. Utiliser `layoutId` uniquement pour les éléments qui persistent entre les rendus.',
+        'Éviter de mélanger les animations FLIP avec les transitions CSS sur le même élément — elles se combattent. Utiliser l\'un ou l\'autre par élément.',
+      ],
+    },
+  },
 ]

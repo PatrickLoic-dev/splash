@@ -486,10 +486,11 @@ function FilteredView({
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border)',
               borderRadius: 14,
-              padding: '22px',
+              padding: 0,
               cursor: 'pointer',
               textAlign: 'left',
-              display: 'flex', flexDirection: 'column', gap: 10,
+              display: 'flex', flexDirection: 'column', gap: 0,
+              overflow: 'hidden',
             }}
             onMouseEnter={e => {
               const c = CAT_COLORS[anim.category] ?? '#534AB7'
@@ -501,40 +502,70 @@ function FilteredView({
               e.currentTarget.style.boxShadow   = 'none'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{
-                padding: '3px 8px', borderRadius: 5,
-                background: (CAT_COLORS[anim.category] ?? '#534AB7') + '18',
-                color: CAT_COLORS[anim.category] ?? '#534AB7',
-                fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600,
-                letterSpacing: '0.08em', textTransform: 'uppercase',
+            {/* ── Mini framed preview thumbnail ── */}
+            <div style={{
+              height: context === 'mobile' ? 148 : 136,
+              overflow: 'hidden',
+              borderBottom: '1px solid var(--border)',
+              background: 'var(--bg)',
+              display: 'flex',
+              alignItems: context === 'mobile' ? 'flex-start' : 'stretch',
+              justifyContent: context === 'mobile' ? 'center' : 'stretch',
+              pointerEvents: 'none',
+              flexShrink: 0,
+            }}>
+              {context === 'mobile' ? (
+                <div style={{ transform: 'scale(0.32)', transformOrigin: 'top center', width: 200, flexShrink: 0 }}>
+                  <PhoneFrame>
+                    <AnimationPreview slug={anim.slug} context="mobile" stepIndex={3} />
+                  </PhoneFrame>
+                </div>
+              ) : (
+                <div style={{ transform: 'scale(0.56)', transformOrigin: 'top left', width: '179%', flexShrink: 0 }}>
+                  <BrowserFrame>
+                    <AnimationPreview slug={anim.slug} context="web" stepIndex={3} />
+                  </BrowserFrame>
+                </div>
+              )}
+            </div>
+
+            {/* ── Text content ── */}
+            <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  padding: '3px 8px', borderRadius: 5,
+                  background: (CAT_COLORS[anim.category] ?? '#534AB7') + '18',
+                  color: CAT_COLORS[anim.category] ?? '#534AB7',
+                  fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>
+                  {anim.category}
+                </span>
+                <span style={{
+                  fontSize: 10, fontFamily: 'var(--font-outfit)',
+                  color: DIFF_COLORS[anim.difficulty], letterSpacing: '0.04em',
+                }}>
+                  {t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}
+                </span>
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-power)', fontSize: 20, fontWeight: 700,
+                letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1.2,
               }}>
-                {anim.category}
-              </span>
-              <span style={{
-                fontSize: 10, fontFamily: 'var(--font-outfit)',
-                color: DIFF_COLORS[anim.difficulty], letterSpacing: '0.04em',
+                {anim.title}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-outfit)', fontSize: 12,
+                color: 'var(--text-tertiary)', lineHeight: 1.6,
               }}>
-                {t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}
-              </span>
-            </div>
-            <div style={{
-              fontFamily: 'var(--font-power)', fontSize: 20, fontWeight: 700,
-              letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1.2,
-            }}>
-              {anim.title}
-            </div>
-            <div style={{
-              fontFamily: 'var(--font-outfit)', fontSize: 12,
-              color: 'var(--text-tertiary)', lineHeight: 1.6,
-            }}>
-              {anim.tagline}
-            </div>
-            <div style={{
-              fontSize: 11, fontFamily: 'var(--font-outfit)',
-              color: 'var(--accent)', marginTop: 2,
-            }}>
-              {t('filt_cta')}
+                {anim.tagline}
+              </div>
+              <div style={{
+                fontSize: 11, fontFamily: 'var(--font-outfit)',
+                color: 'var(--accent)', marginTop: 2,
+              }}>
+                {t('filt_cta')}
+              </div>
             </div>
           </motion.button>
         ))}

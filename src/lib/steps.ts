@@ -7595,6 +7595,1446 @@ const collapsingHeader: StepMap = {
   flutter:        collapsingHeaderFlutter,
 }
 
+/* ─────────────────────────────────────────────────────────────────── */
+/*  pan-dismiss                                                          */
+/* ─────────────────────────────────────────────────────────────────── */
+
+const panDismissReact: Step[] = [
+  {
+    title: 'Connect the gesture handler',
+    description: 'Attach a drag gesture to the card using `useDragControls` or the `drag` prop. No threshold logic yet — the card simply follows the pointer so you can verify the connection works.',
+    fr: { title: 'Connecter le gestionnaire de geste', description: 'Attacher un geste de glissement à la carte via `useDragControls` ou la prop `drag`. Pas encore de logique de seuil — la carte suit simplement le pointeur pour vérifier que la connexion fonctionne.' },
+    code: `import { motion } from 'framer-motion'
+
+export function DismissCard({ children }) {
+  return (
+    <motion.div
+      drag="x"
+      style={{ cursor: 'grab' }}
+    >
+      {children}
+    </motion.div>
+  )
+}`,
+  },
+  {
+    title: 'Track position → opacity/scale',
+    description: 'Use `useMotionValue` and `useTransform` to map drag distance to opacity and scale. This gives the user continuous visual feedback that pulling the card is doing something meaningful.',
+    fr: { title: 'Suivre la position → opacité/échelle', description: 'Utiliser `useMotionValue` et `useTransform` pour lier la distance de glissement à l\'opacité et à l\'échelle. Cela donne à l\'utilisateur un retour visuel continu indiquant que l\'action a du sens.' },
+    code: `import { motion, useMotionValue, useTransform } from 'framer-motion'
+
+export function DismissCard({ children }) {
+  const x = useMotionValue(0)
+  const opacity = useTransform(x, [-150, 0, 150], [0, 1, 0])
+  const scale  = useTransform(x, [-150, 0, 150], [0.85, 1, 0.85])
+
+  return (
+    <motion.div drag="x" style={{ x, opacity, scale, cursor: 'grab' }}>
+      {children}
+    </motion.div>
+  )
+}`,
+  },
+  {
+    title: 'Add dismiss threshold',
+    description: 'Check drag offset and velocity in `onDragEnd`. Dismiss when either exceeds the threshold; otherwise spring back. This prevents accidental dismissals from small nudges.',
+    fr: { title: 'Ajouter le seuil de rejet', description: 'Vérifier le décalage et la vitesse de glissement dans `onDragEnd`. Rejeter si l\'un des deux dépasse le seuil ; sinon revenir en place. Cela évite les rejets accidentels suite à de petits mouvements.' },
+    code: `const THRESHOLD = 120
+
+function handleDragEnd(_, info) {
+  const { offset, velocity } = info
+  if (Math.abs(offset.x) > THRESHOLD || Math.abs(velocity.x) > 500) {
+    onDismiss()
+  }
+  // framer-motion springs back automatically when dragSnapToOrigin is set
+}
+
+<motion.div
+  drag="x"
+  dragSnapToOrigin
+  onDragEnd={handleDragEnd}
+  style={{ x, opacity, scale }}
+/>`,
+  },
+  {
+    title: 'Polish: spring config + backdrop fade',
+    description: 'Tune `dragTransition` spring stiffness/damping so the snap-back feels physical. Fade a semi-transparent backdrop using the same motion value to reinforce the dismiss intent.',
+    fr: { title: 'Finition : ressort + fondu de l\'arrière-plan', description: 'Ajuster la raideur et l\'amortissement du ressort dans `dragTransition` pour que le retour en place soit réaliste. Estomper un arrière-plan semi-transparent via la même valeur de mouvement pour renforcer l\'intention de rejet.' },
+    code: `const backdropOpacity = useTransform(x, [-150, 0, 150], [0.4, 0, 0.4])
+
+<>
+  <motion.div style={{ opacity: backdropOpacity }}
+    className="backdrop" />
+  <motion.div
+    drag="x"
+    dragSnapToOrigin
+    dragTransition={{ bounceStiffness: 300, bounceDamping: 30 }}
+    onDragEnd={handleDragEnd}
+    style={{ x, opacity, scale }}
+  />
+</>`,
+  },
+]
+
+const panDismissNextjs: Step[] = [
+  {
+    title: 'Connect the gesture handler',
+    description: 'Mark the component as a Client Component and attach a drag gesture. Next.js server components cannot hold motion state, so the `"use client"` directive is the first thing to add.',
+    fr: { title: 'Connecter le gestionnaire de geste', description: 'Marquer le composant comme Client Component et attacher un geste de glissement. Les composants serveur Next.js ne peuvent pas gérer l\'état de mouvement, donc la directive `"use client"` est la première chose à ajouter.' },
+    code: `'use client'
+import { motion } from 'framer-motion'
+
+export function DismissCard({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div drag="x" style={{ cursor: 'grab' }}>
+      {children}
+    </motion.div>
+  )
+}`,
+  },
+  {
+    title: 'Track position → opacity/scale',
+    description: 'Wire `useMotionValue` to visual properties with `useTransform`. The card dims and shrinks as it travels, signalling to the user that they are making progress toward dismissal.',
+    fr: { title: 'Suivre la position → opacité/échelle', description: 'Lier `useMotionValue` aux propriétés visuelles via `useTransform`. La carte s\'assombrit et rétrécit en se déplaçant, indiquant à l\'utilisateur qu\'il progresse vers le rejet.' },
+    code: `'use client'
+import { motion, useMotionValue, useTransform } from 'framer-motion'
+
+export function DismissCard({ children }: { children: React.ReactNode }) {
+  const x = useMotionValue(0)
+  const opacity = useTransform(x, [-150, 0, 150], [0, 1, 0])
+  const scale   = useTransform(x, [-150, 0, 150], [0.85, 1, 0.85])
+
+  return (
+    <motion.div drag="x" style={{ x, opacity, scale, cursor: 'grab' }}>
+      {children}
+    </motion.div>
+  )
+}`,
+  },
+  {
+    title: 'Add dismiss threshold',
+    description: 'Evaluate offset and velocity on release. Calling a server action or router navigation after dismissal integrates naturally here — dismiss the card then trigger a data mutation.',
+    fr: { title: 'Ajouter le seuil de rejet', description: 'Évaluer le décalage et la vitesse au relâchement. Appeler une action serveur ou la navigation du routeur après le rejet s\'intègre naturellement ici — rejeter la carte puis déclencher une mutation de données.' },
+    code: `'use client'
+const THRESHOLD = 120
+
+function handleDragEnd(_: unknown, info: PanInfo) {
+  if (Math.abs(info.offset.x) > THRESHOLD ||
+      Math.abs(info.velocity.x) > 500) {
+    // e.g. router.push('/next') or call a server action
+    onDismiss()
+  }
+}
+
+<motion.div drag="x" dragSnapToOrigin onDragEnd={handleDragEnd}
+  style={{ x, opacity, scale }} />`,
+  },
+  {
+    title: 'Polish: spring config + backdrop fade',
+    description: 'Tune the snap-back spring and add a backdrop. In Next.js, keep the backdrop in the same Client Component so it shares the same motion value without extra props drilling.',
+    fr: { title: 'Finition : ressort + fondu de l\'arrière-plan', description: 'Peaufiner le ressort de retour et ajouter un arrière-plan. Dans Next.js, garder l\'arrière-plan dans le même Client Component afin qu\'il partage la même valeur de mouvement sans prop drilling supplémentaire.' },
+    code: `const backdropOpacity = useTransform(x, [-150, 0, 150], [0.4, 0, 0.4])
+
+<>
+  <motion.div className="fixed inset-0 bg-black"
+    style={{ opacity: backdropOpacity }} />
+  <motion.div
+    drag="x" dragSnapToOrigin
+    dragTransition={{ bounceStiffness: 300, bounceDamping: 30 }}
+    onDragEnd={handleDragEnd}
+    style={{ x, opacity, scale }}
+  />
+</>`,
+  },
+]
+
+const panDismissVue: Step[] = [
+  {
+    title: 'Connect the gesture handler',
+    description: 'Use `@vueuse/motion` or Vue\'s native touch events to track pointer position. Starting with a minimal event binding lets you confirm that the gesture layer is working before layering on animation.',
+    fr: { title: 'Connecter le gestionnaire de geste', description: 'Utiliser `@vueuse/motion` ou les événements tactiles natifs de Vue pour suivre la position du pointeur. Commencer par une liaison d\'événement minimale permet de vérifier que la couche de geste fonctionne avant d\'ajouter l\'animation.' },
+    code: `<template>
+  <div ref="card" class="card"
+    @pointerdown="onDown" @pointermove="onMove" @pointerup="onUp"
+    :style="{ transform: \`translateX(\${x}px)\` }">
+    <slot />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+const x = ref(0)
+const startX = ref(0)
+function onDown(e: PointerEvent) { startX.value = e.clientX - x.value }
+function onMove(e: PointerEvent) { x.value = e.clientX - startX.value }
+function onUp() {}
+</script>`,
+  },
+  {
+    title: 'Track position → opacity/scale',
+    description: 'Derive opacity and scale from the `x` ref with computed properties. Vue\'s reactivity system updates these in the same microtask, so the card always shows a consistent visual state.',
+    fr: { title: 'Suivre la position → opacité/échelle', description: 'Dériver l\'opacité et l\'échelle du ref `x` avec des propriétés calculées. Le système de réactivité de Vue met ces valeurs à jour dans la même microtâche, assurant un état visuel toujours cohérent.' },
+    code: `<script setup lang="ts">
+import { ref, computed } from 'vue'
+const x = ref(0)
+const opacity = computed(() =>
+  1 - Math.min(Math.abs(x.value) / 150, 1))
+const scale = computed(() =>
+  1 - Math.min(Math.abs(x.value) / 150, 0.15))
+</script>
+
+<template>
+  <div :style="{ transform: \`translateX(\${x}px) scale(\${scale})\`,
+                 opacity }">
+    <slot />
+  </div>
+</template>`,
+  },
+  {
+    title: 'Add dismiss threshold',
+    description: 'In `onUp`, compare drag distance to the threshold. Resetting `x` to 0 with a CSS transition on pointerup creates the snap-back effect without a motion library.',
+    fr: { title: 'Ajouter le seuil de rejet', description: 'Dans `onUp`, comparer la distance de glissement au seuil. Remettre `x` à 0 avec une transition CSS au relâchement crée l\'effet de retour sans bibliothèque d\'animation.' },
+    code: `const THRESHOLD = 120
+const emit = defineEmits<{ dismiss: [] }>()
+
+function onUp() {
+  if (Math.abs(x.value) > THRESHOLD) {
+    emit('dismiss')
+  } else {
+    // snap back via CSS transition
+    x.value = 0
+  }
+}`,
+  },
+  {
+    title: 'Polish: CSS spring transition + backdrop',
+    description: 'Add a `spring()` CSS custom property or use `transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)` on snap-back. Layer a `:before` backdrop that fades with the card.',
+    fr: { title: 'Finition : transition ressort CSS + arrière-plan', description: 'Ajouter une propriété CSS personnalisée `spring()` ou utiliser `transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)` au retour. Superposer un arrière-plan `:before` qui s\'estompe avec la carte.' },
+    code: `/* In <style> */
+.card {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.35s ease;
+}
+.card.dragging { transition: none; }
+
+.backdrop {
+  opacity: v-bind('Math.min(Math.abs(x) / 150, 0.4)');
+  background: black;
+  position: fixed; inset: 0;
+  transition: opacity 0.3s ease;
+}`,
+  },
+]
+
+const panDismissRN: Step[] = [
+  {
+    title: 'Connect the gesture handler',
+    description: 'Use `react-native-gesture-handler`\'s `PanGestureHandler` to receive raw pan events. Wrapping in `GestureHandlerRootView` at the app root is a prerequisite — missing it causes silent failures on Android.',
+    fr: { title: 'Connecter le gestionnaire de geste', description: 'Utiliser `PanGestureHandler` de `react-native-gesture-handler` pour recevoir les événements de panoramique bruts. Envelopper l\'application dans `GestureHandlerRootView` est un prérequis — son absence cause des échecs silencieux sur Android.' },
+    code: `import { PanGestureHandler } from 'react-native-gesture-handler'
+import Animated from 'react-native-reanimated'
+
+export function DismissCard({ children }) {
+  return (
+    <PanGestureHandler>
+      <Animated.View style={styles.card}>
+        {children}
+      </Animated.View>
+    </PanGestureHandler>
+  )
+}`,
+  },
+  {
+    title: 'Track position → opacity/scale',
+    description: 'Connect `useAnimatedGestureHandler` and `useAnimatedStyle` to derive visual properties from the translation value. Running on the UI thread avoids JS bridge jank on every frame.',
+    fr: { title: 'Suivre la position → opacité/échelle', description: 'Connecter `useAnimatedGestureHandler` et `useAnimatedStyle` pour dériver les propriétés visuelles depuis la valeur de translation. L\'exécution sur le thread UI évite les saccades du pont JS à chaque image.' },
+    code: `import { useSharedValue, useAnimatedStyle, interpolate }
+  from 'react-native-reanimated'
+
+const translateX = useSharedValue(0)
+
+const animatedStyle = useAnimatedStyle(() => ({
+  transform: [{ translateX: translateX.value }],
+  opacity: interpolate(Math.abs(translateX.value), [0, 150], [1, 0]),
+}))
+
+const gestureHandler = useAnimatedGestureHandler({
+  onActive: (e) => { translateX.value = e.translationX },
+})`,
+  },
+  {
+    title: 'Add dismiss threshold',
+    description: 'In `onEnd`, compare translation and velocity to thresholds. Run the dismiss via `runOnJS` so you can call React state setters and navigation APIs that must execute on the JS thread.',
+    fr: { title: 'Ajouter le seuil de rejet', description: 'Dans `onEnd`, comparer la translation et la vitesse aux seuils. Exécuter le rejet via `runOnJS` pour pouvoir appeler les setters d\'état React et les APIs de navigation qui doivent s\'exécuter sur le thread JS.' },
+    code: `import { runOnJS, withSpring } from 'react-native-reanimated'
+
+const gestureHandler = useAnimatedGestureHandler({
+  onActive: (e) => { translateX.value = e.translationX },
+  onEnd: (e) => {
+    if (Math.abs(e.translationX) > 120 || Math.abs(e.velocityX) > 800) {
+      runOnJS(onDismiss)()
+    } else {
+      translateX.value = withSpring(0, { stiffness: 300, damping: 28 })
+    }
+  },
+})`,
+  },
+  {
+    title: 'Polish: spring config + haptic feedback',
+    description: 'Tune `withSpring` stiffness/damping so the snap-back feels physical. Trigger `Haptics.impactAsync` on dismiss for tactile confirmation — haptics are free in Expo and make a big difference on iOS.',
+    fr: { title: 'Finition : ressort + retour haptique', description: 'Ajuster la raideur et l\'amortissement de `withSpring` pour que le retour soit réaliste. Déclencher `Haptics.impactAsync` au rejet pour une confirmation tactile — les haptiques sont gratuits dans Expo et font une grande différence sur iOS.' },
+    code: `import * as Haptics from 'expo-haptics'
+import { runOnJS, withSpring } from 'react-native-reanimated'
+
+function dismiss() {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+  onDismiss()
+}
+
+onEnd: (e) => {
+  if (Math.abs(e.translationX) > 120 || Math.abs(e.velocityX) > 800) {
+    runOnJS(dismiss)()
+  } else {
+    translateX.value = withSpring(0, { stiffness: 400, damping: 35 })
+  }
+}`,
+  },
+]
+
+const panDismissFlutter: Step[] = [
+  {
+    title: 'Connect the gesture handler',
+    description: 'Wrap the card in a `GestureDetector` and store the horizontal offset in state. This baseline confirms the gesture layer is wired before adding any physics.',
+    fr: { title: 'Connecter le gestionnaire de geste', description: 'Envelopper la carte dans un `GestureDetector` et stocker le décalage horizontal dans l\'état. Cette base confirme que la couche de geste est connectée avant d\'ajouter des effets physiques.' },
+    code: `class DismissCard extends StatefulWidget {
+  const DismissCard({super.key, required this.child});
+  final Widget child;
+  @override State<DismissCard> createState() => _State();
+}
+class _State extends State<DismissCard> {
+  double _dx = 0;
+  @override Widget build(BuildContext context) => GestureDetector(
+    onPanUpdate: (d) => setState(() => _dx += d.delta.dx),
+    child: Transform.translate(
+      offset: Offset(_dx, 0), child: widget.child),
+  );
+}`,
+  },
+  {
+    title: 'Track position → opacity/scale',
+    description: 'Derive opacity and scale from `_dx` inside the build method. Because Flutter rebuilds on every `setState` call, the card always reflects the current drag position without manual interpolation.',
+    fr: { title: 'Suivre la position → opacité/échelle', description: 'Dériver l\'opacité et l\'échelle depuis `_dx` dans la méthode build. Comme Flutter reconstruit à chaque appel `setState`, la carte reflète toujours la position de glissement actuelle sans interpolation manuelle.' },
+    code: `final double t = (_dx.abs() / 150).clamp(0.0, 1.0);
+final double opacity = 1.0 - t;
+final double scale   = 1.0 - t * 0.15;
+
+return Opacity(
+  opacity: opacity,
+  child: Transform.scale(
+    scale: scale,
+    child: Transform.translate(
+      offset: Offset(_dx, 0),
+      child: widget.child,
+    ),
+  ),
+);`,
+  },
+  {
+    title: 'Add dismiss threshold',
+    description: 'In `onPanEnd`, compare velocity and offset to thresholds. Calling `widget.onDismiss` is safe here because `onPanEnd` is called on the main isolate.',
+    fr: { title: 'Ajouter le seuil de rejet', description: 'Dans `onPanEnd`, comparer la vitesse et le décalage aux seuils. Appeler `widget.onDismiss` est sûr ici car `onPanEnd` est exécuté sur l\'isolat principal.' },
+    code: `onPanEnd: (details) {
+  final velocity = details.velocity.pixelsPerSecond.dx;
+  if (_dx.abs() > 120 || velocity.abs() > 800) {
+    widget.onDismiss();
+  } else {
+    setState(() => _dx = 0); // snap back (add AnimationController for spring)
+  }
+},`,
+  },
+  {
+    title: 'Polish: spring snap-back + backdrop',
+    description: 'Replace the instant reset with an `AnimationController` using a spring simulation. Add a `ColorFiltered` or `Opacity` backdrop widget that reads `_dx` to fade alongside the card.',
+    fr: { title: 'Finition : retour à ressort + arrière-plan', description: 'Remplacer la réinitialisation instantanée par un `AnimationController` utilisant une simulation à ressort. Ajouter un widget d\'arrière-plan `ColorFiltered` ou `Opacity` qui lit `_dx` pour s\'estomper avec la carte.' },
+    code: `final spring = SpringSimulation(
+  const SpringDescription(mass: 1, stiffness: 300, damping: 28),
+  _dx, 0, velocity,
+);
+_controller.animateWith(spring);
+
+// Backdrop
+Positioned.fill(child: IgnorePointer(
+  child: Opacity(
+    opacity: (_dx.abs() / 150).clamp(0.0, 0.4),
+    child: const ColoredBox(color: Colors.black),
+  ),
+)),`,
+  },
+]
+
+const panDismiss: StepMap = {
+  react:          panDismissReact,
+  nextjs:         panDismissNextjs,
+  vue:            panDismissVue,
+  'react-native': panDismissRN,
+  flutter:        panDismissFlutter,
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  flutter-hero                                                         */
+/* ─────────────────────────────────────────────────────────────────── */
+
+const flutterHeroReact: Step[] = [
+  {
+    title: 'Static layout — grid and detail view',
+    description: 'Build the grid and detail views without any animation. Getting routing and data flow right first means you are only adding animation in later steps, not debugging logic and layout at the same time.',
+    fr: { title: 'Mise en page statique — grille et vue détail', description: 'Construire la grille et la vue détail sans aucune animation. Mettre en place le routage et le flux de données en premier permet de n\'ajouter que l\'animation dans les étapes suivantes, sans déboguer la logique en même temps.' },
+    code: `// Grid.tsx
+export function Grid({ items, onSelect }) {
+  return (
+    <div className="grid">
+      {items.map(item => (
+        <img key={item.id} src={item.src}
+          onClick={() => onSelect(item)} />
+      ))}
+    </div>
+  )
+}
+
+// Detail.tsx
+export function Detail({ item }) {
+  return <img src={item.src} className="detail-image" />
+}`,
+  },
+  {
+    title: 'Page transition between views',
+    description: 'Wrap each page in `AnimatePresence` with `motion.div` enter/exit variants. This gives you a page-level transition as foundation before adding the shared element layer.',
+    fr: { title: 'Transition de page entre les vues', description: 'Envelopper chaque page dans `AnimatePresence` avec des variantes d\'entrée/sortie sur `motion.div`. Cela fournit une transition de page de base avant d\'ajouter la couche d\'élément partagé.' },
+    code: `import { AnimatePresence, motion } from 'framer-motion'
+
+<AnimatePresence mode="wait">
+  {selected ? (
+    <motion.div key="detail"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <Detail item={selected} />
+    </motion.div>
+  ) : (
+    <motion.div key="grid"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <Grid items={items} onSelect={setSelected} />
+    </motion.div>
+  )}
+</AnimatePresence>`,
+  },
+  {
+    title: 'Add layoutId for shared element',
+    description: 'Give the image in both the grid and the detail the same `layoutId`. Framer Motion detects that the element exists in both states and automatically morphs its position, size, and border-radius.',
+    fr: { title: 'Ajouter layoutId pour l\'élément partagé', description: 'Donner à l\'image dans la grille et dans le détail le même `layoutId`. Framer Motion détecte que l\'élément existe dans les deux états et anime automatiquement sa position, sa taille et son rayon de bordure.' },
+    code: `// In Grid
+<motion.img
+  key={item.id}
+  layoutId={\`hero-\${item.id}\`}
+  src={item.src}
+  onClick={() => setSelected(item)}
+/>
+
+// In Detail
+<motion.img
+  layoutId={\`hero-\${selected.id}\`}
+  src={selected.src}
+  className="detail-image"
+/>`,
+  },
+  {
+    title: 'Tune spring stiffness/damping',
+    description: 'Pass a `transition` prop with `type: "spring"` to the shared element. Lowering stiffness makes the morph feel weighty; raising damping prevents bounce — dial both until it feels satisfying.',
+    fr: { title: 'Ajuster la raideur et l\'amortissement du ressort', description: 'Passer une prop `transition` avec `type: "spring"` à l\'élément partagé. Réduire la raideur rend le morphing plus lourd ; augmenter l\'amortissement évite les rebonds — ajuster les deux jusqu\'à obtenir un résultat satisfaisant.' },
+    code: `<motion.img
+  layoutId={\`hero-\${selected.id}\`}
+  src={selected.src}
+  transition={{
+    type: 'spring',
+    stiffness: 260,
+    damping: 30,
+  }}
+  className="detail-image"
+/>`,
+  },
+]
+
+const flutterHeroNextjs: Step[] = [
+  {
+    title: 'Static layout — grid and detail route',
+    description: 'Create a grid page and a dynamic detail route in the App Router. Separate routes mean the browser URL updates on navigation, giving users bookmarkable deep links before any animation.',
+    fr: { title: 'Mise en page statique — grille et route détail', description: 'Créer une page grille et une route détail dynamique dans l\'App Router. Des routes séparées signifient que l\'URL du navigateur est mise à jour à la navigation, donnant aux utilisateurs des liens profonds enregistrables avant toute animation.' },
+    code: `// app/gallery/page.tsx
+export default function GalleryPage() {
+  return (
+    <div className="grid">
+      {items.map(item => (
+        <Link key={item.id} href={\`/gallery/\${item.id}\`}>
+          <img src={item.src} />
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+// app/gallery/[id]/page.tsx
+export default function DetailPage({ params }) {
+  return <img src={getItem(params.id).src} className="detail-image" />
+}`,
+  },
+  {
+    title: 'Page-level transition with layout animations',
+    description: 'In Next.js App Router, wrap your root layout\'s children in `AnimatePresence`. Use `usePathname` as the key so Framer Motion remounts on route change and triggers enter/exit.',
+    fr: { title: 'Transition de page avec animations de mise en page', description: 'Dans l\'App Router Next.js, envelopper les enfants du layout racine dans `AnimatePresence`. Utiliser `usePathname` comme clé pour que Framer Motion remonte le composant au changement de route et déclenche l\'entrée/sortie.' },
+    code: `'use client'
+import { AnimatePresence, motion } from 'framer-motion'
+import { usePathname } from 'next/navigation'
+
+export function PageTransition({ children }) {
+  const path = usePathname()
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div key={path}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}>
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  )
+}`,
+  },
+  {
+    title: 'Shared element with layoutId',
+    description: 'Apply the same `layoutId` to the thumbnail in the grid page and the hero image in the detail page. Next.js keeps both components mounted during the transition so Framer Motion can animate between them.',
+    fr: { title: 'Élément partagé avec layoutId', description: 'Appliquer le même `layoutId` à la miniature dans la page grille et à l\'image hero dans la page détail. Next.js maintient les deux composants montés pendant la transition pour que Framer Motion puisse animer entre eux.' },
+    code: `// GalleryGrid (client component)
+<motion.img layoutId={\`hero-\${item.id}\`} src={item.src} />
+
+// DetailHero (client component)
+<motion.img layoutId={\`hero-\${params.id}\`}
+  src={item.src} className="hero" />`,
+  },
+  {
+    title: 'Tune spring config',
+    description: 'Pass `transition` to the detail hero image. Because Next.js pre-renders the detail page, the spring plays as soon as hydration completes — keep stiffness high enough that users see the animation start immediately.',
+    fr: { title: 'Ajuster la configuration du ressort', description: 'Passer `transition` à l\'image hero du détail. Comme Next.js pré-rend la page de détail, le ressort se joue dès que l\'hydratation est terminée — garder une raideur suffisamment élevée pour que les utilisateurs voient l\'animation démarrer immédiatement.' },
+    code: `<motion.img
+  layoutId={\`hero-\${params.id}\`}
+  src={item.src}
+  className="hero"
+  transition={{ type: 'spring', stiffness: 280, damping: 32 }}
+/>`,
+  },
+]
+
+const flutterHeroVue: Step[] = [
+  {
+    title: 'Static layout — grid and detail view',
+    description: 'Build a Vue grid component and a detail view navigated with Vue Router. Separating concerns now means you swap only the animation layer in later steps.',
+    fr: { title: 'Mise en page statique — grille et vue détail', description: 'Construire un composant grille Vue et une vue détail naviguée avec Vue Router. Séparer les préoccupations maintenant signifie ne remplacer que la couche d\'animation dans les étapes suivantes.' },
+    code: `<!-- Gallery.vue -->
+<template>
+  <div class="grid">
+    <img v-for="item in items" :key="item.id"
+      :src="item.src" @click="$router.push(\`/detail/\${item.id}\`)" />
+  </div>
+</template>
+
+<!-- Detail.vue -->
+<template>
+  <img :src="item.src" class="detail-image" />
+</template>`,
+  },
+  {
+    title: 'Page transition with <Transition>',
+    description: 'Wrap `<RouterView>` in Vue\'s `<Transition>` component. This gives cross-fade between routes and is the foundation on which the shared-element animation will be layered.',
+    fr: { title: 'Transition de page avec <Transition>', description: 'Envelopper `<RouterView>` dans le composant `<Transition>` de Vue. Cela donne un fondu croisé entre les routes et constitue la base sur laquelle l\'animation d\'élément partagé sera ajoutée.' },
+    code: `<Transition name="fade" mode="out-in">
+  <RouterView />
+</Transition>
+
+<style>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>`,
+  },
+  {
+    title: 'Shared element with @vueuse/motion FLIP',
+    description: 'Capture the thumbnail\'s bounding rect before navigation and apply a FLIP animation on the detail hero. FLIP (First, Last, Invert, Play) creates the illusion of a shared element without DOM teleportation.',
+    fr: { title: 'Élément partagé avec @vueuse/motion FLIP', description: 'Capturer le rect de la miniature avant la navigation et appliquer une animation FLIP sur le hero du détail. FLIP (First, Last, Invert, Play) crée l\'illusion d\'un élément partagé sans téléportation DOM.' },
+    code: `// In Gallery.vue — store rect before navigating
+function navigate(item) {
+  const el = document.getElementById(\`thumb-\${item.id}\`)
+  store.heroRect = el?.getBoundingClientRect()
+  router.push(\`/detail/\${item.id}\`)
+}
+
+// In Detail.vue — apply FLIP on mount
+onMounted(() => {
+  if (!store.heroRect) return
+  const el = heroRef.value
+  const last = el.getBoundingClientRect()
+  const dy = store.heroRect.top  - last.top
+  const dx = store.heroRect.left - last.left
+  el.animate([{ transform: \`translate(\${dx}px, \${dy}px)\` }, {}],
+    { duration: 400, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' })
+})`,
+  },
+  {
+    title: 'Tune spring config',
+    description: 'Replace the cubic-bezier with a spring easing via the Web Animations API or `@vueuse/motion` spring. Adjust mass and stiffness until the hero lands with the right weight.',
+    fr: { title: 'Ajuster la configuration du ressort', description: 'Remplacer le cubic-bezier par un easing à ressort via l\'API Web Animations ou `@vueuse/motion` spring. Ajuster la masse et la raideur jusqu\'à ce que le hero atterrisse avec le bon poids.' },
+    code: `import { useSpring } from '@vueuse/motion'
+
+const { set } = useSpring(heroRef, {
+  stiffness: 260,
+  damping: 28,
+})
+
+onMounted(() => {
+  const { top: fromTop, left: fromLeft } = store.heroRect
+  const { top, left } = heroRef.value.getBoundingClientRect()
+  set({ x: fromLeft - left, y: fromTop - top })
+  nextTick(() => set({ x: 0, y: 0 }))
+})`,
+  },
+]
+
+const flutterHeroRN: Step[] = [
+  {
+    title: 'Static layout — list and detail screen',
+    description: 'Build the list and detail screens with React Navigation but no animation. Confirming that data passes correctly through navigation params is far easier without animation complexity.',
+    fr: { title: 'Mise en page statique — liste et écran de détail', description: 'Construire les écrans liste et détail avec React Navigation sans animation. Vérifier que les données transitent correctement via les paramètres de navigation est bien plus facile sans la complexité de l\'animation.' },
+    code: `// ListScreen.tsx
+function ListScreen({ navigation }) {
+  return (
+    <FlatList data={items} renderItem={({ item }) => (
+      <TouchableOpacity onPress={() =>
+        navigation.navigate('Detail', { item })}>
+        <Image source={{ uri: item.uri }} style={styles.thumb} />
+      </TouchableOpacity>
+    )} />
+  )
+}`,
+  },
+  {
+    title: 'Shared transition with react-native-reanimated',
+    description: 'Use `SharedTransition.custom()` from Reanimated 3 to define a custom page transition. This API drives the animation entirely on the UI thread, avoiding bridge latency during navigation.',
+    fr: { title: 'Transition partagée avec react-native-reanimated', description: 'Utiliser `SharedTransition.custom()` de Reanimated 3 pour définir une transition de page personnalisée. Cette API pilote l\'animation entièrement sur le thread UI, évitant la latence du pont lors de la navigation.' },
+    code: `import { SharedTransition } from 'react-native-reanimated'
+
+const transition = SharedTransition.custom((values) => {
+  'worklet'
+  return {
+    width: withSpring(values.targetWidth),
+    height: withSpring(values.targetHeight),
+  }
+})`,
+  },
+  {
+    title: 'Tag the shared element',
+    description: 'Apply `sharedTransitionTag` with the same string on the image in both screens. Reanimated uses this tag to pair the two elements and interpolate between their layouts automatically.',
+    fr: { title: 'Baliser l\'élément partagé', description: 'Appliquer `sharedTransitionTag` avec la même chaîne sur l\'image dans les deux écrans. Reanimated utilise cette balise pour associer les deux éléments et interpoler automatiquement entre leurs mises en page.' },
+    code: `// ListScreen
+<Animated.Image
+  source={{ uri: item.uri }}
+  sharedTransitionTag={\`hero-\${item.id}\`}
+  style={styles.thumb}
+/>
+
+// DetailScreen
+<Animated.Image
+  source={{ uri: item.uri }}
+  sharedTransitionTag={\`hero-\${item.id}\`}
+  style={styles.hero}
+/>`,
+  },
+  {
+    title: 'Tune spring config',
+    description: 'Customize the spring inside `SharedTransition.custom()` with stiffness/damping values. Higher stiffness makes the element snap into place faster; lower damping allows a subtle overshoot.',
+    fr: { title: 'Ajuster la configuration du ressort', description: 'Personnaliser le ressort dans `SharedTransition.custom()` avec des valeurs de raideur et d\'amortissement. Une raideur plus élevée fait atterrir l\'élément plus vite ; un amortissement plus faible permet un léger dépassement.' },
+    code: `const transition = SharedTransition.custom((values) => {
+  'worklet'
+  return {
+    width:  withSpring(values.targetWidth,  { stiffness: 280, damping: 30 }),
+    height: withSpring(values.targetHeight, { stiffness: 280, damping: 30 }),
+    originX: withSpring(values.targetOriginX, { stiffness: 280, damping: 30 }),
+    originY: withSpring(values.targetOriginY, { stiffness: 280, damping: 30 }),
+  }
+})`,
+  },
+]
+
+const flutterHeroFlutter: Step[] = [
+  {
+    title: 'Static layout — grid and detail screen',
+    description: 'Build a grid with `GridView.builder` and a detail screen routed via `Navigator.push`. Without any Hero widget, navigating replaces the screen instantly — this is the baseline.',
+    fr: { title: 'Mise en page statique — grille et écran de détail', description: 'Construire une grille avec `GridView.builder` et un écran de détail routé via `Navigator.push`. Sans widget Hero, la navigation remplace l\'écran instantanément — c\'est la ligne de base.' },
+    code: `GridView.builder(
+  itemBuilder: (_, i) => GestureDetector(
+    onTap: () => Navigator.push(context,
+      MaterialPageRoute(builder: (_) => DetailScreen(item: items[i]))),
+    child: Image.network(items[i].url, fit: BoxFit.cover),
+  ),
+)`,
+  },
+  {
+    title: 'Wrap in Hero for shared animation',
+    description: 'Wrap the image in a `Hero` widget with the same `tag` in both grid and detail. Flutter\'s navigator automatically morphs the element between routes — no extra animation code needed.',
+    fr: { title: 'Envelopper dans Hero pour l\'animation partagée', description: 'Envelopper l\'image dans un widget `Hero` avec le même `tag` dans la grille et dans le détail. Le navigateur de Flutter anime automatiquement l\'élément entre les routes — aucun code d\'animation supplémentaire n\'est nécessaire.' },
+    code: `// Grid
+Hero(
+  tag: 'hero-\${item.id}',
+  child: Image.network(item.url, fit: BoxFit.cover),
+)
+
+// Detail
+Hero(
+  tag: 'hero-\${item.id}',
+  child: Image.network(item.url, fit: BoxFit.cover,
+    width: double.infinity),
+)`,
+  },
+  {
+    title: 'Custom page route for direction control',
+    description: 'Replace `MaterialPageRoute` with a custom `PageRouteBuilder`. This lets you control the page\'s enter/exit curve independently from the Hero morph, preventing jarring background flashes.',
+    fr: { title: 'Route de page personnalisée pour le contrôle de direction', description: 'Remplacer `MaterialPageRoute` par un `PageRouteBuilder` personnalisé. Cela permet de contrôler la courbe d\'entrée/sortie de la page indépendamment du morphing Hero, évitant les flashs d\'arrière-plan indésirables.' },
+    code: `Navigator.push(context, PageRouteBuilder(
+  pageBuilder: (_, __, ___) => DetailScreen(item: item),
+  transitionsBuilder: (_, anim, __, child) =>
+    FadeTransition(opacity: anim, child: child),
+  transitionDuration: const Duration(milliseconds: 400),
+))`,
+  },
+  {
+    title: 'Tune spring config with flightShuttleBuilder',
+    description: 'Use `flightShuttleBuilder` to wrap the Hero child in a `ClipRRect` that animates border-radius during the flight. Combined with `createRectTween` using a `MaterialRectArcTween`, the morph follows an arc path.',
+    fr: { title: 'Ajuster le ressort avec flightShuttleBuilder', description: 'Utiliser `flightShuttleBuilder` pour envelopper l\'enfant Hero dans un `ClipRRect` qui anime le rayon de bordure pendant le vol. Combiné avec `createRectTween` utilisant `MaterialRectArcTween`, le morphing suit une trajectoire en arc.' },
+    code: `Hero(
+  tag: 'hero-\${item.id}',
+  createRectTween: (a, b) => MaterialRectArcTween(begin: a, end: b),
+  flightShuttleBuilder: (_, anim, __, ___, ____) =>
+    AnimatedBuilder(
+      animation: anim,
+      builder: (_, child) => ClipRRect(
+        borderRadius: BorderRadius.lerp(
+          BorderRadius.circular(8), BorderRadius.zero, anim.value)!,
+        child: child,
+      ),
+      child: Image.network(item.url, fit: BoxFit.cover),
+    ),
+  child: Image.network(item.url, fit: BoxFit.cover),
+)`,
+  },
+]
+
+const flutterHero: StepMap = {
+  react:          flutterHeroReact,
+  nextjs:         flutterHeroNextjs,
+  vue:            flutterHeroVue,
+  'react-native': flutterHeroRN,
+  flutter:        flutterHeroFlutter,
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  view-transitions                                                     */
+/* ─────────────────────────────────────────────────────────────────── */
+
+const viewTransitionsReact: Step[] = [
+  {
+    title: 'Baseline navigation without transition',
+    description: 'Set up a simple router with two routes and confirm navigation works. Having a clean baseline means you can attribute any visual glitch to the transition layer, not the routing logic.',
+    fr: { title: 'Navigation de base sans transition', description: 'Configurer un routeur simple avec deux routes et confirmer que la navigation fonctionne. Avoir une base propre signifie que tout artefact visuel peut être attribué à la couche de transition, pas à la logique de routage.' },
+    code: `import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <nav><Link to="/">Home</Link> <Link to="/about">About</Link></nav>
+      <Routes>
+        <Route path="/"      element={<Home />} />
+        <Route path="/about" element={<About />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}`,
+  },
+  {
+    title: 'Wrap navigation in startViewTransition',
+    description: 'Intercept `Link` clicks and call `document.startViewTransition(() => navigate(to))`. The browser captures a snapshot of the current page, renders the next page, and cross-fades by default.',
+    fr: { title: 'Envelopper la navigation dans startViewTransition', description: 'Intercepter les clics sur `Link` et appeler `document.startViewTransition(() => navigate(to))`. Le navigateur capture un instantané de la page actuelle, rend la page suivante et effectue un fondu croisé par défaut.' },
+    code: `import { useNavigate } from 'react-router-dom'
+
+function TransitionLink({ to, children }) {
+  const navigate = useNavigate()
+  function handleClick(e) {
+    e.preventDefault()
+    if (!document.startViewTransition) { navigate(to); return }
+    document.startViewTransition(() => navigate(to))
+  }
+  return <a href={to} onClick={handleClick}>{children}</a>
+}`,
+  },
+  {
+    title: 'Name the shared element',
+    description: 'Add `view-transition-name` CSS to the element that should morph between pages. The browser automatically finds matching named elements on old and new pages and interpolates their layout.',
+    fr: { title: 'Nommer l\'élément partagé', description: 'Ajouter la CSS `view-transition-name` à l\'élément qui doit morphoser entre les pages. Le navigateur trouve automatiquement les éléments nommés correspondants sur les anciennes et nouvelles pages et interpole leur mise en page.' },
+    code: `/* index.css */
+.page-hero {
+  view-transition-name: hero;
+}
+
+/* In Home.tsx */
+<img src={hero.src} className="page-hero" />
+
+/* In About.tsx */
+<img src={hero.src} className="page-hero" />`,
+  },
+  {
+    title: 'Customize the animation with CSS keyframes',
+    description: 'Override the `::view-transition-old` and `::view-transition-new` pseudo-elements to replace the default cross-fade with a slide. Use `animation-timing-function` to control the easing.',
+    fr: { title: 'Personnaliser l\'animation avec des keyframes CSS', description: 'Surcharger les pseudo-éléments `::view-transition-old` et `::view-transition-new` pour remplacer le fondu croisé par défaut par un glissement. Utiliser `animation-timing-function` pour contrôler l\'easing.' },
+    code: `@keyframes slide-in  { from { transform: translateX(100%); } }
+@keyframes slide-out { to   { transform: translateX(-100%); } }
+
+::view-transition-old(root) {
+  animation: 300ms ease-in slide-out;
+}
+::view-transition-new(root) {
+  animation: 300ms ease-out slide-in;
+}`,
+  },
+]
+
+const viewTransitionsNextjs: Step[] = [
+  {
+    title: 'Baseline navigation without transition',
+    description: 'Use Next.js `<Link>` for client-side navigation between two routes. Next.js App Router already prefetches routes — this baseline confirms that prefetching and rendering work before adding transitions.',
+    fr: { title: 'Navigation de base sans transition', description: 'Utiliser `<Link>` de Next.js pour la navigation côté client entre deux routes. L\'App Router Next.js précharge déjà les routes — cette base confirme que le préchargement et le rendu fonctionnent avant d\'ajouter des transitions.' },
+    code: `import Link from 'next/link'
+
+export default function Home() {
+  return (
+    <>
+      <h1>Home</h1>
+      <Link href="/about">Go to About</Link>
+    </>
+  )
+}`,
+  },
+  {
+    title: 'Wrap router.push in startViewTransition',
+    description: 'In a Client Component, intercept navigation and call `startViewTransition` before `router.push`. React\'s concurrent renderer flushes the new route inside the transition callback.',
+    fr: { title: 'Envelopper router.push dans startViewTransition', description: 'Dans un Client Component, intercepter la navigation et appeler `startViewTransition` avant `router.push`. Le moteur de rendu concurrent de React vide la nouvelle route dans le callback de transition.' },
+    code: `'use client'
+import { useRouter } from 'next/navigation'
+
+export function TransitionLink({ href, children }) {
+  const router = useRouter()
+  function navigate() {
+    if (!document.startViewTransition) { router.push(href); return }
+    document.startViewTransition(() => router.push(href))
+  }
+  return <button onClick={navigate}>{children}</button>
+}`,
+  },
+  {
+    title: 'Name the shared element',
+    description: 'Apply `view-transition-name` in a CSS module or global stylesheet. In Next.js, use `globals.css` for the pseudo-element overrides so they apply to every page without scoping issues.',
+    fr: { title: 'Nommer l\'élément partagé', description: 'Appliquer `view-transition-name` dans un CSS module ou une feuille de style globale. Dans Next.js, utiliser `globals.css` pour les surcharges de pseudo-éléments afin qu\'elles s\'appliquent à toutes les pages sans problème de portée.' },
+    code: `/* globals.css */
+.page-hero {
+  view-transition-name: hero;
+  contain: layout;
+}
+
+/* Page component */
+<Image src={item.src} alt="" className="page-hero"
+  width={800} height={600} priority />`,
+  },
+  {
+    title: 'Customize animation',
+    description: 'Override transition keyframes in `globals.css`. Because Next.js compiles CSS at build time, these rules are available on first paint — no flash of un-animated navigation.',
+    fr: { title: 'Personnaliser l\'animation', description: 'Surcharger les keyframes de transition dans `globals.css`. Comme Next.js compile le CSS au moment du build, ces règles sont disponibles dès le premier rendu — pas de flash de navigation non animée.' },
+    code: `@keyframes fade-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+}
+@keyframes fade-scale-out {
+  to   { opacity: 0; transform: scale(1.04); }
+}
+
+::view-transition-old(root) {
+  animation: 250ms ease-in fade-scale-out;
+}
+::view-transition-new(root) {
+  animation: 350ms ease-out fade-scale-in;
+}`,
+  },
+]
+
+const viewTransitionsVue: Step[] = [
+  {
+    title: 'Baseline navigation without transition',
+    description: 'Use Vue Router with `<RouterLink>` and confirm navigation works. The router\'s `history` mode ensures clean URLs that the View Transitions API can snapshot correctly.',
+    fr: { title: 'Navigation de base sans transition', description: 'Utiliser Vue Router avec `<RouterLink>` et confirmer que la navigation fonctionne. Le mode `history` du routeur assure des URLs propres que l\'API View Transitions peut capturer correctement.' },
+    code: `<!-- App.vue -->
+<template>
+  <nav>
+    <RouterLink to="/">Home</RouterLink>
+    <RouterLink to="/about">About</RouterLink>
+  </nav>
+  <RouterView />
+</template>`,
+  },
+  {
+    title: 'Wrap navigation in startViewTransition',
+    description: 'Use a Vue Router navigation guard (`router.beforeEach`) combined with a custom `RouterLink` wrapper to call `startViewTransition`. The guard ensures all navigations go through the transition.',
+    fr: { title: 'Envelopper la navigation dans startViewTransition', description: 'Utiliser un guard de navigation Vue Router (`router.beforeEach`) combiné à un wrapper `RouterLink` personnalisé pour appeler `startViewTransition`. Le guard assure que toutes les navigations passent par la transition.' },
+    code: `// router/index.ts
+router.beforeEach((to, from, next) => {
+  if (!document.startViewTransition) { next(); return }
+  document.startViewTransition(() => {
+    next()
+    return new Promise(resolve =>
+      router.afterEach(() => resolve()))
+  })
+})`,
+  },
+  {
+    title: 'Name the shared element',
+    description: 'Bind `view-transition-name` dynamically with `:style`. Using the item ID in the name means each card in the grid gets a unique transition name — preventing the browser from trying to morph the wrong pair.',
+    fr: { title: 'Nommer l\'élément partagé', description: 'Lier `view-transition-name` dynamiquement avec `:style`. Utiliser l\'ID de l\'item dans le nom signifie que chaque carte de la grille obtient un nom de transition unique — évitant que le navigateur tente de morphoser la mauvaise paire.' },
+    code: `<!-- GridCard.vue -->
+<img :src="item.src"
+  :style="{ viewTransitionName: \`hero-\${item.id}\` }" />
+
+<!-- DetailHero.vue -->
+<img :src="item.src"
+  :style="{ viewTransitionName: \`hero-\${item.id}\` }" />`,
+  },
+  {
+    title: 'Customize the transition',
+    description: 'Override `::view-transition-old` and `::view-transition-new` in your global CSS. In Vue, put these in `main.css` so they are not scoped. Target the named element directly for element-specific timing.',
+    fr: { title: 'Personnaliser la transition', description: 'Surcharger `::view-transition-old` et `::view-transition-new` dans votre CSS global. Dans Vue, les placer dans `main.css` pour qu\'ils ne soient pas scopés. Cibler l\'élément nommé directement pour un timing spécifique à l\'élément.' },
+    code: `/* main.css */
+::view-transition-old(root) {
+  animation: 280ms ease-in both slide-out-left;
+}
+::view-transition-new(root) {
+  animation: 350ms ease-out both slide-in-right;
+}
+::view-transition-image-pair(hero-1) {
+  animation-duration: 400ms;
+}`,
+  },
+]
+
+const viewTransitionsRN: Step[] = [
+  {
+    title: 'Baseline navigation without transition',
+    description: 'Set up a React Navigation Stack with two screens and default transitions disabled. This gives you a clean starting point — you\'ll add the animation layer step by step.',
+    fr: { title: 'Navigation de base sans transition', description: 'Configurer un Stack React Navigation avec deux écrans et les transitions par défaut désactivées. Cela donne un point de départ propre — la couche d\'animation sera ajoutée étape par étape.' },
+    code: `import { createNativeStackNavigator } from '@react-navigation/native-stack'
+
+const Stack = createNativeStackNavigator()
+
+export function App() {
+  return (
+    <Stack.Navigator screenOptions={{ animation: 'none' }}>
+      <Stack.Screen name="Home"   component={HomeScreen} />
+      <Stack.Screen name="Detail" component={DetailScreen} />
+    </Stack.Navigator>
+  )
+}`,
+  },
+  {
+    title: 'Page transition with Reanimated',
+    description: 'Replace `animation: "none"` with a custom entering/exiting animation via Reanimated\'s layout animation presets. `FadeIn` and `FadeOut` are the simplest starting point before adding shared elements.',
+    fr: { title: 'Transition de page avec Reanimated', description: 'Remplacer `animation: "none"` par une animation d\'entrée/sortie personnalisée via les presets d\'animation de mise en page de Reanimated. `FadeIn` et `FadeOut` sont le point de départ le plus simple avant d\'ajouter des éléments partagés.' },
+    code: `import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
+
+// Wrap screen content
+<Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
+  {/* screen content */}
+</Animated.View>`,
+  },
+  {
+    title: 'Tag the shared element',
+    description: 'Apply `sharedTransitionTag` with matching names in both screens. Reanimated 3\'s Shared Element Transition API is the React Native equivalent of the View Transitions API — it pairs elements by tag.',
+    fr: { title: 'Baliser l\'élément partagé', description: 'Appliquer `sharedTransitionTag` avec des noms correspondants dans les deux écrans. L\'API Shared Element Transition de Reanimated 3 est l\'équivalent React Native de l\'API View Transitions — elle associe les éléments par balise.' },
+    code: `// HomeScreen
+<Animated.Image
+  source={{ uri: item.uri }}
+  sharedTransitionTag="detail-hero"
+  style={styles.thumbnail}
+/>
+
+// DetailScreen
+<Animated.Image
+  source={{ uri: item.uri }}
+  sharedTransitionTag="detail-hero"
+  style={styles.heroImage}
+/>`,
+  },
+  {
+    title: 'Customize transitionSpec',
+    description: 'Pass a `sharedTransitionStyle` with a custom spring spec. Tuning `stiffness` and `damping` separately from the page fade gives the shared element its own feel — usually slower and bouncier than the page.',
+    fr: { title: 'Personnaliser transitionSpec', description: 'Passer un `sharedTransitionStyle` avec un spec de ressort personnalisé. Ajuster `stiffness` et `damping` séparément du fondu de page donne à l\'élément partagé sa propre sensation — généralement plus lente et rebondissante que la page.' },
+    code: `import { SharedTransition, withSpring } from 'react-native-reanimated'
+
+const customTransition = SharedTransition.custom((values) => {
+  'worklet'
+  return {
+    width:   withSpring(values.targetWidth,  { stiffness: 200, damping: 24 }),
+    height:  withSpring(values.targetHeight, { stiffness: 200, damping: 24 }),
+    originX: withSpring(values.targetOriginX,{ stiffness: 200, damping: 24 }),
+    originY: withSpring(values.targetOriginY,{ stiffness: 200, damping: 24 }),
+  }
+})
+
+<Animated.Image sharedTransitionTag="detail-hero"
+  sharedTransitionStyle={customTransition} />`,
+  },
+]
+
+const viewTransitionsFlutter: Step[] = [
+  {
+    title: 'Baseline navigation without transition',
+    description: 'Push a new route with `Navigator.push` and `MaterialPageRoute`. The default Material slide transition will appear — override `transitionDuration` to zero to start from a clean, instant navigation baseline.',
+    fr: { title: 'Navigation de base sans transition', description: 'Pousser une nouvelle route avec `Navigator.push` et `MaterialPageRoute`. La transition de glissement Material par défaut apparaîtra — surcharger `transitionDuration` à zéro pour partir d\'une base de navigation instantanée et propre.' },
+    code: `Navigator.push(context,
+  MaterialPageRoute(
+    builder: (_) => const DetailScreen(),
+    // start from instant navigation
+  ),
+)`,
+  },
+  {
+    title: 'Add page transition with PageRouteBuilder',
+    description: 'Replace `MaterialPageRoute` with `PageRouteBuilder` and a `FadeTransition`. This gives you full control over the page enter/exit animation before layering Hero animations on top.',
+    fr: { title: 'Ajouter une transition de page avec PageRouteBuilder', description: 'Remplacer `MaterialPageRoute` par `PageRouteBuilder` avec une `FadeTransition`. Cela donne un contrôle total sur l\'animation d\'entrée/sortie de la page avant d\'y superposer des animations Hero.' },
+    code: `Navigator.push(context, PageRouteBuilder(
+  pageBuilder: (_, __, ___) => const DetailScreen(),
+  transitionsBuilder: (_, animation, __, child) =>
+    FadeTransition(opacity: animation, child: child),
+  transitionDuration: const Duration(milliseconds: 350),
+))`,
+  },
+  {
+    title: 'Wrap in Hero for shared element',
+    description: 'Wrap the element in both screens in a `Hero` widget with the same `tag`. Flutter\'s navigator detects matching tags and morphs the element during the page transition automatically.',
+    fr: { title: 'Envelopper dans Hero pour l\'élément partagé', description: 'Envelopper l\'élément dans les deux écrans dans un widget `Hero` avec le même `tag`. Le navigateur de Flutter détecte les balises correspondantes et morphose l\'élément pendant la transition de page automatiquement.' },
+    code: `// List screen
+Hero(
+  tag: 'item-\${item.id}',
+  child: Image.network(item.url, fit: BoxFit.cover),
+)
+
+// Detail screen
+Hero(
+  tag: 'item-\${item.id}',
+  child: Image.network(item.url, fit: BoxFit.cover,
+    width: double.infinity),
+)`,
+  },
+  {
+    title: 'Customize animation with CurvedAnimation',
+    description: 'Pass `createRectTween` to the `Hero` and combine it with a `CurvedAnimation` on the page route. `Curves.easeInOutCubicEmphasized` is the Material 3 recommended curve for container transforms.',
+    fr: { title: 'Personnaliser l\'animation avec CurvedAnimation', description: 'Passer `createRectTween` au `Hero` et le combiner avec une `CurvedAnimation` sur la route de page. `Curves.easeInOutCubicEmphasized` est la courbe recommandée par Material 3 pour les transformations de conteneur.' },
+    code: `Hero(
+  tag: 'item-\${item.id}',
+  createRectTween: (a, b) => MaterialRectArcTween(begin: a, end: b),
+  child: Image.network(item.url, fit: BoxFit.cover),
+)
+
+// In PageRouteBuilder
+transitionsBuilder: (_, animation, __, child) => FadeTransition(
+  opacity: CurvedAnimation(
+    parent: animation,
+    curve: Curves.easeInOutCubicEmphasized,
+  ),
+  child: child,
+),`,
+  },
+]
+
+const viewTransitions: StepMap = {
+  react:          viewTransitionsReact,
+  nextjs:         viewTransitionsNextjs,
+  vue:            viewTransitionsVue,
+  'react-native': viewTransitionsRN,
+  flutter:        viewTransitionsFlutter,
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  flip-list                                                            */
+/* ─────────────────────────────────────────────────────────────────── */
+
+const flipListReact: Step[] = [
+  {
+    title: 'Static list — render items without animation',
+    description: 'Render a list of items with `Array.map`. Getting the data model and key strategy right now prevents animation bugs later — React needs stable keys to pair entering and exiting elements.',
+    fr: { title: 'Liste statique — afficher les items sans animation', description: 'Afficher une liste d\'items avec `Array.map`. Mettre en place le modèle de données et la stratégie de clés maintenant évite les bugs d\'animation plus tard — React a besoin de clés stables pour associer les éléments entrants et sortants.' },
+    code: `export function FlipList({ items }) {
+  return (
+    <ul>
+      {items.map(item => (
+        <li key={item.id}>{item.label}</li>
+      ))}
+    </ul>
+  )
+}`,
+  },
+  {
+    title: 'Fade enter/exit with AnimatePresence',
+    description: 'Wrap the list in `AnimatePresence` and each item in `motion.li`. When an item is removed from the array, `AnimatePresence` keeps it in the DOM until its exit animation completes.',
+    fr: { title: 'Fondu d\'entrée/sortie avec AnimatePresence', description: 'Envelopper la liste dans `AnimatePresence` et chaque item dans `motion.li`. Lorsqu\'un item est retiré du tableau, `AnimatePresence` le maintient dans le DOM jusqu\'à la fin de son animation de sortie.' },
+    code: `import { AnimatePresence, motion } from 'framer-motion'
+
+<AnimatePresence>
+  {items.map(item => (
+    <motion.li key={item.id}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}>
+      {item.label}
+    </motion.li>
+  ))}
+</AnimatePresence>`,
+  },
+  {
+    title: 'Layout animation for position changes',
+    description: 'Add the `layout` prop to each `motion.li`. Framer Motion uses FLIP under the hood to animate items smoothly when they shift position after a sort or reorder.',
+    fr: { title: 'Animation de mise en page pour les changements de position', description: 'Ajouter la prop `layout` à chaque `motion.li`. Framer Motion utilise FLIP en interne pour animer les items en douceur lorsqu\'ils changent de position après un tri ou un réordonnancement.' },
+    code: `<AnimatePresence>
+  {items.map(item => (
+    <motion.li
+      key={item.id}
+      layout
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {item.label}
+    </motion.li>
+  ))}
+</AnimatePresence>`,
+  },
+  {
+    title: 'Stagger + spring config',
+    description: 'Add `variants` with a `staggerChildren` delay on the parent and a spring `transition` on each item. Stagger gives the eye a path to follow; spring stiffness/damping controls how items settle.',
+    fr: { title: 'Décalage + configuration du ressort', description: 'Ajouter des `variants` avec un délai `staggerChildren` sur le parent et une `transition` à ressort sur chaque item. Le décalage guide le regard ; la raideur et l\'amortissement du ressort contrôlent la façon dont les items se stabilisent.' },
+    code: `const list = { animate: { transition: { staggerChildren: 0.05 } } }
+const item = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0,
+    transition: { type: 'spring', stiffness: 300, damping: 28 } },
+  exit:    { opacity: 0 },
+}
+
+<motion.ul variants={list} animate="animate">
+  <AnimatePresence>
+    {items.map(i => (
+      <motion.li key={i.id} variants={item} layout>{i.label}</motion.li>
+    ))}
+  </AnimatePresence>
+</motion.ul>`,
+  },
+]
+
+const flipListNextjs: Step[] = [
+  {
+    title: 'Static list — render items without animation',
+    description: 'In the App Router, mark the list as a Client Component since it needs client-side state for sorting/filtering. A static render baseline confirms server rendering works before adding interactivity.',
+    fr: { title: 'Liste statique — afficher les items sans animation', description: 'Dans l\'App Router, marquer la liste comme Client Component car elle a besoin d\'état côté client pour le tri/filtrage. Une base de rendu statique confirme que le rendu serveur fonctionne avant d\'ajouter de l\'interactivité.' },
+    code: `'use client'
+
+export function FlipList({ items }: { items: Item[] }) {
+  return (
+    <ul className="list">
+      {items.map(item => (
+        <li key={item.id} className="list-item">
+          {item.label}
+        </li>
+      ))}
+    </ul>
+  )
+}`,
+  },
+  {
+    title: 'Fade enter/exit with AnimatePresence',
+    description: 'Swap `li` for `motion.li` inside `AnimatePresence`. In Next.js, this runs purely client-side — server components that fetch data pass items as props to this client component.',
+    fr: { title: 'Fondu d\'entrée/sortie avec AnimatePresence', description: 'Remplacer `li` par `motion.li` dans `AnimatePresence`. Dans Next.js, cela s\'exécute entièrement côté client — les composants serveur qui récupèrent les données passent les items comme props à ce composant client.' },
+    code: `'use client'
+import { AnimatePresence, motion } from 'framer-motion'
+
+<AnimatePresence>
+  {items.map(item => (
+    <motion.li key={item.id}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="list-item">
+      {item.label}
+    </motion.li>
+  ))}
+</AnimatePresence>`,
+  },
+  {
+    title: 'Layout animation for position changes',
+    description: 'Add `layout` to each item. Next.js Server Actions can reorder items via `revalidatePath` — the client component picks up the new order and Framer Motion animates items to their new positions.',
+    fr: { title: 'Animation de mise en page pour les changements de position', description: 'Ajouter `layout` à chaque item. Les Server Actions Next.js peuvent réordonner les items via `revalidatePath` — le composant client reçoit le nouvel ordre et Framer Motion anime les items vers leurs nouvelles positions.' },
+    code: `<AnimatePresence>
+  {items.map(item => (
+    <motion.li
+      key={item.id}
+      layout
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {item.label}
+    </motion.li>
+  ))}
+</AnimatePresence>`,
+  },
+  {
+    title: 'Stagger + spring config',
+    description: 'Add `layoutId` in combination with stagger variants for a polished list. In Next.js, memoize the variant objects outside the component so they are not recreated on every render.',
+    fr: { title: 'Décalage + configuration du ressort', description: 'Ajouter `layoutId` combiné à des variants de décalage pour une liste soignée. Dans Next.js, mémoriser les objets variant en dehors du composant pour éviter de les recréer à chaque rendu.' },
+    code: `const listVariants = { animate: { transition: { staggerChildren: 0.06 } } }
+const itemVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0,
+    transition: { type: 'spring', stiffness: 320, damping: 30 } },
+  exit: { opacity: 0 },
+}
+
+<motion.ul variants={listVariants} animate="animate">
+  <AnimatePresence>
+    {items.map(i => (
+      <motion.li key={i.id} layout variants={itemVariants}>{i.label}</motion.li>
+    ))}
+  </AnimatePresence>
+</motion.ul>`,
+  },
+]
+
+const flipListVue: Step[] = [
+  {
+    title: 'Static list — render items without animation',
+    description: 'Use `v-for` with a stable `:key`. Vue requires a key on transitioned list items — without it, the transition group cannot distinguish entering from moving elements.',
+    fr: { title: 'Liste statique — afficher les items sans animation', description: 'Utiliser `v-for` avec un `:key` stable. Vue exige une clé sur les éléments de liste transitionés — sans elle, le groupe de transition ne peut pas distinguer les éléments entrants des éléments en mouvement.' },
+    code: `<template>
+  <ul>
+    <li v-for="item in items" :key="item.id">
+      {{ item.label }}
+    </li>
+  </ul>
+</template>`,
+  },
+  {
+    title: 'Fade enter/exit with TransitionGroup',
+    description: 'Replace `<ul>` with `<TransitionGroup tag="ul">`. Vue animates elements entering and leaving the list using CSS classes — no JavaScript animation loop needed.',
+    fr: { title: 'Fondu d\'entrée/sortie avec TransitionGroup', description: 'Remplacer `<ul>` par `<TransitionGroup tag="ul">`. Vue anime les éléments entrant et sortant de la liste avec des classes CSS — aucune boucle d\'animation JavaScript n\'est nécessaire.' },
+    code: `<TransitionGroup tag="ul" name="fade">
+  <li v-for="item in items" :key="item.id">
+    {{ item.label }}
+  </li>
+</TransitionGroup>
+
+<style>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>`,
+  },
+  {
+    title: 'Layout animation with move-class',
+    description: 'Add a `move-class` to `TransitionGroup`. When items reorder, Vue applies this class to elements that change position, enabling CSS to animate them from their old to new coordinates.',
+    fr: { title: 'Animation de mise en page avec move-class', description: 'Ajouter une `move-class` à `TransitionGroup`. Lorsque les items se réordonnent, Vue applique cette classe aux éléments qui changent de position, permettant au CSS de les animer de leurs anciennes vers leurs nouvelles coordonnées.' },
+    code: `<TransitionGroup tag="ul" name="fade" move-class="item-move">
+  <li v-for="item in items" :key="item.id">{{ item.label }}</li>
+</TransitionGroup>
+
+<style>
+.item-move { transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+.fade-leave-active { position: absolute; }
+</style>`,
+  },
+  {
+    title: 'Stagger + spring timing',
+    description: 'Use the `:css="false"` mode with a JavaScript hook and a stagger delay based on element index. For spring-like easing, use `cubic-bezier(0.34, 1.56, 0.64, 1)` — CSS\'s closest approximation to a spring.',
+    fr: { title: 'Décalage + timing à ressort', description: 'Utiliser le mode `:css="false"` avec un hook JavaScript et un délai de décalage basé sur l\'index de l\'élément. Pour un easing semblable à un ressort, utiliser `cubic-bezier(0.34, 1.56, 0.64, 1)` — l\'approximation CSS la plus proche d\'un ressort.' },
+    code: `<TransitionGroup tag="ul" :css="false"
+  @enter="onEnter" @leave="onLeave">
+  <li v-for="(item, i) in items" :key="item.id"
+    :data-index="i">{{ item.label }}</li>
+</TransitionGroup>
+
+<script setup>
+function onEnter(el, done) {
+  const i = +el.dataset.index
+  el.animate(
+    [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }],
+    { duration: 350, delay: i * 50,
+      easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)', fill: 'backwards' }
+  ).onfinish = done
+}
+</script>`,
+  },
+]
+
+const flipListRN: Step[] = [
+  {
+    title: 'Static list — FlatList without animation',
+    description: 'Use `FlatList` with a stable `keyExtractor`. FlatList virtualizes the list for performance — animations must work with this virtualization to avoid items disappearing when they scroll off screen.',
+    fr: { title: 'Liste statique — FlatList sans animation', description: 'Utiliser `FlatList` avec un `keyExtractor` stable. FlatList virtualise la liste pour les performances — les animations doivent fonctionner avec cette virtualisation pour éviter que les items disparaissent en défilant hors de l\'écran.' },
+    code: `<FlatList
+  data={items}
+  keyExtractor={item => item.id}
+  renderItem={({ item }) => (
+    <View style={styles.item}>
+      <Text>{item.label}</Text>
+    </View>
+  )}
+/>`,
+  },
+  {
+    title: 'Fade enter/exit with layout animations',
+    description: 'Switch to `Animated.FlatList` and add `entering` / `exiting` presets to each item. Reanimated handles the animation on the UI thread so scrolling stays smooth even during add/remove.',
+    fr: { title: 'Fondu d\'entrée/sortie avec animations de mise en page', description: 'Passer à `Animated.FlatList` et ajouter les presets `entering` / `exiting` à chaque item. Reanimated gère l\'animation sur le thread UI pour que le défilement reste fluide même pendant les ajouts/suppressions.' },
+    code: `import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
+
+function ListItem({ item }) {
+  return (
+    <Animated.View entering={FadeIn} exiting={FadeOut}>
+      <Text>{item.label}</Text>
+    </Animated.View>
+  )
+}`,
+  },
+  {
+    title: 'Layout animation for reorder',
+    description: 'Add `layout={LinearTransition}` to each item. When the data array reorders, Reanimated calculates the delta between old and new positions and animates each item along that path.',
+    fr: { title: 'Animation de mise en page pour le réordonnancement', description: 'Ajouter `layout={LinearTransition}` à chaque item. Lorsque le tableau de données se réordonne, Reanimated calcule le delta entre les anciennes et nouvelles positions et anime chaque item le long de cette trajectoire.' },
+    code: `import Animated, {
+  FadeIn, FadeOut, LinearTransition
+} from 'react-native-reanimated'
+
+<Animated.View
+  entering={FadeIn}
+  exiting={FadeOut}
+  layout={LinearTransition}
+>
+  <Text>{item.label}</Text>
+</Animated.View>`,
+  },
+  {
+    title: 'Stagger + spring config',
+    description: 'Combine `FadeInDown.delay(index * 50)` for stagger with a spring-based layout transition. `SpringTransition` from Reanimated gives each repositioned item a physical, overshooting feel.',
+    fr: { title: 'Décalage + configuration du ressort', description: 'Combiner `FadeInDown.delay(index * 50)` pour le décalage avec une transition de mise en page à ressort. `SpringTransition` de Reanimated donne à chaque item repositionné une sensation physique avec léger dépassement.' },
+    code: `import Animated, {
+  FadeInDown, FadeOut, SpringTransition
+} from 'react-native-reanimated'
+
+function ListItem({ item, index }) {
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(index * 50).springify()
+        .stiffness(300).damping(28)}
+      exiting={FadeOut.duration(200)}
+      layout={SpringTransition.stiffness(300).damping(28)}
+    >
+      <Text>{item.label}</Text>
+    </Animated.View>
+  )
+}`,
+  },
+]
+
+const flipListFlutter: Step[] = [
+  {
+    title: 'Static list — ListView without animation',
+    description: 'Use `ListView.builder` to render items. Using a builder constructor is essential for large lists — `AnimatedList` also has a builder API, so the migration in later steps is straightforward.',
+    fr: { title: 'Liste statique — ListView sans animation', description: 'Utiliser `ListView.builder` pour afficher les items. L\'utilisation d\'un constructeur builder est essentielle pour les grandes listes — `AnimatedList` dispose également d\'une API builder, donc la migration dans les étapes suivantes est simple.' },
+    code: `ListView.builder(
+  itemCount: items.length,
+  itemBuilder: (context, index) => ListTile(
+    key: ValueKey(items[index].id),
+    title: Text(items[index].label),
+  ),
+)`,
+  },
+  {
+    title: 'Fade enter/exit with AnimatedList',
+    description: 'Replace `ListView.builder` with `AnimatedList` and a `GlobalKey`. Call `insertItem` and `removeItem` instead of mutating the list directly — Flutter plays the specified transition animation on each call.',
+    fr: { title: 'Fondu d\'entrée/sortie avec AnimatedList', description: 'Remplacer `ListView.builder` par `AnimatedList` avec une `GlobalKey`. Appeler `insertItem` et `removeItem` au lieu de muter la liste directement — Flutter joue l\'animation de transition spécifiée à chaque appel.' },
+    code: `final _listKey = GlobalKey<AnimatedListState>();
+
+AnimatedList(
+  key: _listKey,
+  initialItemCount: items.length,
+  itemBuilder: (context, index, animation) =>
+    FadeTransition(
+      opacity: animation,
+      child: ListTile(title: Text(items[index].label)),
+    ),
+)
+
+void addItem(Item item) {
+  items.insert(0, item);
+  _listKey.currentState!.insertItem(0);
+}`,
+  },
+  {
+    title: 'Layout animation with AnimatedList reorder',
+    description: 'For reordering, remove the item at its old index and reinsert at the new index. Flutter\'s `AnimatedList` animates both operations — the remove plays an exit, the insert plays an entrance.',
+    fr: { title: 'Animation de mise en page avec réordonnancement AnimatedList', description: 'Pour le réordonnancement, supprimer l\'item à son ancien index et le réinsérer au nouvel index. L\'`AnimatedList` de Flutter anime les deux opérations — la suppression joue une sortie, l\'insertion joue une entrée.' },
+    code: `void reorder(int oldIndex, int newIndex) {
+  final item = items.removeAt(oldIndex);
+  _listKey.currentState!.removeItem(oldIndex,
+    (context, animation) => SizeTransition(
+      sizeFactor: animation,
+      child: ListTile(title: Text(item.label)),
+    ));
+  items.insert(newIndex, item);
+  _listKey.currentState!.insertItem(newIndex);
+}`,
+  },
+  {
+    title: 'Stagger + spring timing',
+    description: 'Pass a `CurvedAnimation` with an interval-based curve to each item\'s transition for stagger. Wrapping in `SlideTransition` and `FadeTransition` in sequence gives a spring-like enter that pairs well with the reorder animation.',
+    fr: { title: 'Décalage + timing à ressort', description: 'Passer une `CurvedAnimation` avec une courbe basée sur des intervalles à la transition de chaque item pour le décalage. Enchaîner `SlideTransition` et `FadeTransition` donne une entrée semblable à un ressort qui se marie bien avec l\'animation de réordonnancement.' },
+    code: `itemBuilder: (context, index, animation) {
+  final curved = CurvedAnimation(
+    parent: animation,
+    curve: Interval(index * 0.05, 1.0,
+      curve: Curves.easeOutBack),
+  );
+  return SlideTransition(
+    position: Tween<Offset>(
+      begin: const Offset(0, 0.3), end: Offset.zero,
+    ).animate(curved),
+    child: FadeTransition(
+      opacity: curved,
+      child: ListTile(title: Text(items[index].label)),
+    ),
+  );
+},`,
+  },
+]
+
+const flipList: StepMap = {
+  react:          flipListReact,
+  nextjs:         flipListNextjs,
+  vue:            flipListVue,
+  'react-native': flipListRN,
+  flutter:        flipListFlutter,
+}
+
 export const ALL_STEPS: Record<string, StepMap> = {
   'entrance-reveal':   entranceReveal,
   'page-transitions':  pageTransitions,
@@ -7606,6 +9046,10 @@ export const ALL_STEPS: Record<string, StepMap> = {
   'onboarding-flow':   onboardingFlow,
   'shared-element':    sharedElement,
   'collapsing-header': collapsingHeader,
+  'pan-dismiss':       panDismiss,
+  'flutter-hero':      flutterHero,
+  'view-transitions':  viewTransitions,
+  'flip-list':         flipList,
 }
 
 export function getSteps(slug: string, platform: PlatformId): Step[] {

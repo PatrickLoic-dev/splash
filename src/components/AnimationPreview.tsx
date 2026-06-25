@@ -1375,6 +1375,547 @@ function CollapsingHeaderMobile({ step }: { step: number }) {
   )
 }
 
+/* ── 11. Pan Dismiss ────────────────────────────────────────────────────── */
+
+function PanDismissWeb({ step }: { step: number }) {
+  const initial = [
+    { id: 'a', label: 'Design review', color: '#534AB7' },
+    { id: 'b', label: 'Update docs',   color: '#1D9E75' },
+    { id: 'c', label: 'Fix bug #42',   color: '#D85A30' },
+  ]
+  const [items, setItems] = useState(initial)
+  useEffect(() => { setItems(initial) }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function remove(id: string) { setItems(p => p.filter(i => i.id !== id)) }
+
+  return (
+    <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <AnimatePresence>
+        {items.map(item => (
+          <motion.div
+            key={item.id}
+            layout={step >= 3}
+            exit={step >= 1 ? { x: '-100%', opacity: 0 } : {}}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
+            style={{ position: 'relative', overflow: 'hidden', marginBottom: 8 }}
+          >
+            <div style={{
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: 64,
+              background: '#D85A30', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '0 10px 10px 0',
+            }}>
+              <span style={{ color: '#fff', fontSize: 10, fontFamily: 'var(--font-outfit)' }}>Delete</span>
+            </div>
+            <motion.div
+              drag={step >= 1 ? 'x' : false}
+              dragConstraints={{ left: -64, right: 0 }}
+              dragElastic={step >= 2 ? 0.1 : 0.5}
+              onDragEnd={step >= 2 ? ((_, { offset }) => { if (offset.x < -36) remove(item.id) }) : undefined}
+              whileDrag={step >= 3 ? { boxShadow: '0 4px 20px rgba(0,0,0,0.14)' } : undefined}
+              style={{
+                padding: '12px 14px', borderRadius: 10,
+                border: '1px solid var(--border)', background: 'var(--bg)',
+                display: 'flex', alignItems: 'center', gap: 10,
+                cursor: step >= 1 ? 'grab' : 'default',
+                position: 'relative', zIndex: 1, userSelect: 'none',
+              }}
+            >
+              <div style={{ width: 8, height: 8, borderRadius: 4, background: item.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)', flex: 1 }}>{item.label}</span>
+              {step >= 1 && <span style={{ fontSize: 9, color: 'var(--text-tertiary)', fontFamily: 'var(--font-outfit)' }}>← swipe</span>}
+            </motion.div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      {items.length === 0 && (
+        <button onClick={() => setItems(initial)} style={{
+          padding: '10px', borderRadius: 10, border: '1px dashed var(--border)',
+          background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+          fontSize: 11, color: 'var(--text-tertiary)',
+        }}>Reset list</button>
+      )}
+    </div>
+  )
+}
+
+function PanDismissMobile({ step }: { step: number }) {
+  const y = useMotionValue(0)
+  const cardOpacity = useTransform(y, [0, 180], [1, 0])
+  const cardScale   = useTransform(y, [0, 180], [1, 0.88])
+  const backdropOp  = useTransform(y, [0, 180], [0, 0.5])
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => { setDismissed(false); y.set(0) }, [step, y])
+
+  if (dismissed) {
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20 }}>
+        <span style={{ fontSize: 9, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)' }}>Card dismissed</span>
+        <button onClick={() => { setDismissed(false); y.set(0) }} style={{
+          padding: '6px 14px', borderRadius: 8, background: 'var(--accent)', color: '#fff',
+          border: 'none', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font-outfit)',
+        }}>Restore</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ height: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: 10 }}>
+      {step >= 3 && (
+        <motion.div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,1)', opacity: backdropOp }} />
+      )}
+      <motion.div
+        drag={step >= 1 ? 'y' : false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={step >= 2 ? 0.6 : 1}
+        style={{
+          y: step >= 1 ? y : 0,
+          opacity: step >= 3 ? cardOpacity : 1,
+          scale: step >= 3 ? cardScale : 1,
+          width: '100%', padding: '14px 12px', borderRadius: 14,
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          cursor: step >= 1 ? 'grab' : 'default', userSelect: 'none',
+        }}
+        onDragEnd={(_, { offset }) => {
+          if (step >= 2 && offset.y > 70) {
+            fmAnimate(y, 360, { duration: 0.22, ease: 'easeIn' }).then(() => setDismissed(true))
+          } else {
+            fmAnimate(y, 0, { type: 'spring', stiffness: 400, damping: 30 })
+          }
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#534AB7', flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 11, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)', fontWeight: 600 }}>Notification</div>
+            <div style={{ fontSize: 9, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)' }}>
+              {step >= 1 ? 'Drag down to dismiss' : 'New message'}
+            </div>
+          </div>
+        </div>
+        <div style={{ height: 4, borderRadius: 2, background: 'var(--border)', marginBottom: 6 }} />
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'var(--border-strong)' }} />
+          <div style={{ flex: 2, height: 4, borderRadius: 2, background: 'var(--border)' }} />
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+/* ── 12. Flutter Hero ───────────────────────────────────────────────────── */
+
+const HERO_ITEMS = [
+  { id: 'a', color: '#534AB7', label: 'Aurora' },
+  { id: 'b', color: '#1D9E75', label: 'Forest' },
+  { id: 'c', color: '#D85A30', label: 'Ember'  },
+]
+
+function FlutterHeroWeb({ step }: { step: number }) {
+  const [selIdx, setSelIdx] = useState<number | null>(null)
+  const [page, setPage] = useState<'grid' | 'detail'>('grid')
+
+  useEffect(() => { setSelIdx(null); setPage('grid') }, [step])
+
+  function open(i: number) { setSelIdx(i); setPage('detail') }
+  function close() { setPage('grid') }
+
+  const item = selIdx !== null ? HERO_ITEMS[selIdx] : null
+
+  return (
+    <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+      <AnimatePresence mode={step >= 2 ? 'wait' : undefined}>
+        {page === 'grid' ? (
+          <motion.div key="grid"
+            initial={step >= 2 ? { opacity: 0 } : false} animate={{ opacity: 1 }}
+            exit={step >= 2 ? { opacity: 0 } : {}} transition={{ duration: 0.18 }}
+            style={{ position: 'absolute', inset: 0, padding: '14px 16px' }}
+          >
+            <div style={{ fontSize: 13, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 10 }}>Gallery</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              {HERO_ITEMS.map((it, i) => (
+                step >= 3 ? (
+                  <motion.div key={it.id} layoutId={`hero-web-${it.id}`}
+                    onClick={() => open(i)} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+                    style={{ height: 80, borderRadius: 10, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 7 }}>
+                    <span style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
+                  </motion.div>
+                ) : (
+                  <div key={it.id} onClick={() => open(i)}
+                    style={{ height: 80, borderRadius: 10, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 7 }}>
+                    <span style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
+                  </div>
+                )
+              ))}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div key="detail"
+            initial={step >= 2 ? { opacity: 0 } : false} animate={{ opacity: 1 }}
+            exit={step >= 2 ? { opacity: 0 } : {}} transition={{ duration: 0.18 }}
+            style={{ position: 'absolute', inset: 0, padding: '14px 16px' }}
+          >
+            <button onClick={close} style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 10, fontFamily: 'var(--font-outfit)' }}>← Back</button>
+            {item && (
+              step >= 3 ? (
+                <motion.div layoutId={`hero-web-${item.id}`}
+                  transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+                  style={{ width: '100%', height: 110, borderRadius: 12, background: item.color, marginBottom: 12, display: 'flex', alignItems: 'flex-end', padding: 12 }}>
+                  <span style={{ fontSize: 15, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</span>
+                </motion.div>
+              ) : (
+                <div style={{ width: '100%', height: 110, borderRadius: 12, background: item.color, marginBottom: 12, display: 'flex', alignItems: 'flex-end', padding: 12 }}>
+                  <span style={{ fontSize: 15, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</span>
+                </div>
+              )
+            )}
+            <div style={{ width: 80, height: 8, borderRadius: 4, background: 'var(--text-primary)', marginBottom: 6 }} />
+            <div style={{ width: '75%', height: 5, borderRadius: 3, background: 'var(--border-strong)', marginBottom: 4 }} />
+            <div style={{ width: '60%', height: 5, borderRadius: 3, background: 'var(--border-strong)' }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function FlutterHeroMobile({ step }: { step: number }) {
+  const [selIdx, setSelIdx] = useState<number | null>(null)
+  const item = selIdx !== null ? HERO_ITEMS[selIdx] : null
+
+  useEffect(() => { setSelIdx(null) }, [step])
+
+  return (
+    <div style={{ height: '100%', position: 'relative', overflow: 'hidden', padding: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5 }}>
+        {HERO_ITEMS.map((it, i) => (
+          step >= 3 ? (
+            <motion.div key={it.id} layoutId={`hero-mob-${it.id}`}
+              onClick={() => setSelIdx(i)} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+              style={{ height: 65, borderRadius: 9, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 5 }}>
+              <span style={{ fontSize: 8, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
+            </motion.div>
+          ) : (
+            <div key={it.id} onClick={() => setSelIdx(i)}
+              style={{ height: 65, borderRadius: 9, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 5 }}>
+              <span style={{ fontSize: 8, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
+            </div>
+          )
+        ))}
+      </div>
+
+      <AnimatePresence>
+        {selIdx !== null && item && (
+          <>
+            <motion.div key="bd"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSelIdx(null)}
+              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40 }} />
+            {step >= 3 ? (
+              <motion.div key="detail" layoutId={`hero-mob-${item.id}`}
+                transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+                onClick={() => setSelIdx(null)}
+                style={{ position: 'absolute', top: 14, left: 10, right: 10, height: 160, borderRadius: 14, background: item.color, zIndex: 50, display: 'flex', alignItems: 'flex-end', padding: 12, cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: 14, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-outfit)' }}>Tap to close</div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div key="detail-static"
+                initial={step >= 1 ? { opacity: 0, scale: 0.92 } : {}}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={step >= 1 ? { opacity: 0, scale: 0.92 } : {}}
+                transition={{ duration: 0.22 }}
+                onClick={() => setSelIdx(null)}
+                style={{ position: 'absolute', top: 14, left: 10, right: 10, height: 160, borderRadius: 14, background: item.color, zIndex: 50, display: 'flex', alignItems: 'flex-end', padding: 12, cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: 14, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-outfit)' }}>Tap to close</div>
+                </div>
+              </motion.div>
+            )}
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+/* ── 13. View Transitions ───────────────────────────────────────────────── */
+
+const VT_ITEMS = [
+  { color: '#534AB7', title: 'Aurora Borealis', sub: 'Nature · 3 min read' },
+  { color: '#1D9E75', title: 'Forest Trail',    sub: 'Outdoors · 5 min read' },
+]
+
+function ViewTransitionsWeb({ step }: { step: number }) {
+  const [page, setPage]     = useState<'list' | 'detail'>('list')
+  const [selIdx, setSelIdx] = useState(0)
+
+  useEffect(() => { setPage('list') }, [step])
+
+  function open(i: number) { setSelIdx(i); setPage('detail') }
+
+  const listContent = (
+    <div style={{ padding: '14px 16px' }}>
+      <div style={{ fontSize: 13, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 10 }}>Articles</div>
+      {VT_ITEMS.map((it, i) => (
+        <div key={i} onClick={() => open(i)} style={{
+          display: 'flex', gap: 10, alignItems: 'center', padding: '8px 10px',
+          borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-secondary)',
+          cursor: 'pointer', marginBottom: 8,
+        }}>
+          {step >= 3
+            ? <motion.div layoutId={`vt-w-${i}`} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+                style={{ width: 44, height: 44, borderRadius: 8, background: it.color, flexShrink: 0 }} />
+            : <div style={{ width: 44, height: 44, borderRadius: 8, background: it.color, flexShrink: 0 }} />
+          }
+          <div>
+            <div style={{ fontSize: 12, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)', fontWeight: 500 }}>{it.title}</div>
+            <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{it.sub}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const it = VT_ITEMS[selIdx]
+  const detailContent = (
+    <div style={{ padding: '14px 16px' }}>
+      <button onClick={() => setPage('list')} style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 10, fontFamily: 'var(--font-outfit)' }}>← Articles</button>
+      {step >= 3
+        ? <motion.div layoutId={`vt-w-${selIdx}`} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+            style={{ width: '100%', height: 100, borderRadius: 12, background: it.color, marginBottom: 12 }} />
+        : <div style={{ width: '100%', height: 100, borderRadius: 12, background: it.color, marginBottom: 12 }} />
+      }
+      <div style={{ fontSize: 14, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 4 }}>{it.title}</div>
+      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 10 }}>{it.sub}</div>
+      <div style={{ width: '100%', height: 5, borderRadius: 3, background: 'var(--border-strong)', marginBottom: 4 }} />
+      <div style={{ width: '82%', height: 5, borderRadius: 3, background: 'var(--border)', marginBottom: 4 }} />
+      <div style={{ width: '68%', height: 5, borderRadius: 3, background: 'var(--border)' }} />
+    </div>
+  )
+
+  if (step === 0) {
+    return (
+      <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+        {page === 'list' ? listContent : detailContent}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={page}
+          initial={{ opacity: 0, y: step >= 2 ? 12 : 0 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: step >= 2 ? -12 : 0 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
+          style={{ position: 'absolute', inset: 0 }}
+        >
+          {page === 'list' ? listContent : detailContent}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function ViewTransitionsMobile({ step }: { step: number }) {
+  const [page, setPage]     = useState<'list' | 'detail'>('list')
+  const [selIdx, setSelIdx] = useState(0)
+
+  useEffect(() => { setPage('list') }, [step])
+
+  function open(i: number) { setSelIdx(i); setPage('detail') }
+
+  const it = VT_ITEMS[selIdx]
+
+  const listContent = (
+    <div style={{ padding: '8px 10px' }}>
+      <div style={{ fontSize: 12, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 8 }}>Articles</div>
+      {VT_ITEMS.map((item, i) => (
+        <div key={i} onClick={() => open(i)} style={{
+          display: 'flex', gap: 8, alignItems: 'center', padding: '7px 8px',
+          borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-secondary)',
+          cursor: 'pointer', marginBottom: 6,
+        }}>
+          {step >= 3
+            ? <motion.div layoutId={`vt-m-${i}`} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+                style={{ width: 36, height: 36, borderRadius: 7, background: item.color, flexShrink: 0 }} />
+            : <div style={{ width: 36, height: 36, borderRadius: 7, background: item.color, flexShrink: 0 }} />
+          }
+          <div>
+            <div style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)', fontWeight: 500 }}>{item.title}</div>
+            <div style={{ fontSize: 8, color: 'var(--text-tertiary)' }}>{item.sub}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const detailContent = (
+    <div style={{ padding: '8px 10px' }}>
+      <button onClick={() => setPage('list')} style={{ fontSize: 10, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 8, fontFamily: 'var(--font-outfit)' }}>← Back</button>
+      {step >= 3
+        ? <motion.div layoutId={`vt-m-${selIdx}`} transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+            style={{ width: '100%', height: 80, borderRadius: 10, background: it.color, marginBottom: 10 }} />
+        : <div style={{ width: '100%', height: 80, borderRadius: 10, background: it.color, marginBottom: 10 }} />
+      }
+      <div style={{ fontSize: 12, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 3 }}>{it.title}</div>
+      <div style={{ fontSize: 9, color: 'var(--text-tertiary)', marginBottom: 8 }}>{it.sub}</div>
+      <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'var(--border-strong)', marginBottom: 3 }} />
+      <div style={{ width: '80%', height: 4, borderRadius: 2, background: 'var(--border)', marginBottom: 3 }} />
+      <div style={{ width: '65%', height: 4, borderRadius: 2, background: 'var(--border)' }} />
+    </div>
+  )
+
+  if (step === 0) {
+    return <div style={{ height: '100%', overflow: 'hidden' }}>{page === 'list' ? listContent : detailContent}</div>
+  }
+
+  return (
+    <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={page}
+          initial={{ opacity: 0, x: page === 'detail' ? (step >= 2 ? 18 : 0) : (step >= 2 ? -18 : 0) }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: page === 'list' ? (step >= 2 ? -18 : 0) : (step >= 2 ? 18 : 0) }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
+          style={{ position: 'absolute', inset: 0 }}
+        >
+          {page === 'list' ? listContent : detailContent}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+/* ── 14. FLIP List ──────────────────────────────────────────────────────── */
+
+const FLIP_ALL = [
+  { id: 'a', label: 'React',   color: '#61DAFB' },
+  { id: 'b', label: 'Vue',     color: '#42B883' },
+  { id: 'c', label: 'Angular', color: '#DD0031' },
+  { id: 'd', label: 'Svelte',  color: '#FF3E00' },
+]
+
+function FlipListWeb({ step }: { step: number }) {
+  const [items, setItems] = useState(FLIP_ALL)
+  const [filter, setFilter] = useState<'all' | 'top2'>('all')
+
+  useEffect(() => { setFilter('all'); setItems(FLIP_ALL) }, [step])
+  useEffect(() => {
+    setItems(filter === 'all' ? FLIP_ALL : FLIP_ALL.slice(0, 2))
+  }, [filter])
+
+  return (
+    <div style={{ padding: '14px 16px' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, alignItems: 'center' }}>
+        {(['all', 'top2'] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)} style={{
+            padding: '4px 10px', borderRadius: 6,
+            border: `1px solid ${filter === f ? 'var(--accent)' : 'var(--border)'}`,
+            background: filter === f ? 'var(--accent-faint)' : 'var(--bg)',
+            color: filter === f ? 'var(--accent)' : 'var(--text-tertiary)',
+            fontSize: 11, fontFamily: 'var(--font-outfit)', cursor: 'pointer',
+          }}>{f === 'all' ? 'All' : 'Top 2'}</button>
+        ))}
+        <button onClick={() => setItems(p => [...p].reverse())} style={{
+          marginLeft: 'auto', padding: '4px 10px', borderRadius: 6,
+          border: '1px solid var(--border)', background: 'var(--bg)',
+          color: 'var(--text-tertiary)', fontSize: 11, fontFamily: 'var(--font-outfit)', cursor: 'pointer',
+        }}>Flip ↕</button>
+      </div>
+
+      <motion.div layout={step >= 3} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <AnimatePresence mode="popLayout">
+          {items.map(item => (
+            <motion.div
+              key={item.id}
+              layout={step >= 3}
+              initial={step >= 1 ? { opacity: 0, y: 8 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              exit={step >= 1 ? { opacity: 0, y: -8, height: 0, marginBottom: 0 } : {}}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
+              style={{
+                padding: '10px 12px', borderRadius: 8,
+                border: '1px solid var(--border)', background: 'var(--bg)',
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}
+            >
+              <div style={{ width: 8, height: 8, borderRadius: 4, background: item.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)' }}>{item.label}</span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  )
+}
+
+function FlipListMobile({ step }: { step: number }) {
+  const mobileAll = [
+    { id: 'a', label: 'React Native', color: '#61DAFB' },
+    { id: 'b', label: 'Flutter',      color: '#54C5F8' },
+    { id: 'c', label: 'Ionic',        color: '#3880FF' },
+  ]
+  const [items, setItems] = useState(mobileAll)
+  const [filter, setFilter] = useState<'all' | 'top'>('all')
+
+  useEffect(() => { setFilter('all'); setItems(mobileAll) }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setItems(filter === 'all' ? mobileAll : mobileAll.slice(0, 2))
+  }, [filter]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div style={{ padding: '8px 10px' }}>
+      <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
+        {(['all', 'top'] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)} style={{
+            padding: '3px 8px', borderRadius: 5,
+            border: `1px solid ${filter === f ? 'var(--accent)' : 'var(--border)'}`,
+            background: filter === f ? 'var(--accent-faint)' : 'var(--bg)',
+            color: filter === f ? 'var(--accent)' : 'var(--text-tertiary)',
+            fontSize: 10, fontFamily: 'var(--font-outfit)', cursor: 'pointer',
+          }}>{f === 'all' ? 'All' : 'Top 2'}</button>
+        ))}
+        <button onClick={() => setItems(p => [...p].reverse())} style={{
+          marginLeft: 'auto', padding: '3px 8px', borderRadius: 5,
+          border: '1px solid var(--border)', background: 'var(--bg)',
+          color: 'var(--text-tertiary)', fontSize: 10, fontFamily: 'var(--font-outfit)', cursor: 'pointer',
+        }}>↕</button>
+      </div>
+
+      <motion.div layout={step >= 3} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <AnimatePresence mode="popLayout">
+          {items.map(item => (
+            <motion.div
+              key={item.id}
+              layout={step >= 3}
+              initial={step >= 1 ? { opacity: 0, y: 6 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              exit={step >= 1 ? { opacity: 0, y: -6, height: 0 } : {}}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
+              style={{
+                padding: '9px 10px', borderRadius: 8,
+                border: '1px solid var(--border)', background: 'var(--bg)',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+            >
+              <div style={{ width: 6, height: 6, borderRadius: 3, background: item.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)' }}>{item.label}</span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  )
+}
+
 /* ── Dispatch ───────────────────────────────────────────────────────────── */
 
 const WEB_MAP: Record<string, React.FC<{ step: number }>> = {
@@ -1388,6 +1929,10 @@ const WEB_MAP: Record<string, React.FC<{ step: number }>> = {
   'onboarding-flow':   OnboardingFlowWeb,
   'shared-element':    SharedElementWeb,
   'collapsing-header': CollapsingHeaderWeb,
+  'pan-dismiss':       PanDismissWeb,
+  'flutter-hero':      FlutterHeroWeb,
+  'view-transitions':  ViewTransitionsWeb,
+  'flip-list':         FlipListWeb,
 }
 
 const MOBILE_MAP: Record<string, React.FC<{ step: number }>> = {
@@ -1401,6 +1946,10 @@ const MOBILE_MAP: Record<string, React.FC<{ step: number }>> = {
   'onboarding-flow':   OnboardingFlowMobile,
   'shared-element':    SharedElementMobile,
   'collapsing-header': CollapsingHeaderMobile,
+  'pan-dismiss':       PanDismissMobile,
+  'flutter-hero':      FlutterHeroMobile,
+  'view-transitions':  ViewTransitionsMobile,
+  'flip-list':         FlipListMobile,
 }
 
 export function AnimationPreview({ slug, context, stepIndex = 3 }: {
