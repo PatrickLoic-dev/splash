@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
 export type Lang = 'en' | 'fr'
 
@@ -151,11 +151,29 @@ const I18nContext = createContext<{
   t:       (k) => T.en[k],
 })
 
+function detectLang(): Lang {
+  if (typeof window === 'undefined') return 'en'
+  const saved = localStorage.getItem('splash-lang') as Lang | null
+  if (saved === 'en' || saved === 'fr') return saved
+  const browser = (navigator.languages?.[0] ?? navigator.language ?? '').toLowerCase()
+  return browser.startsWith('fr') ? 'fr' : 'en'
+}
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>('en')
+
+  useEffect(() => {
+    setLang(detectLang())
+  }, [])
+
+  const setLangPersisted = (l: Lang) => {
+    localStorage.setItem('splash-lang', l)
+    setLang(l)
+  }
+
   const t = (key: TranslationKey): string => T[lang][key]
   return (
-    <I18nContext.Provider value={{ lang, setLang, t }}>
+    <I18nContext.Provider value={{ lang, setLang: setLangPersisted, t }}>
       {children}
     </I18nContext.Provider>
   )
