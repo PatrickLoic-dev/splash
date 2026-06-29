@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { I18nProvider } from '@/lib/i18n'
+import { CustomCursor } from '@/components/CustomCursor'
+import { PageTransition } from '@/components/PageTransition'
+import { FooterGate } from '@/components/FooterGate'
 
 export const metadata: Metadata = {
   title: 'Splash — Learn animations that ship',
@@ -29,7 +32,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider>
-          <I18nProvider>{children}</I18nProvider>
+          <I18nProvider>
+            <CustomCursor />
+            <PageTransition>
+              {children}
+            </PageTransition>
+            <FooterGate />
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>
