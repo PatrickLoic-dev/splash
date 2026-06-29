@@ -59,6 +59,7 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
 }
 
 body {
@@ -110,6 +111,12 @@ html.theme-transitioning *::after {
     black 0%,
     transparent 100%
   );
+}
+
+/* Compositor-thread shimmer — replaces the Framer Motion JS-driven version */
+@keyframes shimmer-slide {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(200%); }
 }
 
 @keyframes border-shimmer {

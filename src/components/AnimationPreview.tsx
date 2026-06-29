@@ -17,14 +17,13 @@ function Shimmer({ width = '100%', height = 10, radius = 4 }: {
       overflow: 'hidden', background: 'var(--bg-tertiary)',
       position: 'relative', flexShrink: 0,
     }}>
-      <motion.div
-        style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%)',
-        }}
-        animate={{ x: ['-100%', '100%'] }}
-        transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}
-      />
+      {/* CSS animation runs on compositor thread — zero JS overhead */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%)',
+        animation: 'shimmer-slide 1.4s linear infinite',
+        willChange: 'transform',
+      }} />
     </div>
   )
 }
@@ -54,6 +53,7 @@ function EntranceRevealWeb({ step }: { step: number }) {
             background: 'var(--bg-secondary)',
             border: '1px solid var(--border)',
             display: 'flex', alignItems: 'center', gap: 12,
+            willChange: 'transform, opacity',
           }}
         >
           <div style={{ width: 30, height: 30, borderRadius: 8, background: row.color, flexShrink: 0 }} />
@@ -192,7 +192,7 @@ function PageTransitionsWeb({ step }: { step: number }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: step >= 2 ? -14 : 0 }}
             transition={{ duration: 0.28, ease: step >= 2 ? [0.22, 1, 0.36, 1] as [number,number,number,number] : 'easeOut' as const }}
-            style={{ position: 'absolute', inset: 0, padding: 16 }}
+            style={{ position: 'absolute', inset: 0, padding: 16, willChange: 'transform, opacity' }}
           >
             {page === 'overview'
               ? <PTOverviewContent onDetail={() => setPage('detail')} />
@@ -307,7 +307,7 @@ function GestureFeedbackWeb({ step }: { step: number }) {
           drag="x"
           dragConstraints={{ left: -70, right: 70 }}
           dragElastic={0.25}
-          whileDrag={{ scale: 1.02, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+          whileDrag={{ scale: 1.02 }}
           style={{
             padding: '12px 16px', borderRadius: 10, cursor: 'grab',
             border: '1px solid var(--border)', background: 'var(--bg-secondary)',
@@ -491,8 +491,9 @@ function ParallaxMobile({ step }: { step: number }) {
         y: step >= 1 ? bgY : 0,
         background: 'linear-gradient(145deg, #534AB7 0%, #1D9E75 100%)',
         opacity: 0.45,
+        willChange: 'transform',
       }} />
-      <motion.div style={{ position: 'relative', zIndex: 1, y: step >= 2 ? textY : 0, padding: '88px 10px 10px' }}>
+      <motion.div style={{ position: 'relative', zIndex: 1, y: step >= 2 ? textY : 0, padding: '88px 10px 10px', willChange: 'transform' }}>
         <div style={{ fontSize: 12, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', fontWeight: 400, marginBottom: 4 }}>Explore</div>
         <div style={{ fontSize: 9, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)', marginBottom: 10 }}>
           {step === 0 ? 'Static layout' : 'Scroll to discover'}

@@ -602,9 +602,12 @@ function FilteredView({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: 0.04 + i * 0.03, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                    whileHover={{ y: -3, transition: { duration: 0.18 } }}
-                    whileTap={{ scale: 0.98 }}
+                    transition={{
+                      delay: 0.04 + i * 0.03, duration: 0.35, ease: [0.22, 1, 0.36, 1],
+                      layout: { type: 'tween', duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+                    }}
+                    whileHover={{ y: -3, transition: { duration: 0.15, ease: 'easeOut' } }}
+                    whileTap={{ scale: 0.98, transition: { duration: 0.08 } }}
                     style={{
                       background: 'var(--bg-secondary)',
                       border: '1px solid var(--border)',
@@ -614,6 +617,7 @@ function FilteredView({
                       textAlign: 'left',
                       display: 'flex', flexDirection: 'column', gap: 0,
                       overflow: 'hidden',
+                      willChange: 'transform, opacity',
                     }}
                     onMouseEnter={e => {
                       const c = CAT_COLORS[anim.category] ?? '#534AB7'
@@ -636,15 +640,16 @@ function FilteredView({
                       justifyContent: context === 'mobile' ? 'center' : 'stretch',
                       pointerEvents: 'none',
                       flexShrink: 0,
+                      contain: 'layout paint',
                     }}>
                       {context === 'mobile' ? (
-                        <div style={{ transform: 'scale(0.32)', transformOrigin: 'top center', width: 200, flexShrink: 0 }}>
+                        <div style={{ transform: 'scale(0.32) translateZ(0)', transformOrigin: 'top center', width: 200, flexShrink: 0 }}>
                           <PhoneFrame>
                             <AnimationPreview slug={anim.slug} context="mobile" stepIndex={3} />
                           </PhoneFrame>
                         </div>
                       ) : (
-                        <div style={{ transform: 'scale(0.56)', transformOrigin: 'top left', width: '179%', flexShrink: 0 }}>
+                        <div style={{ transform: 'scale(0.56) translateZ(0)', transformOrigin: 'top left', width: '179%', flexShrink: 0 }}>
                           <BrowserFrame>
                             <AnimationPreview slug={anim.slug} context="web" stepIndex={3} />
                           </BrowserFrame>
@@ -876,7 +881,7 @@ function PreviewPanel({ slug, context, replayKey, stepIndex, steps, accentColor,
         <motion.div key={`${slug}-${context}-${replayKey}`}
           initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+          style={{ width: '100%', display: 'flex', justifyContent: 'center', willChange: 'transform, opacity' }}
         >
           {context === 'web' ? (
             <BrowserFrame><AnimationPreview key={`${replayKey}-${stepIndex}`} slug={slug} context="web" stepIndex={stepIndex} /></BrowserFrame>
@@ -1003,15 +1008,16 @@ function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, cur
                 justifyContent: context === 'mobile' ? 'center' : 'stretch',
                 pointerEvents: 'none',
                 borderBottom: '1px solid var(--border)',
+                contain: 'layout paint',
               }}>
                 {context === 'mobile' ? (
-                  <div style={{ transform: 'scale(0.32)', transformOrigin: 'top center', width: 200, flexShrink: 0 }}>
+                  <div style={{ transform: 'scale(0.32) translateZ(0)', transformOrigin: 'top center', width: 200, flexShrink: 0 }}>
                     <PhoneFrame>
                       <AnimationPreview slug={anim.slug} context="mobile" stepIndex={3} />
                     </PhoneFrame>
                   </div>
                 ) : (
-                  <div style={{ transform: 'scale(0.56)', transformOrigin: 'top left', width: '179%', flexShrink: 0 }}>
+                  <div style={{ transform: 'scale(0.56) translateZ(0)', transformOrigin: 'top left', width: '179%', flexShrink: 0 }}>
                     <BrowserFrame>
                       <AnimationPreview slug={anim.slug} context="web" stepIndex={3} />
                     </BrowserFrame>
