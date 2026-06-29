@@ -131,11 +131,12 @@ export function HomePage() {
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <a
                 href="/learn"
-                className="btn-border-anim"
                 style={{
                   padding: '13px 28px', borderRadius: 10,
-                  background: 'var(--accent)', color: '#fff',
-                  fontSize: 15, fontWeight: 500,
+                  background: 'none',
+                  border: '1.5px solid var(--accent)',
+                  color: 'var(--accent)',
+                  fontSize: 15, fontWeight: 600,
                   fontFamily: 'var(--font-outfit)',
                   textDecoration: 'none',
                   letterSpacing: '-0.01em',

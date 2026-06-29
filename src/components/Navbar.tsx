@@ -200,23 +200,6 @@ export function Navbar() {
               </button>
             )}
 
-            {/* CTA — desktop only, hidden on /learn */}
-            {!isMobile && !isLearnPage && (
-              <a
-                href="/learn"
-                className="btn-border-anim"
-                style={{
-                  padding: '0 20px', height: 34, borderRadius: 20,
-                  background: 'var(--accent)', color: '#fff',
-                  fontSize: 13, fontWeight: 600,
-                  textDecoration: 'none', fontFamily: 'var(--font-outfit)',
-                  letterSpacing: '0.01em',
-                  display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap',
-                }}
-              >
-                {t('nav_start')}
-              </a>
-            )}
 
             {/* Hamburger — mobile only */}
             {isMobile && (
@@ -300,31 +283,6 @@ export function Navbar() {
                 </motion.a>
               ))}
 
-              {/* CTA — hidden on /learn */}
-              {!isLearnPage && (
-                <motion.div
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.17, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ marginTop: 12 }}
-                >
-                  <a
-                    href="/learn"
-                    onClick={() => setMenuOpen(false)}
-                    className="btn-border-anim"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center',
-                      padding: '14px 28px', borderRadius: 12,
-                      background: 'var(--accent)', color: '#fff',
-                      fontSize: 15, fontWeight: 600,
-                      fontFamily: 'var(--font-outfit)',
-                      textDecoration: 'none', letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {t('nav_start')}
-                  </a>
-                </motion.div>
-              )}
             </div>
 
             {/* Bottom controls */}
