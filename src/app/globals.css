@@ -1,41 +1,43 @@
-@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,500,400,300&display=swap');
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400,300&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@700,600,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "./responsive.css";
 
 :root {
-  --font-power: 'Cabinet Grotesk', system-ui, sans-serif;
-  --font-outfit: 'Satoshi', system-ui, sans-serif;
+  --font-power: 'Clash Display', system-ui, sans-serif;
+  --font-outfit: 'Plus Jakarta Sans', system-ui, sans-serif;
 
-  --bg: #FFFFFF;
-  --bg-nav: rgba(255,255,255,0.85);
-  --bg-secondary: #F7F7F5;
-  --bg-tertiary: #EEEEEC;
-  --text-primary: #0A0A0A;
-  --text-secondary: #555550;
-  --text-tertiary: #999990;
+  /* Midnight Ember — light mode */
+  --bg: #FFFAF7;
+  --bg-nav: rgba(255,250,247,0.88);
+  --bg-secondary: #FFF3EC;
+  --bg-tertiary: #FFE4D0;
+  --text-primary: #18100A;
+  --text-secondary: #6B4030;
+  --text-tertiary: #A07060;
   --border: rgba(0,0,0,0.07);
-  --border-strong: rgba(0,0,0,0.14);
-  --accent: #534AB7;
-  --accent-light: #7F77DD;
-  --accent-faint: #EEEDFE;
-  --accent-mid: #AFA9EC;
+  --border-strong: rgba(0,0,0,0.13);
+  --accent: #E8520A;
+  --accent-light: #FF7A3D;
+  --accent-faint: #FFF1EB;
+  --accent-mid: #F47040;
 }
 
 .dark {
-  --bg: #0A0A0A;
-  --bg-nav: rgba(10,10,10,0.85);
-  --bg-secondary: #121212;
-  --bg-tertiary: #1C1C1C;
-  --text-primary: #FFFFFF;
-  --text-secondary: #C0C0BC;
-  --text-tertiary: #707068;
+  /* Midnight Ember — dark mode */
+  --bg: #0E0B08;
+  --bg-nav: rgba(14,11,8,0.88);
+  --bg-secondary: #1A1410;
+  --bg-tertiary: #261C15;
+  --text-primary: #F5EDE6;
+  --text-secondary: #C0A090;
+  --text-tertiary: #7A6050;
   --border: rgba(255,255,255,0.06);
-  --border-strong: rgba(255,255,255,0.12);
-  --accent: #7F77DD;
-  --accent-light: #AFA9EC;
-  --accent-faint: #16143A;
-  --accent-mid: #534AB7;
+  --border-strong: rgba(255,255,255,0.11);
+  --accent: #FF7A3D;
+  --accent-light: #FFA070;
+  --accent-faint: #2A1408;
+  --accent-mid: #E8520A;
 }
 
 *, *::before, *::after {
@@ -85,8 +87,8 @@ body {
 }
 
 ::selection {
-  background: var(--accent-faint);
-  color: var(--accent);
+  background: #FFD4BC;
+  color: #8A2E00;
 }
 
 ::-webkit-scrollbar { width: 5px; }
@@ -94,12 +96,12 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
 
 :root {
-  --grid-dot:        rgba(0,0,0,0.08);
-  --grid-dot-bright: rgba(83,74,183,0.55);
+  --grid-dot:        rgba(0,0,0,0.07);
+  --grid-dot-bright: rgba(232,82,10,0.50);
 }
 .dark {
-  --grid-dot:        rgba(255,255,255,0.06);
-  --grid-dot-bright: rgba(127,119,221,0.65);
+  --grid-dot:        rgba(255,255,255,0.05);
+  --grid-dot-bright: rgba(255,122,61,0.60);
 }
 
 .grid-cursor-glow {
@@ -137,7 +139,7 @@ body {
   position: absolute;
   inset: -2px;
   border-radius: 12px;
-  background: linear-gradient(90deg, #534AB7, #7C3AED, #61DAFB, #41B883, #534AB7);
+  background: linear-gradient(90deg, #E8520A, #FF7A3D, #FFB347, #FF7A3D, #E8520A);
   background-size: 300% 100%;
   animation: border-shimmer 3s linear infinite;
   z-index: -1;
@@ -147,6 +149,6 @@ body {
   position: absolute;
   inset: 0;
   border-radius: 10px;
-  background: var(--accent);
+  background: var(--accent-mid);
   z-index: -1;
 }
