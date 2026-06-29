@@ -15,20 +15,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem('splash-theme') as Theme | null
     const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    setTheme(saved ?? system)
+    const initial = saved ?? system
+    document.documentElement.classList.toggle('dark', initial === 'dark')
+    setTheme(initial)
   }, [])
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem('splash-theme', theme)
-  }, [theme])
-
   const toggle = () => {
-    document.documentElement.classList.add('theme-transitioning')
-    setTheme(t => (t === 'dark' ? 'light' : 'dark'))
-    window.setTimeout(() => {
-      document.documentElement.classList.remove('theme-transitioning')
-    }, 450)
+    const next: Theme = theme === 'dark' ? 'light' : 'dark'
+
+    const commit = () => {
+      document.documentElement.classList.toggle('dark', next === 'dark')
+      localStorage.setItem('splash-theme', next)
+    }
+
+    // Single GPU crossfade — no per-element transitions
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      document.startViewTransition(commit)
+    } else {
+      commit()
+    }
+
+    setTheme(next)
   }
 
   return (

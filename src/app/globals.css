@@ -66,18 +66,22 @@ body {
   min-height: 100dvh;
 }
 
-/* Gentle theme transition — applied only while toggling */
-html.theme-transitioning,
-html.theme-transitioning *,
-html.theme-transitioning *::before,
-html.theme-transitioning *::after {
-  transition:
-    background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    fill 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    stroke 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+/* Theme crossfade via View Transitions API — single GPU composite, no per-element transitions */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.35s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+::view-transition-old(root) { animation-name: theme-fade-out; }
+::view-transition-new(root) { animation-name: theme-fade-in;  }
+
+@keyframes theme-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes theme-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 ::selection {
