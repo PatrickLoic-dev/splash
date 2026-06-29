@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { usePathname } from 'next/navigation'
 import { useTheme } from './ThemeProvider'
 import { useI18n } from '@/lib/i18n'
 import { useBreakpoint } from '@/lib/useBreakpoint'
@@ -36,9 +37,11 @@ function useScrollDirection() {
 export function Navbar() {
   const { theme, toggle } = useTheme()
   const { lang, setLang, t } = useI18n()
-  const visible = useScrollDirection()
+  const visible  = useScrollDirection()
+  const pathname = usePathname()
   const { isMobile } = useBreakpoint()
   const [menuOpen, setMenuOpen] = useState(false)
+  const isLearnPage = pathname?.startsWith('/learn') ?? false
 
   /* close menu on resize to desktop */
   useEffect(() => {
@@ -197,8 +200,8 @@ export function Navbar() {
               </button>
             )}
 
-            {/* CTA — desktop only */}
-            {!isMobile && (
+            {/* CTA — desktop only, hidden on /learn */}
+            {!isMobile && !isLearnPage && (
               <a
                 href="/learn"
                 className="btn-border-anim"
@@ -272,7 +275,7 @@ export function Navbar() {
             {/* Nav links */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '48px 28px 32px' }}>
               {[
-                { href: '/', label: 'Home' },
+                { href: '/', label: t('nav_home') },
                 { href: '/learn', label: t('nav_learn') },
               ].map((item, i) => (
                 <motion.a
@@ -297,29 +300,31 @@ export function Navbar() {
                 </motion.a>
               ))}
 
-              {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.17, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                style={{ marginTop: 12 }}
-              >
-                <a
-                  href="/learn"
-                  onClick={() => setMenuOpen(false)}
-                  className="btn-border-anim"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center',
-                    padding: '14px 28px', borderRadius: 12,
-                    background: 'var(--accent)', color: '#fff',
-                    fontSize: 15, fontWeight: 600,
-                    fontFamily: 'var(--font-outfit)',
-                    textDecoration: 'none', letterSpacing: '-0.01em',
-                  }}
+              {/* CTA — hidden on /learn */}
+              {!isLearnPage && (
+                <motion.div
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.17, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ marginTop: 12 }}
                 >
-                  {t('nav_start')}
-                </a>
-              </motion.div>
+                  <a
+                    href="/learn"
+                    onClick={() => setMenuOpen(false)}
+                    className="btn-border-anim"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '14px 28px', borderRadius: 12,
+                      background: 'var(--accent)', color: '#fff',
+                      fontSize: 15, fontWeight: 600,
+                      fontFamily: 'var(--font-outfit)',
+                      textDecoration: 'none', letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {t('nav_start')}
+                  </a>
+                </motion.div>
+              )}
             </div>
 
             {/* Bottom controls */}
