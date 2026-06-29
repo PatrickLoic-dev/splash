@@ -2,8 +2,8 @@
 @import "./responsive.css";
 
 :root {
-  --font-power: 'Clash Display', system-ui, sans-serif;
-  --font-outfit: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-power: 'Cabinet Grotesk', system-ui, sans-serif;
+  --font-outfit: 'Satoshi', system-ui, sans-serif;
 
   /* Midnight Ember — light mode */
   --bg: #FFFAF7;
