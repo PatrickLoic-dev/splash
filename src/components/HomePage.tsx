@@ -8,7 +8,7 @@ import { useI18n } from '@/lib/i18n'
 import { useBreakpoint } from '@/lib/useBreakpoint'
 import { PLATFORM_LOGOS } from './PlatformLogos'
 
-const FEATURED_SLUGS = ['entrance-reveal', 'shared-element', 'spring-physics']
+const FEATURED_SLUGS = ['entrance-reveal', 'shared-element', 'stagger-list', 'gesture-feedback']
 const FEATURED = ANIMATIONS.filter(a => FEATURED_SLUGS.includes(a.slug))
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -315,7 +315,7 @@ export function HomePage() {
                   letterSpacing: '0.12em', textTransform: 'uppercase',
                   color: 'var(--accent)', marginBottom: 12,
                 }}>
-                  {t('home_count_label')}
+                  {ANIMATIONS.length} {lang === 'fr' ? 'patterns' : 'patterns'}
                 </p>
                 <h2 style={{
                   fontFamily: 'var(--font-power)', fontWeight: 700,
@@ -329,7 +329,7 @@ export function HomePage() {
 
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+              gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
               gap: 16,
             }}>
               {FEATURED.map((anim, i) => {

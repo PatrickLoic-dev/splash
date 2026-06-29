@@ -34,7 +34,17 @@ function CoffeeIcon({ size = 18 }: { size?: number }) {
   )
 }
 
+function GlobeIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </svg>
+  )
+}
+
 const SOCIALS = [
+  { href: 'https://kangueloic.me',                     icon: GlobeIcon,    label: 'Website'  },
   { href: 'https://github.com/PatrickLoic-dev',        icon: GitHubIcon,   label: 'GitHub'   },
   { href: 'https://x.com/PatrickLoic_dev',             icon: XIcon,        label: 'X'        },
   { href: 'https://linkedin.com/in/patrickloic',       icon: LinkedInIcon, label: 'LinkedIn' },

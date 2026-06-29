@@ -11,47 +11,75 @@ export function CustomCursor() {
     const ring = ringRef.current
     if (!dot || !ring) return
 
-    let rx = -100, ry = -100
-    let dx = -100, dy = -100
+    let rx = -200, ry = -200
+    let dx = -200, dy = -200
     let raf: number
+    let isHoveringTarget = false
+
+    const setDefault = () => {
+      isHoveringTarget = false
+      ring.style.transition = 'opacity 0.2s, width 0.25s ease, height 0.25s ease, border-radius 0.25s ease, margin 0.25s ease, transform 0.0s'
+      ring.style.width       = '32px'
+      ring.style.height      = '32px'
+      ring.style.borderRadius = '50%'
+      ring.style.marginLeft  = '-16px'
+      ring.style.marginTop   = '-16px'
+      ring.style.background  = 'transparent'
+      ring.style.border      = '1.5px solid var(--accent)'
+      dot.style.opacity = '1'
+    }
+
+    const setOnTarget = (el: Element) => {
+      isHoveringTarget = true
+      const rect = el.getBoundingClientRect()
+      const w = rect.width  + 8
+      const h = rect.height + 8
+      const br = parseFloat(getComputedStyle(el).borderRadius) + 4
+
+      ring.style.transition = 'opacity 0.2s, width 0.2s ease, height 0.2s ease, border-radius 0.2s ease, margin 0.2s ease, transform 0.15s ease'
+      ring.style.width       = `${w}px`
+      ring.style.height      = `${h}px`
+      ring.style.borderRadius = `${br}px`
+      ring.style.marginLeft  = `${-w / 2}px`
+      ring.style.marginTop   = `${-h / 2}px`
+      ring.style.background  = 'rgba(163,230,53,0.07)'
+      ring.style.border      = '1.5px solid var(--accent)'
+
+      // snap ring center to element center
+      rx = rect.left + rect.width  / 2
+      ry = rect.top  + rect.height / 2
+      ring.style.transform = `translate(${rx}px, ${ry}px)`
+      dot.style.opacity = '0'
+    }
+
+    const SELECTORS = 'a, button, [role="button"], input, select, textarea, label, [tabindex]'
 
     const onMove = (e: MouseEvent) => {
       dx = e.clientX
       dy = e.clientY
+
+      const target = (e.target as Element)?.closest(SELECTORS)
+      if (target) {
+        setOnTarget(target)
+      } else if (isHoveringTarget) {
+        setDefault()
+      }
     }
+
+    const onEnter = () => { dot.style.opacity = '1'; ring.style.opacity = '1' }
+    const onLeave = () => { dot.style.opacity = '0'; ring.style.opacity = '0' }
+
+    const onDown = () => { dot.style.transform = `translate(${dx}px, ${dy}px) scale(0.5)` }
+    const onUp   = () => { dot.style.transform = `translate(${dx}px, ${dy}px) scale(1)` }
 
     const tick = () => {
-      // dot follows instantly
-      dot.style.transform  = `translate(${dx}px, ${dy}px)`
-      // ring lags behind
-      rx += (dx - rx) * 0.12
-      ry += (dy - ry) * 0.12
-      ring.style.transform = `translate(${rx}px, ${ry}px)`
+      dot.style.transform = `translate(${dx}px, ${dy}px)`
+      if (!isHoveringTarget) {
+        rx += (dx - rx) * 0.12
+        ry += (dy - ry) * 0.12
+        ring.style.transform = `translate(${rx}px, ${ry}px)`
+      }
       raf = requestAnimationFrame(tick)
-    }
-
-    const onEnter = () => {
-      dot.style.opacity  = '1'
-      ring.style.opacity = '1'
-    }
-    const onLeave = () => {
-      dot.style.opacity  = '0'
-      ring.style.opacity = '0'
-    }
-
-    const onDown = () => {
-      dot.style.transform  = `translate(${dx}px, ${dy}px) scale(0.5)`
-      ring.style.width  = '40px'
-      ring.style.height = '40px'
-      ring.style.marginLeft = '-20px'
-      ring.style.marginTop  = '-20px'
-    }
-    const onUp = () => {
-      dot.style.transform  = `translate(${dx}px, ${dy}px) scale(1)`
-      ring.style.width  = '32px'
-      ring.style.height = '32px'
-      ring.style.marginLeft = '-16px'
-      ring.style.marginTop  = '-16px'
     }
 
     document.addEventListener('mousemove',  onMove)
@@ -73,38 +101,27 @@ export function CustomCursor() {
 
   return (
     <>
-      {/* dot */}
-      <div
-        ref={dotRef}
-        style={{
-          position: 'fixed', top: 0, left: 0,
-          width: 6, height: 6,
-          marginLeft: -3, marginTop: -3,
-          borderRadius: '50%',
-          background: 'var(--accent)',
-          pointerEvents: 'none',
-          zIndex: 99999,
-          opacity: 0,
-          transition: 'opacity 0.2s, transform 0.08s',
-          willChange: 'transform',
-        }}
-      />
-      {/* ring */}
-      <div
-        ref={ringRef}
-        style={{
-          position: 'fixed', top: 0, left: 0,
-          width: 32, height: 32,
-          marginLeft: -16, marginTop: -16,
-          borderRadius: '50%',
-          border: '1.5px solid var(--accent)',
-          pointerEvents: 'none',
-          zIndex: 99998,
-          opacity: 0,
-          transition: 'opacity 0.2s, width 0.2s, height 0.2s, margin 0.2s',
-          willChange: 'transform',
-        }}
-      />
+      <div ref={dotRef} style={{
+        position: 'fixed', top: 0, left: 0,
+        width: 6, height: 6, marginLeft: -3, marginTop: -3,
+        borderRadius: '50%',
+        background: 'var(--accent)',
+        pointerEvents: 'none',
+        zIndex: 99999,
+        opacity: 0,
+        willChange: 'transform',
+      }} />
+      <div ref={ringRef} style={{
+        position: 'fixed', top: 0, left: 0,
+        width: 32, height: 32, marginLeft: -16, marginTop: -16,
+        borderRadius: '50%',
+        border: '1.5px solid var(--accent)',
+        pointerEvents: 'none',
+        zIndex: 99998,
+        opacity: 0,
+        transition: 'opacity 0.2s',
+        willChange: 'transform',
+      }} />
     </>
   )
 }
