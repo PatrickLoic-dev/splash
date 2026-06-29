@@ -66,6 +66,8 @@ const T = {
     det_copy:           'copy',
     det_copied:         '✓ copied',
     det_no_impl:        'No implementation for this platform yet.',
+    /* ── Favorites ── */
+    fav_title:          'Favorites',
     /* ── Difficulty ── */
     diff_Beginner:      'Beginner',
     diff_Intermediate:  'Intermediate',
@@ -132,6 +134,8 @@ const T = {
     det_copy:           'copier',
     det_copied:         '✓ copié',
     det_no_impl:        "Pas encore d'implémentation pour cette plateforme.",
+    /* ── Favorites ── */
+    fav_title:          'Favoris',
     /* ── Difficulty ── */
     diff_Beginner:      'Débutant',
     diff_Intermediate:  'Intermédiaire',

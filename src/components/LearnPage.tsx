@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import {
@@ -42,12 +42,23 @@ const PLATFORM_CONTEXT: Record<string, Context> = {
 }
 
 import { PLATFORM_LOGOS } from './PlatformLogos'
+import { UseCaseModal, getUseCaseImage } from './UseCaseModal'
 
 /* ── View state ── */
 type ViewState =
   | { kind: 'selector' }
   | { kind: 'filtered'; platform: PlatformId }
   | { kind: 'detail'; slug: string; context: Context; platform: PlatformId }
+
+/* ── Bookmark helpers ── */
+const BOOKMARK_KEY = 'splash-bookmarks'
+function loadBookmarks(): string[] {
+  if (typeof window === 'undefined') return []
+  try { return JSON.parse(localStorage.getItem(BOOKMARK_KEY) ?? '[]') } catch { return [] }
+}
+function saveBookmarks(slugs: string[]) {
+  localStorage.setItem(BOOKMARK_KEY, JSON.stringify(slugs))
+}
 
 export function LearnPage() {
   const searchParams = useSearchParams()
@@ -56,6 +67,17 @@ export function LearnPage() {
   const [stepIndex,  setStepIndex]  = useState(0)
   // track which platform was clicked so the non-clicked cards can fade out
   const [clickedPlatform, setClickedPlatform] = useState<PlatformId | null>(null)
+  const [bookmarks, setBookmarks] = useState<string[]>([])
+
+  useEffect(() => { setBookmarks(loadBookmarks()) }, [])
+
+  function toggleBookmark(slug: string) {
+    setBookmarks(prev => {
+      const next = prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+      saveBookmarks(next)
+      return next
+    })
+  }
 
   // Handle ?slug= URL param — auto-navigate to the correct animation
   useEffect(() => {
@@ -126,6 +148,8 @@ export function LearnPage() {
                   onBack={() => setView({ kind: 'selector' })}
                   onSelect={openDetailFromFilter}
                   onSwitchPlatform={(p) => setView({ kind: 'filtered', platform: p })}
+                  bookmarks={bookmarks}
+                  onToggleBookmark={toggleBookmark}
                 />
               </motion.div>
 
@@ -294,12 +318,14 @@ function SelectorView({
 /* ────────────────────────────────────────────────────────────────────────── */
 
 function FilteredView({
-  platform, onBack, onSelect, onSwitchPlatform
+  platform, onBack, onSelect, onSwitchPlatform, bookmarks, onToggleBookmark
 }: {
   platform: PlatformId
   onBack: () => void
   onSelect: (slug: string, platform: PlatformId) => void
   onSwitchPlatform: (p: PlatformId) => void
+  bookmarks: string[]
+  onToggleBookmark: (slug: string) => void
 }) {
   const { t, lang } = useI18n()
   const { isMobile, isTablet, isDesktop } = useBreakpoint()
@@ -313,6 +339,7 @@ function FilteredView({
   const allDifficulties: Array<'Beginner' | 'Intermediate' | 'Advanced'> = ['Beginner', 'Intermediate', 'Advanced']
   const [activeCats,   setActiveCats]   = useState<string[]>([])
   const [activeDiffs,  setActiveDiffs]  = useState<string[]>([])
+  const [showFavOnly,  setShowFavOnly]  = useState(false)
 
   function toggleCat(cat: string) {
     setActiveCats(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])
@@ -323,7 +350,8 @@ function FilteredView({
 
   const filtered = available.filter(a =>
     (activeCats.length  === 0 || activeCats.includes(a.category))  &&
-    (activeDiffs.length === 0 || activeDiffs.includes(a.difficulty))
+    (activeDiffs.length === 0 || activeDiffs.includes(a.difficulty)) &&
+    (!showFavOnly || bookmarks.includes(a.slug))
   )
 
   const hasActiveFilters = activeCats.length > 0 || activeDiffs.length > 0
@@ -373,6 +401,9 @@ function FilteredView({
     </div>
   )
 
+  /* ── Favorites filter ── */
+  const favSlugs = bookmarks.filter(s => available.some(a => a.slug === s))
+
   const sidebar = (
     <div style={{
       width: isDesktop ? 172 : '100%',
@@ -386,6 +417,26 @@ function FilteredView({
       {isDesktop && (
         <div style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16, letterSpacing: '0.04em' }}>
           {t('filt_filter_label')} {hasActiveFilters && <span style={{ color: 'var(--accent)' }}>· {filtered.length}</span>}
+        </div>
+      )}
+      {/* Favorites section */}
+      {favSlugs.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 8 }}>
+            {t('fav_title')}
+          </div>
+          <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowFavOnly(v => !v)} style={{
+            padding: isDesktop ? '6px 10px' : '4px 10px', borderRadius: 7, cursor: 'pointer',
+            border: `1px solid ${showFavOnly ? '#f59e0b60' : 'var(--border)'}`,
+            background: showFavOnly ? '#f59e0b14' : 'transparent',
+            color: showFavOnly ? '#f59e0b' : 'var(--text-tertiary)',
+            fontSize: 11, fontFamily: 'var(--font-outfit)', fontWeight: showFavOnly ? 600 : 400,
+            textAlign: 'left', width: isDesktop ? '100%' : 'auto',
+            transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            {showFavOnly && <span style={{ width: 5, height: 5, borderRadius: 3, background: '#f59e0b', flexShrink: 0 }} />}
+            ★ {t('fav_title')} ({favSlugs.length})
+          </motion.button>
         </div>
       )}
       <SidebarSection
@@ -592,12 +643,28 @@ function FilteredView({
                         }}>
                           {t(`cat_${anim.category}` as Parameters<typeof t>[0])}
                         </span>
-                        <span style={{
-                          fontSize: 10, fontFamily: 'var(--font-outfit)',
-                          color: DIFF_COLORS[anim.difficulty], letterSpacing: '0.04em',
-                        }}>
-                          {t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{
+                            fontSize: 10, fontFamily: 'var(--font-outfit)',
+                            color: DIFF_COLORS[anim.difficulty], letterSpacing: '0.04em',
+                          }}>
+                            {t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}
+                          </span>
+                          {/* Bookmark button */}
+                          <button
+                            onClick={e => { e.stopPropagation(); onToggleBookmark(anim.slug) }}
+                            onKeyDown={e => e.stopPropagation()}
+                            style={{
+                              background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+                              color: bookmarks.includes(anim.slug) ? '#f59e0b' : 'var(--text-tertiary)',
+                              fontSize: 14, lineHeight: 1, flexShrink: 0, transition: 'color 0.15s',
+                              display: 'flex', alignItems: 'center',
+                            }}
+                            title={bookmarks.includes(anim.slug) ? 'Remove bookmark' : 'Bookmark'}
+                          >
+                            {bookmarks.includes(anim.slug) ? '★' : '☆'}
+                          </button>
+                        </div>
                       </div>
                       <div style={{
                         fontFamily: 'var(--font-power)', fontSize: 18, fontWeight: 700,
@@ -644,6 +711,23 @@ function DetailView({
   const useTabs = isMobile || isTablet
   const [activeTab, setActiveTab] = useState<'preview' | 'learn'>('preview')
   const rawAnim     = ANIMATIONS.find(a => a.slug === slug)!
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'ArrowLeft')  { onStepChange(Math.max(0, stepIndex - 1)); return }
+      if (e.key === 'ArrowRight') { const stepsNow = getSteps(slug, platform); onStepChange(Math.min(stepsNow.length - 1, stepIndex + 1)); return }
+      if (e.key === 'r' || e.key === 'R') { onReplay(); return }
+      if (e.key === 'c' || e.key === 'C') {
+        const stepsNow = getSteps(slug, platform)
+        const code = stepsNow[stepIndex]?.code ?? rawAnim.implementations.find(i => i.platform === platform)?.code ?? ''
+        if (code) navigator.clipboard.writeText(code)
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [slug, platform, stepIndex, onStepChange, onReplay, rawAnim])
   const anim        = localizeAnim(rawAnim, lang)
   const accentColor = CAT_COLORS[anim.category] ?? '#534AB7'
   const pool        = context === 'web' ? WEB_PLATFORMS : MOBILE_PLATFORMS
@@ -772,24 +856,67 @@ function DetailView({
 
       {/* ══ DESKTOP → side-by-side ══ */}
       {!useTabs && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
-          {/* Left: preview panel */}
-          <div style={{
-            width: 380, flexShrink: 0,
-            borderRight: '1px solid var(--border)',
-            background: 'var(--bg-secondary)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            padding: 24, gap: 16, overflowY: 'auto',
-          }}>
-            <PreviewPanel slug={slug} context={context} replayKey={replayKey} stepIndex={stepIndex} steps={steps} accentColor={accentColor} onStepChange={onStepChange} onReplay={onReplay} concept={anim.concept} t={t} />
-          </div>
-
-          {/* Right: learn panel */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '36px 48px 80px' }}>
-            <LearnPanel anim={anim} rawAnim={rawAnim} pool={pool} platform={platform} impl={impl} steps={steps} stepIndex={stepIndex} currentStep={currentStep} accentColor={accentColor} context={context} onPlatformChange={onPlatformChange} onStepChange={onStepChange} lang={lang} t={t} />
-          </div>
-        </div>
+        <ResizableSplitView
+          left={<PreviewPanel slug={slug} context={context} replayKey={replayKey} stepIndex={stepIndex} steps={steps} accentColor={accentColor} onStepChange={onStepChange} onReplay={onReplay} concept={anim.concept} t={t} />}
+          right={<LearnPanel anim={anim} rawAnim={rawAnim} pool={pool} platform={platform} impl={impl} steps={steps} stepIndex={stepIndex} currentStep={currentStep} accentColor={accentColor} context={context} onPlatformChange={onPlatformChange} onStepChange={onStepChange} lang={lang} t={t} />}
+        />
       )}
+    </div>
+  )
+}
+
+/* ── Resizable split view for desktop ── */
+function ResizableSplitView({ left, right }: { left: React.ReactNode; right: React.ReactNode }) {
+  const [splitPct, setSplitPct] = useState(38)
+  const dragging = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!dragging.current || !containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const pct  = ((e.clientX - rect.left) / rect.width) * 100
+      setSplitPct(Math.min(75, Math.max(25, pct)))
+    }
+    function onMouseUp() { dragging.current = false; document.body.style.cursor = '' }
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+    return () => { document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp) }
+  }, [])
+
+  return (
+    <div ref={containerRef} style={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
+      {/* Left pane */}
+      <div style={{
+        flex: `0 0 ${splitPct}%`,
+        borderRight: '1px solid var(--border)',
+        background: 'var(--bg-secondary)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: 24, gap: 16, overflowY: 'auto',
+      }}>
+        {left}
+      </div>
+      {/* Drag handle */}
+      <div
+        onMouseDown={() => { dragging.current = true; document.body.style.cursor = 'col-resize' }}
+        style={{
+          width: 6, flexShrink: 0, cursor: 'col-resize', background: 'var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+          transition: 'background 0.15s',
+          userSelect: 'none',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent)')}
+        onMouseLeave={e => { if (!dragging.current) e.currentTarget.style.background = 'var(--border)' }}
+      >
+        {/* Grip dots */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, pointerEvents: 'none' }}>
+          {[0,1,2].map(i => <div key={i} style={{ width: 2, height: 2, borderRadius: '50%', background: 'var(--text-tertiary)', opacity: 0.6 }} />)}
+        </div>
+      </div>
+      {/* Right pane */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '36px 48px 80px' }}>
+        {right}
+      </div>
     </div>
   )
 }
@@ -839,9 +966,85 @@ function PreviewPanel({ slug, context, replayKey, stepIndex, steps, accentColor,
         >{t('det_replay')}</button>
       )}
 
+      {/* Keyboard hint row */}
+      {steps.length > 0 && (
+        <div style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)', opacity: 0.7, textAlign: 'center', letterSpacing: '0.02em' }}>
+          ← → steps · R replay · C copy
+        </div>
+      )}
+
       <div style={{ width: '100%', padding: '14px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)' }}>
         <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>{concept}</p>
       </div>
+    </>
+  )
+}
+
+/* ── Use-case cards with hero modal ── */
+function UseCasesSection({ anim, accentColor }: { anim: Animation; accentColor: string }) {
+  const { t } = useI18n()
+  const [activeUseCase, setActiveUseCase] = useState<null | { uc: { label: string; example: string }; image: string; index: number }>(null)
+
+  return (
+    <>
+      <Section title={t('det_cases')} color={accentColor}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          {anim.useCases.map((uc, i) => {
+            const image = getUseCaseImage(anim.slug, i)
+            return (
+              <motion.div
+                key={i}
+                layoutId={`usecase-card-${i}`}
+                onClick={() => setActiveUseCase({ uc, image, index: i })}
+                whileHover={{ y: -3, transition: { duration: 0.18 } }}
+                style={{
+                  borderRadius: 12, border: '1px solid var(--border)',
+                  background: 'var(--bg-secondary)', overflow: 'hidden',
+                  cursor: 'pointer',
+                }}
+              >
+                {/* Real image */}
+                <div style={{ height: 120, overflow: 'hidden', position: 'relative' }}>
+                  <img
+                    src={image}
+                    alt={uc.label}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    loading="lazy"
+                  />
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.5) 100%)',
+                  }} />
+                  <span style={{
+                    position: 'absolute', bottom: 8, left: 10,
+                    padding: '2px 8px', borderRadius: 10,
+                    background: accentColor,
+                    color: '#fff',
+                    fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 700,
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>{uc.label}</span>
+                </div>
+                <div style={{ padding: '10px 12px' }}>
+                  <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.6, margin: 0,
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                  }}>{uc.example}</p>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+      </Section>
+
+      <AnimatePresence>
+        {activeUseCase && (
+          <UseCaseModal
+            useCase={{ ...activeUseCase.uc, image: activeUseCase.image, index: activeUseCase.index }}
+            slug={anim.slug}
+            accentColor={accentColor}
+            onClose={() => setActiveUseCase(null)}
+          />
+        )}
+      </AnimatePresence>
     </>
   )
 }
@@ -916,47 +1119,7 @@ function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, cur
         )}
       </Section>
       <Divider />
-      <Section title={t('det_cases')} color={accentColor}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {anim.useCases.map((uc, i) => (
-            <div key={i} style={{
-              borderRadius: 12, border: '1px solid var(--border)',
-              background: 'var(--bg-secondary)', overflow: 'hidden',
-            }}>
-              {/* Mini preview thumbnail */}
-              <div style={{
-                height: context === 'mobile' ? 148 : 136,
-                background: 'var(--bg)', overflow: 'hidden', flexShrink: 0,
-                display: 'flex',
-                alignItems: context === 'mobile' ? 'flex-start' : 'stretch',
-                justifyContent: context === 'mobile' ? 'center' : 'stretch',
-                pointerEvents: 'none',
-                borderBottom: '1px solid var(--border)',
-                contain: 'layout paint',
-              }}>
-                {context === 'mobile' ? (
-                  <div style={{ transform: 'scale(0.32) translateZ(0)', transformOrigin: 'top center', width: 200, flexShrink: 0 }}>
-                    <PhoneFrame>
-                      <AnimationPreview slug={anim.slug} context="mobile" stepIndex={3} />
-                    </PhoneFrame>
-                  </div>
-                ) : (
-                  <div style={{ transform: 'scale(0.56) translateZ(0)', transformOrigin: 'top left', width: '179%', flexShrink: 0 }}>
-                    <BrowserFrame>
-                      <AnimationPreview slug={anim.slug} context="web" stepIndex={3} />
-                    </BrowserFrame>
-                  </div>
-                )}
-              </div>
-              {/* Label + text */}
-              <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{ padding: '2px 8px', borderRadius: 12, background: accentColor + '1a', color: accentColor, fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 600, letterSpacing: '0.04em', width: 'fit-content' }}>{uc.label}</span>
-                <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>{uc.example}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Section>
+      <UseCasesSection anim={anim} accentColor={accentColor} />
       <Divider />
       <Section title={t('det_tips')} color={accentColor}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -976,6 +1139,11 @@ function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, cur
 function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep, lang }: {
   steps: Step[]; stepIndex: number; accentColor: string; onStepChange: (i: number) => void; currentStep: Step; lang: 'en' | 'fr'
 }) {
+  const n = steps.length
+  const p1 = Math.floor(n / 3)
+  const p2 = Math.floor(2 * n / 3)
+  const phaseOf = (i: number) => i < p1 ? 'Setup' : i < p2 ? 'Core' : 'Polish'
+
   return (
     <div>
       {/* Step tabs — scrollable on mobile */}
@@ -983,30 +1151,44 @@ function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep
         {steps.map((s, i) => {
           const ls       = localizeStep(s, lang)
           const isActive = stepIndex === i
+          const phase    = phaseOf(i)
+          const isPhaseStart = i === 0 || phaseOf(i - 1) !== phase
           return (
-            <button key={i} onClick={() => onStepChange(i)} style={{
-              flex: '0 0 auto', minWidth: 80, padding: '10px 12px', border: 'none',
-              borderBottom: `2px solid ${isActive ? accentColor : 'transparent'}`,
-              borderRight: i < steps.length - 1 ? '1px solid var(--border)' : 'none',
-              background: isActive ? accentColor + '0e' : 'transparent',
-              cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <React.Fragment key={i}>
+              {isPhaseStart && n > 3 && (
                 <span style={{
-                  width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                  background: isActive ? accentColor : 'var(--bg-tertiary)',
-                  color: isActive ? '#fff' : 'var(--text-tertiary)',
-                  border: `1px solid ${isActive ? accentColor : 'var(--border)'}`,
-                  fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-outfit)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{i + 1}</span>
-                <span style={{
-                  fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: isActive ? 600 : 400,
-                  color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)', lineHeight: 1.3,
-                  whiteSpace: 'nowrap',
-                }}>{ls.title}</span>
-              </div>
-            </button>
+                  flex: '0 0 auto', alignSelf: 'center',
+                  padding: '2px 7px', marginLeft: i === 0 ? 4 : 6, marginRight: 2,
+                  borderRadius: 4, fontSize: 8, fontFamily: 'var(--font-outfit)', fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  color: accentColor, background: accentColor + '18',
+                  whiteSpace: 'nowrap', pointerEvents: 'none',
+                }}>{phase}</span>
+              )}
+              <button onClick={() => onStepChange(i)} style={{
+                flex: '0 0 auto', minWidth: 80, padding: '10px 12px', border: 'none',
+                borderBottom: `2px solid ${isActive ? accentColor : 'transparent'}`,
+                borderRight: i < steps.length - 1 ? '1px solid var(--border)' : 'none',
+                background: isActive ? accentColor + '0e' : 'transparent',
+                cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                    background: isActive ? accentColor : 'var(--bg-tertiary)',
+                    color: isActive ? '#fff' : 'var(--text-tertiary)',
+                    border: `1px solid ${isActive ? accentColor : 'var(--border)'}`,
+                    fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{i + 1}</span>
+                  <span style={{
+                    fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: isActive ? 600 : 400,
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)', lineHeight: 1.3,
+                    whiteSpace: 'nowrap',
+                  }}>{ls.title}</span>
+                </div>
+              </button>
+            </React.Fragment>
           )
         })}
       </div>
@@ -1020,20 +1202,46 @@ function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep
             borderRight: `1px solid ${accentColor}28`,
             borderBottom: `1px solid ${accentColor}18`,
           }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-              <span style={{
-                fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 700,
-                color: accentColor, letterSpacing: '0.06em', textTransform: 'uppercase',
-              }}>Step {stepIndex + 1} / {steps.length}</span>
-              <span style={{ fontSize: 13, fontFamily: 'var(--font-outfit)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                {localizeStep(currentStep, lang).title}
-              </span>
-            </div>
+            {(() => {
+              const prevCode = stepIndex > 0 ? (steps[stepIndex - 1]?.code ?? '') : ''
+              const currCode = currentStep.code ?? ''
+              const prevLines = prevCode.split('\n')
+              const currLines = currCode.split('\n')
+              const prevSet   = new Set(prevLines)
+              const addedLines = new Set(currLines.filter(l => !prevSet.has(l)))
+              const addedCount = stepIndex > 0 ? addedLines.size : 0
+              return (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+                  <span style={{
+                    fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 700,
+                    color: accentColor, letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>Step {stepIndex + 1} / {steps.length}</span>
+                  <span style={{ fontSize: 13, fontFamily: 'var(--font-outfit)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {localizeStep(currentStep, lang).title}
+                  </span>
+                  {addedCount > 0 && (
+                    <span style={{
+                      fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600,
+                      padding: '1px 6px', borderRadius: 4,
+                      background: accentColor + '20', color: accentColor,
+                    }}>+{addedCount} new</span>
+                  )}
+                </div>
+              )
+            })()}
             <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.75, margin: 0 }}>
               <Inline text={localizeStep(currentStep, lang).description} />
             </p>
           </div>
-          <CodeBlock code={currentStep.code} />
+          {(() => {
+            const prevCode = stepIndex > 0 ? (steps[stepIndex - 1]?.code ?? '') : ''
+            const currCode = currentStep.code ?? ''
+            const prevLines = prevCode.split('\n')
+            const currLines = currCode.split('\n')
+            const prevSet   = new Set(prevLines)
+            const addedLineSet = stepIndex > 0 ? new Set(currLines.filter(l => !prevSet.has(l))) : new Set<string>()
+            return <CodeBlock code={currCode} addedLines={addedLineSet} accentColor={accentColor} />
+          })()}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -1060,17 +1268,32 @@ function Divider() {
   return <div style={{ height: 1, background: 'var(--border)', margin: '32px 0' }} />
 }
 
-function CodeBlock({ code }: { code: string }) {
+function CodeBlock({ code, addedLines, accentColor }: { code: string; addedLines?: Set<string>; accentColor?: string }) {
   const [copied, setCopied] = useState(false)
   const { t } = useI18n()
+  const lines = code.split('\n')
+  const hasHighlight = addedLines && addedLines.size > 0
   return (
     <div style={{ position: 'relative' }}>
       <pre style={{
-        padding: '18px 22px', borderRadius: '0 0 10px 10px',
+        padding: hasHighlight ? '0' : '18px 22px', borderRadius: '0 0 10px 10px',
         background: 'var(--bg-tertiary)', border: '1px solid var(--border)', borderTop: 'none',
         fontSize: 12, fontFamily: 'ui-monospace, "Cascadia Code", "Fira Code", monospace',
         color: 'var(--text-secondary)', overflowX: 'auto', lineHeight: 1.7, margin: 0, whiteSpace: 'pre',
-      }}>{code}</pre>
+      }}>
+        {hasHighlight ? lines.map((line, i) => {
+          const isAdded = addedLines!.has(line)
+          return (
+            <div key={i} style={{
+              paddingLeft: 22, paddingRight: 22,
+              ...(i === 0 ? { paddingTop: 18 } : {}),
+              ...(i === lines.length - 1 ? { paddingBottom: 18 } : {}),
+              background: isAdded ? (accentColor ?? '#534AB7') + '22' : 'transparent',
+              borderLeft: isAdded ? `3px solid ${accentColor ?? '#534AB7'}` : '3px solid transparent',
+            }}>{line}</div>
+          )
+        }) : code}
+      </pre>
       <button
         onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1600) }}
         style={{
