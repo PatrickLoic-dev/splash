@@ -5,19 +5,19 @@
   --font-power: 'Cabinet Grotesk', system-ui, sans-serif;
   --font-outfit: 'Satoshi', system-ui, sans-serif;
 
-  /* Obsidian Lime — light mode */
-  --bg: #F8FFF0;
-  --bg-nav: rgba(248,255,240,0.88);
-  --bg-secondary: #EEFAD8;
-  --bg-tertiary: #DBEDB0;
-  --text-primary: #0A1400;
-  --text-secondary: #3A5010;
-  --text-tertiary: #6A8030;
+  /* Obsidian Lime — light mode (neutral white base) */
+  --bg: #FFFFFF;
+  --bg-nav: rgba(255,255,255,0.88);
+  --bg-secondary: #F5F5F5;
+  --bg-tertiary: #EBEBEB;
+  --text-primary: #0A0A0A;
+  --text-secondary: #555555;
+  --text-tertiary: #999999;
   --border: rgba(0,0,0,0.08);
   --border-strong: rgba(0,0,0,0.14);
   --accent: #5A9200;
   --accent-light: #82C400;
-  --accent-faint: #EEFAD8;
+  --accent-faint: #F0FAE0;
   --accent-mid: #A3E635;
 }
 
@@ -96,7 +96,7 @@ body {
 
 :root {
   --grid-dot:        rgba(0,0,0,0.07);
-  --grid-dot-bright: rgba(90,146,0,0.55);
+  --grid-dot-bright: rgba(90,146,0,0.45);
 }
 .dark {
   --grid-dot:        rgba(163,230,53,0.07);
