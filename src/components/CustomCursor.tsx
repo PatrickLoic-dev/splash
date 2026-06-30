@@ -7,9 +7,16 @@ export function CustomCursor() {
   const ringRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // Skip entirely on touch devices
+    if (window.matchMedia('(pointer: coarse)').matches) return
+
     const dot  = dotRef.current
     const ring = ringRef.current
     if (!dot || !ring) return
+
+    // Make elements visible now that we know it's a pointer device
+    dot.style.display  = 'block'
+    ring.style.display = 'block'
 
     let rx = -200, ry = -200
     let dx = -200, dy = -200
@@ -44,8 +51,6 @@ export function CustomCursor() {
       ring.style.marginTop   = `${-h / 2}px`
       ring.style.background  = 'rgba(163,230,53,0.07)'
       ring.style.border      = '1.5px solid var(--accent)'
-
-      // snap ring center to element center
       rx = rect.left + rect.width  / 2
       ry = rect.top  + rect.height / 2
       ring.style.transform = `translate(${rx}px, ${ry}px)`
@@ -57,7 +62,6 @@ export function CustomCursor() {
     const onMove = (e: MouseEvent) => {
       dx = e.clientX
       dy = e.clientY
-
       const target = (e.target as Element)?.closest(SELECTORS)
       if (target) {
         setOnTarget(target)
@@ -68,9 +72,8 @@ export function CustomCursor() {
 
     const onEnter = () => { dot.style.opacity = '1'; ring.style.opacity = '1' }
     const onLeave = () => { dot.style.opacity = '0'; ring.style.opacity = '0' }
-
-    const onDown = () => { dot.style.transform = `translate(${dx}px, ${dy}px) scale(0.5)` }
-    const onUp   = () => { dot.style.transform = `translate(${dx}px, ${dy}px) scale(1)` }
+    const onDown  = () => { dot.style.transform = `translate(${dx}px, ${dy}px) scale(0.5)` }
+    const onUp    = () => { dot.style.transform = `translate(${dx}px, ${dy}px) scale(1)` }
 
     const tick = () => {
       dot.style.transform = `translate(${dx}px, ${dy}px)`
@@ -99,9 +102,11 @@ export function CustomCursor() {
     }
   }, [])
 
+  // Always render the DOM nodes — hidden by default, shown only if pointer device (set in effect)
   return (
     <>
       <div ref={dotRef} style={{
+        display: 'none',
         position: 'fixed', top: 0, left: 0,
         width: 6, height: 6, marginLeft: -3, marginTop: -3,
         borderRadius: '50%',
@@ -112,6 +117,7 @@ export function CustomCursor() {
         willChange: 'transform',
       }} />
       <div ref={ringRef} style={{
+        display: 'none',
         position: 'fixed', top: 0, left: 0,
         width: 32, height: 32, marginLeft: -16, marginTop: -16,
         borderRadius: '50%',

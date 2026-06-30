@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence, useMotionValue, useTransform, animate as fmAnimate, useScroll } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue, useTransform, animate as fmAnimate, useScroll, LayoutGroup, Reorder } from 'framer-motion'
 import type { Context } from '@/lib/learnContent'
 
 /* ── Shared shimmer ─────────────────────────────────────────────────────── */
@@ -1515,58 +1515,72 @@ const HERO_ITEMS = [
 function FlutterHeroWeb({ step }: { step: number }) {
   const [selected, setSelected] = useState<string | null>(null)
   const item = HERO_ITEMS.find(i => i.id === selected)
+  const withLayout = step >= 3
 
   useEffect(() => { setSelected(null) }, [step])
 
   return (
-    <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
-      {/* Grid — always in the DOM so layoutId origin is preserved */}
-      <div style={{ padding: '14px 16px' }}>
-        <div style={{ fontSize: 13, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 10 }}>Gallery</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-          {HERO_ITEMS.map(it => (
-            step >= 3 ? (
-              <motion.div key={it.id} layoutId={`hw-${it.id}`}
-                onClick={() => setSelected(it.id)}
-                transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-                style={{ height: 80, borderRadius: 10, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 7 }}>
-                <span style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
-              </motion.div>
-            ) : (
-              <div key={it.id} onClick={() => setSelected(it.id)}
-                style={{ height: 80, borderRadius: 10, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 7 }}>
-                <span style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
-              </div>
-            )
-          ))}
+    <LayoutGroup>
+      <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+        {/* Grid — always in DOM; hidden behind overlay when detail is open */}
+        <div style={{ padding: '14px 16px' }}>
+          <div style={{ fontSize: 13, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 10 }}>Gallery</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {HERO_ITEMS.map(it => {
+              const isSelected = selected === it.id
+              return withLayout ? (
+                <motion.div key={it.id} layoutId={`hw-${it.id}`}
+                  onClick={() => !isSelected && setSelected(it.id)}
+                  transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+                  style={{
+                    height: 80, borderRadius: 10, background: it.color, cursor: 'pointer',
+                    display: 'flex', alignItems: 'flex-end', padding: 7,
+                    // keep the card in flow but invisible when it's the selected one
+                    opacity: isSelected ? 0 : 1, pointerEvents: isSelected ? 'none' : 'auto',
+                  }}>
+                  <motion.span layout="position" style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</motion.span>
+                </motion.div>
+              ) : (
+                <div key={it.id} onClick={() => setSelected(it.id)}
+                  style={{ height: 80, borderRadius: 10, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 7 }}>
+                  <span style={{ fontSize: 9, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
+                </div>
+              )
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Overlay sheet — detail slides up over the grid */}
-      <AnimatePresence>
-        {selected && item && (
-          <>
+        {/* Backdrop */}
+        <AnimatePresence>
+          {selected && (
             <motion.div key="bd"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setSelected(null)}
               style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 40 }}
             />
+          )}
+        </AnimatePresence>
+
+        {/* Detail sheet */}
+        <AnimatePresence>
+          {selected && item && (
             <motion.div key="sheet"
-              initial={step >= 1 ? { y: '100%' } : {}} animate={{ y: 0 }}
+              initial={step >= 1 ? { y: '100%' } : { opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
               exit={step >= 1 ? { y: '100%' } : { opacity: 0 }}
               transition={{ type: 'spring', stiffness: 380, damping: 36 }}
               style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50,
                 background: 'var(--bg)', borderRadius: '14px 14px 0 0', padding: 16 }}
             >
-              {step >= 3 ? (
+              {withLayout ? (
                 <motion.div layoutId={`hw-${selected}`}
-                  transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-                  style={{ width: '100%', height: 100, borderRadius: 12, background: item.color, marginBottom: 12,
+                  transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+                  style={{ width: '100%', height: 120, borderRadius: 12, background: item.color, marginBottom: 12,
                     display: 'flex', alignItems: 'flex-end', padding: 12 }}>
-                  <span style={{ fontSize: 15, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</span>
+                  <motion.span layout="position" style={{ fontSize: 15, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</motion.span>
                 </motion.div>
               ) : (
-                <div style={{ width: '100%', height: 100, borderRadius: 12, background: item.color, marginBottom: 12,
+                <div style={{ width: '100%', height: 120, borderRadius: 12, background: item.color, marginBottom: 12,
                   display: 'flex', alignItems: 'flex-end', padding: 12 }}>
                   <span style={{ fontSize: 15, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</span>
                 </div>
@@ -1576,61 +1590,73 @@ function FlutterHeroWeb({ step }: { step: number }) {
               <button onClick={() => setSelected(null)} style={{ marginTop: 10, padding: '6px 14px', borderRadius: 8,
                 background: item.color, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11 }}>Close</button>
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </LayoutGroup>
   )
 }
 
 function FlutterHeroMobile({ step }: { step: number }) {
   const [selected, setSelected] = useState<string | null>(null)
   const item = HERO_ITEMS.find(i => i.id === selected)
+  const withLayout = step >= 3
 
   useEffect(() => { setSelected(null) }, [step])
 
   return (
-    <div style={{ height: '100%', position: 'relative', overflow: 'hidden', padding: 10 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5 }}>
-        {HERO_ITEMS.map(it => (
-          step >= 3 ? (
-            <motion.div key={it.id} layoutId={`hm-${it.id}`}
-              onClick={() => setSelected(it.id)}
-              transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-              style={{ height: 65, borderRadius: 9, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 5 }}>
-              <span style={{ fontSize: 8, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
-            </motion.div>
-          ) : (
-            <div key={it.id} onClick={() => setSelected(it.id)}
-              style={{ height: 65, borderRadius: 9, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 5 }}>
-              <span style={{ fontSize: 8, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
-            </div>
-          )
-        ))}
-      </div>
+    <LayoutGroup>
+      <div style={{ height: '100%', position: 'relative', overflow: 'hidden', padding: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5 }}>
+          {HERO_ITEMS.map(it => {
+            const isSelected = selected === it.id
+            return withLayout ? (
+              <motion.div key={it.id} layoutId={`hm-${it.id}`}
+                onClick={() => !isSelected && setSelected(it.id)}
+                transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+                style={{
+                  height: 65, borderRadius: 9, background: it.color, cursor: 'pointer',
+                  display: 'flex', alignItems: 'flex-end', padding: 5,
+                  opacity: isSelected ? 0 : 1, pointerEvents: isSelected ? 'none' : 'auto',
+                }}>
+                <motion.span layout="position" style={{ fontSize: 8, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</motion.span>
+              </motion.div>
+            ) : (
+              <div key={it.id} onClick={() => setSelected(it.id)}
+                style={{ height: 65, borderRadius: 9, background: it.color, cursor: 'pointer', display: 'flex', alignItems: 'flex-end', padding: 5 }}>
+                <span style={{ fontSize: 8, color: '#fff', fontFamily: 'var(--font-outfit)' }}>{it.label}</span>
+              </div>
+            )
+          })}
+        </div>
 
-      <AnimatePresence>
-        {selected && item && (
-          <>
+        <AnimatePresence>
+          {selected && (
             <motion.div key="bd"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setSelected(null)}
               style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40 }} />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {selected && item && (
             <motion.div key="sheet"
-              initial={step >= 1 ? { y: '100%' } : {}} animate={{ y: 0 }}
+              initial={step >= 1 ? { y: '100%' } : { opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
               exit={step >= 1 ? { y: '100%' } : { opacity: 0 }}
               transition={{ type: 'spring', stiffness: 380, damping: 36 }}
               style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50,
                 background: 'var(--bg)', borderRadius: '12px 12px 0 0', padding: 12 }}>
-              {step >= 3 ? (
+              {withLayout ? (
                 <motion.div layoutId={`hm-${selected}`}
-                  transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-                  style={{ width: '100%', height: 90, borderRadius: 10, background: item.color, marginBottom: 10,
+                  transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+                  style={{ width: '100%', height: 110, borderRadius: 10, background: item.color, marginBottom: 10,
                     display: 'flex', alignItems: 'flex-end', padding: 10 }}>
-                  <div style={{ fontSize: 13, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</div>
+                  <motion.span layout="position" style={{ fontSize: 13, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</motion.span>
                 </motion.div>
               ) : (
-                <div style={{ width: '100%', height: 90, borderRadius: 10, background: item.color, marginBottom: 10,
+                <div style={{ width: '100%', height: 110, borderRadius: 10, background: item.color, marginBottom: 10,
                   display: 'flex', alignItems: 'flex-end', padding: 10 }}>
                   <div style={{ fontSize: 13, color: '#fff', fontFamily: 'var(--font-power)' }}>{item.label}</div>
                 </div>
@@ -1638,10 +1664,10 @@ function FlutterHeroMobile({ step }: { step: number }) {
               <button onClick={() => setSelected(null)} style={{ padding: '5px 12px', borderRadius: 7,
                 background: item.color, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 10 }}>Close</button>
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </LayoutGroup>
   )
 }
 
@@ -1908,6 +1934,170 @@ function FlipListMobile({ step }: { step: number }) {
   )
 }
 
+/* ── 15. Morphing Button ──────────────────────────────────────────────────── */
+
+function MorphingButtonPreview({ step }: { step: number }) {
+  const [state, setState] = useState<'idle' | 'loading' | 'success'>('idle')
+
+  useEffect(() => { setState('idle') }, [step])
+
+  async function handleClick() {
+    if (state !== 'idle') return
+    setState('loading')
+    await new Promise(r => setTimeout(r, 1400))
+    setState('success')
+    setTimeout(() => setState('idle'), 1800)
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+      <motion.button
+        layout={step >= 1}
+        onClick={handleClick}
+        transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+        style={{
+          borderRadius: 999, border: 'none', cursor: state === 'idle' ? 'pointer' : 'default',
+          background: state === 'success' ? '#22c55e' : 'var(--accent)', color: '#0a0a0a',
+          height: 46, width: step >= 1 ? (state === 'idle' ? 150 : 46) : 150,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+          fontFamily: 'var(--font-outfit)', fontWeight: 600, fontSize: 14,
+        }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {state === 'idle' && (
+            <motion.span key="label" initial={step >= 2 ? { opacity: 0 } : false} animate={{ opacity: 1 }} exit={step >= 2 ? { opacity: 0 } : {}} transition={{ duration: 0.15 }}>
+              Submit
+            </motion.span>
+          )}
+          {state === 'loading' && (
+            <motion.svg key="spinner"
+              initial={{ opacity: 0, rotate: 0 }} animate={{ opacity: 1, rotate: 360 }} exit={{ opacity: 0 }}
+              transition={{ opacity: { duration: 0.15 }, rotate: { repeat: Infinity, duration: 0.8, ease: 'linear' } }}
+              width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="8" stroke="rgba(0,0,0,0.2)" strokeWidth="2.5"/>
+              <path d="M10 2a8 8 0 018 8" stroke="#0a0a0a" strokeWidth="2.5" strokeLinecap="round"/>
+            </motion.svg>
+          )}
+          {state === 'success' && (
+            <motion.svg key="check"
+              initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <motion.path d="M4 10l4.5 4.5 7.5-8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                initial={step >= 3 ? { pathLength: 0 } : false} animate={{ pathLength: 1 }} transition={{ duration: 0.35, ease: 'easeOut' }} />
+            </motion.svg>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </div>
+  )
+}
+
+/* ── 16. Drag to Reorder ──────────────────────────────────────────────────── */
+
+const REORDER_ITEMS = [
+  { id: '1', label: 'Design tokens',  color: '#534AB7' },
+  { id: '2', label: 'Components',     color: '#1D9E75' },
+  { id: '3', label: 'Animations',     color: '#D85A30' },
+  { id: '4', label: 'Accessibility',  color: '#A3E635' },
+]
+
+function DragReorderPreview({ step }: { step: number }) {
+  const [items, setItems] = useState(REORDER_ITEMS)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { setItems(REORDER_ITEMS) }, [step])
+
+  return (
+    <div ref={containerRef} style={{ padding: '14px 16px', width: '100%' }}>
+      <div style={{ fontSize: 12, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 10 }}>Tasks</div>
+      {step >= 2 ? (
+        <Reorder.Group axis="y" values={items} onReorder={setItems} style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {items.map(item => (
+            <Reorder.Item key={item.id} value={item} style={{ listStyle: 'none' }}
+              whileDrag={{ scale: 1.03, boxShadow: '0 8px 20px rgba(0,0,0,0.18)', zIndex: 9 }}
+            >
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 9,
+                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                borderRadius: 9, padding: '8px 10px', cursor: step >= 3 ? 'grab' : 'default', userSelect: 'none',
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                  {[0,1,2].map(i => <div key={i} style={{ display: 'flex', gap: 2 }}><div style={{ width: 2.5, height: 2.5, borderRadius: 1, background: 'currentColor' }} /><div style={{ width: 2.5, height: 2.5, borderRadius: 1, background: 'currentColor' }} /></div>)}
+                </div>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 11, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)' }}>{item.label}</span>
+              </div>
+            </Reorder.Item>
+          ))}
+        </Reorder.Group>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {items.map(item => (
+            <div key={item.id} style={{
+              display: 'flex', alignItems: 'center', gap: 9,
+              background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+              borderRadius: 9, padding: '8px 10px',
+            }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)' }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── 17. Animated Counter ─────────────────────────────────────────────────── */
+
+function CounterValue({ to, duration, prefix = '', suffix = '', decimals = 0, play }: {
+  to: number; duration: number; prefix?: string; suffix?: string; decimals?: number; play: boolean
+}) {
+  const val  = useMotionValue(0)
+  const [display, setDisplay] = useState(prefix + (0).toFixed(decimals) + suffix)
+
+  useEffect(() => {
+    const unsub = val.on('change', v => setDisplay(prefix + v.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + suffix))
+    return unsub
+  }, [val, prefix, suffix, decimals])
+
+  useEffect(() => {
+    if (!play) { val.set(0); return }
+    const ctrl = fmAnimate(val, to, { duration, ease: [0.16, 1, 0.3, 1] })
+    return () => ctrl.stop()
+  }, [play, to, duration, val])
+
+  return <>{display}</>
+}
+
+function NumberCounterPreview({ step }: { step: number }) {
+  const [play, setPlay] = useState(false)
+
+  useEffect(() => { setPlay(false); const t = setTimeout(() => setPlay(true), 150); return () => clearTimeout(t) }, [step])
+
+  const stats = [
+    { to: 2400000, prefix: '$', label: 'Revenue', duration: 1.8 },
+    { to: 98.6,    suffix: '%', label: 'Uptime', decimals: 1, duration: 1.5 },
+  ]
+
+  return (
+    <div style={{ display: 'flex', gap: 14, padding: 20, justifyContent: 'center', alignItems: 'center', height: '100%', flexWrap: 'wrap' }}>
+      {stats.map(s => (
+        <div key={s.label} style={{
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '16px 20px', textAlign: 'center', minWidth: 110,
+        }}>
+          <div style={{ fontFamily: 'var(--font-power)', fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            <CounterValue {...s} play={step >= 1 ? play : false} />
+          </div>
+          <div style={{ fontFamily: 'var(--font-outfit)', fontSize: 10, color: 'var(--text-tertiary)', marginTop: 3 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /* ── Dispatch ───────────────────────────────────────────────────────────── */
 
 const WEB_MAP: Record<string, React.FC<{ step: number }>> = {
@@ -1925,6 +2115,9 @@ const WEB_MAP: Record<string, React.FC<{ step: number }>> = {
   'flutter-hero':      FlutterHeroWeb,
   'view-transitions':  ViewTransitionsWeb,
   'flip-list':         FlipListWeb,
+  'morphing-button':   MorphingButtonPreview,
+  'drag-reorder':      DragReorderPreview,
+  'number-counter':    NumberCounterPreview,
 }
 
 const MOBILE_MAP: Record<string, React.FC<{ step: number }>> = {
@@ -1942,6 +2135,9 @@ const MOBILE_MAP: Record<string, React.FC<{ step: number }>> = {
   'flutter-hero':      FlutterHeroMobile,
   'view-transitions':  ViewTransitionsMobile,
   'flip-list':         FlipListMobile,
+  'morphing-button':   MorphingButtonPreview,
+  'drag-reorder':      DragReorderPreview,
+  'number-counter':    NumberCounterPreview,
 }
 
 export function AnimationPreview({ slug, context, stepIndex = 3 }: {

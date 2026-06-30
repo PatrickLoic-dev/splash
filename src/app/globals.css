@@ -47,6 +47,16 @@
   cursor: none !important;
 }
 
+/* Restore native cursor on touch devices (no custom cursor rendered) */
+@media (pointer: coarse) {
+  *, *::before, *::after {
+    cursor: auto !important;
+  }
+  a, button, [role="button"], select, label, [tabindex] {
+    cursor: pointer !important;
+  }
+}
+
 /* Re-enable selection only on code blocks */
 pre, code, pre *, code * {
   user-select: text;

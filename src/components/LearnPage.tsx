@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import {
   ANIMATIONS, PLATFORMS, WEB_PLATFORMS, MOBILE_PLATFORMS,
   localizeAnim, localizeStep,
@@ -60,16 +60,29 @@ function saveBookmarks(slugs: string[]) {
   localStorage.setItem(BOOKMARK_KEY, JSON.stringify(slugs))
 }
 
+/* ── Progress tracking ── */
+const PROGRESS_KEY = 'splash-progress'
+function loadProgress(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '{}') } catch { return {} }
+}
+function saveProgress(p: Record<string, number>) {
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(p))
+}
+
 export function LearnPage() {
   const searchParams = useSearchParams()
+  const router       = useRouter()
   const [view,       setView]       = useState<ViewState>({ kind: 'selector' })
   const [replayKey,  setReplayKey]  = useState(0)
   const [stepIndex,  setStepIndex]  = useState(0)
-  // track which platform was clicked so the non-clicked cards can fade out
   const [clickedPlatform, setClickedPlatform] = useState<PlatformId | null>(null)
-  const [bookmarks, setBookmarks] = useState<string[]>([])
+  const [bookmarks,  setBookmarks]  = useState<string[]>([])
+  const [progress,   setProgress]   = useState<Record<string, number>>({})
+  const [cmdOpen,    setCmdOpen]    = useState(false)
+  const skipUrlSync = useRef(false)
 
   useEffect(() => { setBookmarks(loadBookmarks()) }, [])
+  useEffect(() => { setProgress(loadProgress()) }, [])
 
   function toggleBookmark(slug: string) {
     setBookmarks(prev => {
@@ -79,16 +92,44 @@ export function LearnPage() {
     })
   }
 
-  // Handle ?slug= URL param — auto-navigate to the correct animation
+  function markProgress(slug: string, stepIdx: number) {
+    setProgress(prev => {
+      const best = Math.max(prev[slug] ?? 0, stepIdx)
+      const next = { ...prev, [slug]: best }
+      saveProgress(next)
+      return next
+    })
+  }
+
+  // Sync URL → state on mount / param change
   useEffect(() => {
-    const slug = searchParams.get('slug')
+    const slug     = searchParams.get('slug')
+    const platform = searchParams.get('platform') as PlatformId | null
+    const step     = parseInt(searchParams.get('step') ?? '0', 10)
     if (!slug) return
     const anim = ANIMATIONS.find(a => a.slug === slug)
     if (!anim) return
-    const platform = anim.implementations[0]?.platform ?? 'react'
-    const context  = PLATFORM_CONTEXT[platform] ?? 'web'
-    setView({ kind: 'detail', slug, context, platform })
+    const resolvedPlatform = platform ?? anim.implementations[0]?.platform ?? 'react'
+    const context = PLATFORM_CONTEXT[resolvedPlatform] ?? 'web'
+    skipUrlSync.current = true
+    setView({ kind: 'detail', slug, context, platform: resolvedPlatform })
+    setStepIndex(isNaN(step) ? 0 : step)
   }, [searchParams])
+
+  // Sync state → URL when in detail view
+  useEffect(() => {
+    if (skipUrlSync.current) { skipUrlSync.current = false; return }
+    if (view.kind === 'detail') {
+      const params = new URLSearchParams({
+        slug:     view.slug,
+        platform: view.platform,
+        step:     String(stepIndex),
+      })
+      router.replace(`/learn?${params.toString()}`, { scroll: false })
+    } else {
+      router.replace('/learn', { scroll: false })
+    }
+  }, [view, stepIndex])
 
   function openFiltered(platform: PlatformId) {
     setClickedPlatform(platform)
@@ -114,12 +155,27 @@ export function LearnPage() {
     openDetail(slug, PLATFORM_CONTEXT[platform] ?? 'web', platform)
   }
 
+  // Cmd+K / Ctrl+K global shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setCmdOpen(o => !o) }
+      if (e.key === 'Escape') setCmdOpen(false)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   const showGrid = view.kind === 'selector' || view.kind === 'filtered'
 
   return (
     <>
-      <Navbar />
+      <Navbar onOpenCmd={() => setCmdOpen(true)} />
       {showGrid && <GridBackground />}
+      <CommandPalette
+        open={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        onNavigate={(slug, platform) => { setCmdOpen(false); openDetail(slug, PLATFORM_CONTEXT[platform] ?? 'web', platform) }}
+      />
       <div style={{ paddingTop: 56, minHeight: '100dvh', position: 'relative', zIndex: 1 }}>
         <LayoutGroup>
           <AnimatePresence mode="popLayout">
@@ -150,6 +206,7 @@ export function LearnPage() {
                   onSwitchPlatform={(p) => setView({ kind: 'filtered', platform: p })}
                   bookmarks={bookmarks}
                   onToggleBookmark={toggleBookmark}
+                  progress={progress}
                 />
               </motion.div>
 
@@ -176,7 +233,8 @@ export function LearnPage() {
                   }}
                   onNavigate={(slug, ctx) => openDetail(slug, ctx)}
                   onReplay={() => setReplayKey(k => k + 1)}
-                  onStepChange={setStepIndex}
+                  progress={progress}
+                  onStepChange={(i) => { setStepIndex(i); if (view.kind === 'detail') markProgress(view.slug, i) }}
                 />
               </motion.div>
             )}
@@ -318,7 +376,7 @@ function SelectorView({
 /* ────────────────────────────────────────────────────────────────────────── */
 
 function FilteredView({
-  platform, onBack, onSelect, onSwitchPlatform, bookmarks, onToggleBookmark
+  platform, onBack, onSelect, onSwitchPlatform, bookmarks, onToggleBookmark, progress
 }: {
   platform: PlatformId
   onBack: () => void
@@ -326,6 +384,7 @@ function FilteredView({
   onSwitchPlatform: (p: PlatformId) => void
   bookmarks: string[]
   onToggleBookmark: (slug: string) => void
+  progress: Record<string, number>
 }) {
   const { t, lang } = useI18n()
   const { isMobile, isTablet, isDesktop } = useBreakpoint()
@@ -678,6 +737,27 @@ function FilteredView({
                       }}>
                         {locAnim.tagline}
                       </div>
+                      {(() => {
+                        const total   = getSteps(anim.slug, platform).length
+                        const reached = progress[anim.slug] ?? -1
+                        const done    = total > 0 && reached >= total - 1
+                        const pct     = total > 0 ? Math.min(100, Math.round(((reached + 1) / total) * 100)) : 0
+                        if (total === 0) return null
+                        return (
+                          <div style={{ marginTop: 4 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                              <span style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', color: done ? 'var(--accent)' : 'var(--text-tertiary)' }}>
+                                {done ? '✓ ' + (lang === 'fr' ? 'Terminé' : 'Completed') : pct > 0 ? `${pct}%` : ''}
+                              </span>
+                            </div>
+                            {pct > 0 && (
+                              <div style={{ height: 2, borderRadius: 1, background: 'var(--border)' }}>
+                                <div style={{ height: '100%', borderRadius: 1, background: done ? 'var(--accent)' : 'var(--accent)', width: `${pct}%`, opacity: done ? 1 : 0.5, transition: 'width 0.4s ease' }} />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
                       <div style={{ fontSize: 11, fontFamily: 'var(--font-outfit)', color: 'var(--accent)', marginTop: 2 }}>
                         {t('filt_cta')}
                       </div>
@@ -699,10 +779,11 @@ function FilteredView({
 /* ────────────────────────────────────────────────────────────────────────── */
 
 function DetailView({
-  slug, context, platform, replayKey, stepIndex,
+  slug, context, platform, replayKey, stepIndex, progress,
   onBack, onContextSwitch, onPlatformChange, onNavigate, onReplay, onStepChange,
 }: {
   slug: string; context: Context; platform: PlatformId; replayKey: number; stepIndex: number
+  progress: Record<string, number>
   onBack: () => void; onContextSwitch: (ctx: Context) => void; onPlatformChange: (p: PlatformId) => void
   onNavigate: (slug: string, ctx: Context) => void; onReplay: () => void; onStepChange: (i: number) => void
 }) {
@@ -729,7 +810,7 @@ function DetailView({
     return () => window.removeEventListener('keydown', handleKey)
   }, [slug, platform, stepIndex, onStepChange, onReplay, rawAnim])
   const anim        = localizeAnim(rawAnim, lang)
-  const accentColor = CAT_COLORS[anim.category] ?? '#534AB7'
+  const accentColor = 'var(--accent)'
   const pool        = context === 'web' ? WEB_PLATFORMS : MOBILE_PLATFORMS
   const impl        = anim.implementations.find(i => i.platform === platform)
   const idx         = ANIMATIONS.findIndex(a => a.slug === slug)
@@ -786,6 +867,7 @@ function DetailView({
         </div>
         {!isMobile && (
           <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+            <ShareButton slug={slug} platform={platform} stepIndex={stepIndex} />
             <button onClick={() => prev && onNavigate(prev.slug, context)} disabled={!prev} style={{
               padding: '4px 10px', borderRadius: 6, fontSize: 11,
               border: '1px solid var(--border)', background: 'var(--bg-secondary)',
@@ -1135,115 +1217,173 @@ function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, cur
   )
 }
 
-/* ── Stepper ── */
+/* ── Stepper with phase accordions ── */
 function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep, lang }: {
   steps: Step[]; stepIndex: number; accentColor: string; onStepChange: (i: number) => void; currentStep: Step; lang: 'en' | 'fr'
 }) {
-  const n = steps.length
-  const p1 = Math.floor(n / 3)
-  const p2 = Math.floor(2 * n / 3)
-  const phaseOf = (i: number) => i < p1 ? 'Setup' : i < p2 ? 'Core' : 'Polish'
+  const n  = steps.length
+  const p1 = Math.ceil(n / 3)
+  const p2 = Math.ceil(2 * n / 3)
+
+  const phases = [
+    { label: lang === 'fr' ? 'Configuration' : 'Setup',      indices: steps.slice(0,  p1).map((_, i) => i) },
+    { label: lang === 'fr' ? 'Logique principale' : 'Core logic', indices: steps.slice(p1, p2).map((_, i) => p1 + i) },
+    { label: lang === 'fr' ? 'Finition' : 'Polish',          indices: steps.slice(p2).map((_, i) => p2 + i) },
+  ].filter(ph => ph.indices.length > 0)
+
+  // Track which phases are open — open the one containing current step
+  const phaseOf = (idx: number) => phases.findIndex(ph => ph.indices.includes(idx))
+  const [openPhases, setOpenPhases] = useState<Set<number>>(() => new Set([phaseOf(stepIndex)]))
+
+  // When stepIndex changes, ensure its phase is open
+  useEffect(() => {
+    const p = phaseOf(stepIndex)
+    setOpenPhases(prev => prev.has(p) ? prev : new Set([...prev, p]))
+  }, [stepIndex])
+
+  const togglePhase = (i: number) =>
+    setOpenPhases(prev => { const s = new Set(prev); s.has(i) ? s.delete(i) : s.add(i); return s })
 
   return (
-    <div>
-      {/* Step tabs — scrollable on mobile */}
-      <div style={{ display: 'flex', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)', background: 'var(--bg-secondary)', overflowX: 'auto' }}>
-        {steps.map((s, i) => {
-          const ls       = localizeStep(s, lang)
-          const isActive = stepIndex === i
-          const phase    = phaseOf(i)
-          const isPhaseStart = i === 0 || phaseOf(i - 1) !== phase
-          return (
-            <React.Fragment key={i}>
-              {isPhaseStart && n > 3 && (
-                <span style={{
-                  flex: '0 0 auto', alignSelf: 'center',
-                  padding: '2px 7px', marginLeft: i === 0 ? 4 : 6, marginRight: 2,
-                  borderRadius: 4, fontSize: 8, fontFamily: 'var(--font-outfit)', fontWeight: 700,
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                  color: accentColor, background: accentColor + '18',
-                  whiteSpace: 'nowrap', pointerEvents: 'none',
-                }}>{phase}</span>
-              )}
-              <button onClick={() => onStepChange(i)} style={{
-                flex: '0 0 auto', minWidth: 80, padding: '10px 12px', border: 'none',
-                borderBottom: `2px solid ${isActive ? accentColor : 'transparent'}`,
-                borderRight: i < steps.length - 1 ? '1px solid var(--border)' : 'none',
-                background: isActive ? accentColor + '0e' : 'transparent',
-                cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+    <div style={{ border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
+      {phases.map((phase, pi) => {
+        const isOpen         = openPhases.has(pi)
+        const hasActiveStep  = phase.indices.includes(stepIndex)
+        return (
+          <div key={pi} style={{ borderTop: pi > 0 ? '1px solid var(--border)' : 'none' }}>
+
+            {/* Phase header — accordion toggle */}
+            <button
+              onClick={() => togglePhase(pi)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 16px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                background: hasActiveStep ? accentColor + '0c' : 'var(--bg-secondary)',
+                transition: 'background 0.15s',
+              }}
+            >
+              {/* Phase dot */}
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                background: hasActiveStep ? accentColor : 'var(--border-strong)',
+                boxShadow: hasActiveStep ? `0 0 0 3px ${accentColor}28` : 'none',
+                transition: 'all 0.2s',
+              }} />
+              <span style={{
+                fontFamily: 'var(--font-outfit)', fontSize: 11, fontWeight: 700,
+                color: hasActiveStep ? accentColor : 'var(--text-secondary)',
+                letterSpacing: '0.07em', textTransform: 'uppercase', flex: 1,
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{
-                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                    background: isActive ? accentColor : 'var(--bg-tertiary)',
-                    color: isActive ? '#fff' : 'var(--text-tertiary)',
-                    border: `1px solid ${isActive ? accentColor : 'var(--border)'}`,
-                    fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-outfit)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>{i + 1}</span>
-                  <span style={{
-                    fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: isActive ? 600 : 400,
-                    color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)', lineHeight: 1.3,
-                    whiteSpace: 'nowrap',
-                  }}>{ls.title}</span>
-                </div>
-              </button>
-            </React.Fragment>
-          )
-        })}
-      </div>
-      <AnimatePresence mode="wait">
-        <motion.div key={stepIndex} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18 }}>
-          {/* Step description — why this step matters */}
-          <div style={{
-            padding: '14px 18px',
-            background: accentColor + '08',
-            borderLeft: `1px solid ${accentColor}28`,
-            borderRight: `1px solid ${accentColor}28`,
-            borderBottom: `1px solid ${accentColor}18`,
-          }}>
-            {(() => {
-              const prevCode = stepIndex > 0 ? (steps[stepIndex - 1]?.code ?? '') : ''
-              const currCode = currentStep.code ?? ''
-              const prevLines = prevCode.split('\n')
-              const currLines = currCode.split('\n')
-              const prevSet   = new Set(prevLines)
-              const addedLines = new Set(currLines.filter(l => !prevSet.has(l)))
-              const addedCount = stepIndex > 0 ? addedLines.size : 0
-              return (
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-                  <span style={{
-                    fontSize: 10, fontFamily: 'var(--font-outfit)', fontWeight: 700,
-                    color: accentColor, letterSpacing: '0.06em', textTransform: 'uppercase',
-                  }}>Step {stepIndex + 1} / {steps.length}</span>
-                  <span style={{ fontSize: 13, fontFamily: 'var(--font-outfit)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {localizeStep(currentStep, lang).title}
-                  </span>
-                  {addedCount > 0 && (
-                    <span style={{
-                      fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600,
-                      padding: '1px 6px', borderRadius: 4,
-                      background: accentColor + '20', color: accentColor,
-                    }}>+{addedCount} new</span>
-                  )}
-                </div>
-              )
-            })()}
-            <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.75, margin: 0 }}>
-              <Inline text={localizeStep(currentStep, lang).description} />
-            </p>
+                {phase.label}
+              </span>
+              <span style={{
+                fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-outfit)',
+              }}>
+                {phase.indices.length} step{phase.indices.length > 1 ? 's' : ''}
+              </span>
+              <motion.span
+                animate={{ rotate: isOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ fontSize: 10, color: 'var(--text-tertiary)', display: 'inline-block', lineHeight: 1 }}
+              >
+                ▾
+              </motion.span>
+            </button>
+
+            {/* Steps list inside phase */}
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  key="content"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div style={{ borderTop: '1px solid var(--border)' }}>
+                    {phase.indices.map(i => {
+                      const s        = steps[i]
+                      const ls       = localizeStep(s, lang)
+                      const isActive = stepIndex === i
+                      const prevCode = i > 0 ? (steps[i - 1]?.code ?? '') : ''
+                      const currCode = s.code ?? ''
+                      const prevSet  = new Set(prevCode.split('\n'))
+                      const added    = i > 0 ? currCode.split('\n').filter(l => !prevSet.has(l)).length : 0
+                      return (
+                        <div key={i} style={{ borderTop: i !== phase.indices[0] ? '1px solid var(--border)' : 'none' }}>
+                          {/* Step row */}
+                          <button
+                            onClick={() => onStepChange(i)}
+                            style={{
+                              width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                              padding: '10px 16px 10px 28px', border: 'none', cursor: 'pointer',
+                              textAlign: 'left', background: isActive ? accentColor + '10' : 'var(--bg)',
+                              borderLeft: isActive ? `3px solid ${accentColor}` : '3px solid transparent',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            <span style={{
+                              width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                              background: isActive ? accentColor : 'var(--bg-tertiary)',
+                              color: isActive ? '#fff' : 'var(--text-tertiary)',
+                              border: `1px solid ${isActive ? accentColor : 'var(--border)'}`,
+                              fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-outfit)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.15s',
+                            }}>{i + 1}</span>
+                            <span style={{
+                              flex: 1, fontSize: 12, fontFamily: 'var(--font-outfit)',
+                              fontWeight: isActive ? 600 : 400,
+                              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                              lineHeight: 1.4,
+                            }}>{ls.title}</span>
+                            {added > 0 && (
+                              <span style={{
+                                fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600,
+                                padding: '1px 5px', borderRadius: 4,
+                                background: accentColor + '20', color: accentColor, flexShrink: 0,
+                              }}>+{added}</span>
+                            )}
+                          </button>
+
+                          {/* Expanded: description + code diff */}
+                          <AnimatePresence initial={false}>
+                            {isActive && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                style={{ overflow: 'hidden' }}
+                              >
+                                <div style={{
+                                  padding: '12px 16px 0 28px',
+                                  background: accentColor + '06',
+                                  borderTop: `1px solid ${accentColor}20`,
+                                }}>
+                                  <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.75, margin: '0 0 12px' }}>
+                                    <Inline text={localizeStep(currentStep, lang).description} />
+                                  </p>
+                                </div>
+                                {(() => {
+                                  const prevSet2 = new Set(prevCode.split('\n'))
+                                  const addedSet = i > 0 ? new Set(currCode.split('\n').filter(l => !prevSet2.has(l))) : new Set<string>()
+                                  return <CodeBlock code={currCode} addedLines={addedSet} accentColor={accentColor} />
+                                })()}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          {(() => {
-            const prevCode = stepIndex > 0 ? (steps[stepIndex - 1]?.code ?? '') : ''
-            const currCode = currentStep.code ?? ''
-            const prevLines = prevCode.split('\n')
-            const currLines = currCode.split('\n')
-            const prevSet   = new Set(prevLines)
-            const addedLineSet = stepIndex > 0 ? new Set(currLines.filter(l => !prevSet.has(l))) : new Set<string>()
-            return <CodeBlock code={currCode} addedLines={addedLineSet} accentColor={accentColor} />
-          })()}
-        </motion.div>
-      </AnimatePresence>
+        )
+      })}
     </div>
   )
 }
@@ -1325,3 +1465,157 @@ function Inline({ text }: { text: string }) {
     </>
   )
 }
+
+/* â"€â"€ Share button â"€â"€ */
+function ShareButton({ slug, platform, stepIndex }: { slug: string; platform: PlatformId; stepIndex: number }) {
+  const { t } = useI18n()
+  const [copied, setCopied] = useState(false)
+
+  function share() {
+    const params = new URLSearchParams({ slug, platform, step: String(stepIndex) })
+    const url = `${window.location.origin}/learn?${params.toString()}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    })
+  }
+
+  return (
+    <button onClick={share} style={{
+      padding: '4px 10px', borderRadius: 6, fontSize: 11,
+      border: '1px solid var(--border)', background: copied ? 'var(--accent)' : 'var(--bg-secondary)',
+      color: copied ? '#fff' : 'var(--text-secondary)',
+      cursor: 'pointer', fontFamily: 'var(--font-outfit)', transition: 'all 0.2s',
+      display: 'flex', alignItems: 'center', gap: 5,
+    }}>
+      {copied ? t('det_shared') : (
+        <>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          {t('det_share')}
+        </>
+      )}
+    </button>
+  )
+}
+
+/* â"€â"€ Command palette â"€â"€ */
+function CommandPalette({ open, onClose, onNavigate }: {
+  open: boolean
+  onClose: () => void
+  onNavigate: (slug: string, platform: PlatformId) => void
+}) {
+  const { t, lang } = useI18n()
+  const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (open) { setQuery(''); setTimeout(() => inputRef.current?.focus(), 50) }
+  }, [open])
+
+  const results = query.trim()
+    ? ANIMATIONS.filter(a => {
+        const q = query.toLowerCase()
+        const loc = localizeAnim(a, lang)
+        return loc.title.toLowerCase().includes(q) ||
+               loc.tagline.toLowerCase().includes(q) ||
+               a.category.toLowerCase().includes(q) ||
+               a.slug.includes(q)
+      })
+    : ANIMATIONS
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            key="cmd-backdrop"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={onClose}
+            style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9001, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <motion.div
+            key="cmd-panel"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              pointerEvents: 'all',
+              width: '90%', maxWidth: 580,
+              background: 'var(--bg)', border: '1px solid var(--border-strong)',
+              borderRadius: 16, overflow: 'hidden',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2.2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={lang === 'fr' ? 'Rechercher une animation...' : 'Search animations...'}
+                style={{
+                  flex: 1, border: 'none', background: 'transparent', outline: 'none',
+                  fontFamily: 'var(--font-outfit)', fontSize: 15, color: 'var(--text-primary)',
+                  cursor: 'text',
+                }}
+              />
+              <kbd style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)', padding: '2px 6px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>Esc</kbd>
+            </div>
+
+            <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+              {results.length === 0 ? (
+                <div style={{ padding: '24px', textAlign: 'center', fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                  {lang === 'fr' ? 'Aucun rÃ©sultat' : 'No results'}
+                </div>
+              ) : results.map((anim, i) => {
+                const loc      = localizeAnim(anim, lang)
+                const platform = anim.implementations[0]?.platform ?? 'react'
+                return (
+                  <button key={anim.slug} onClick={() => onNavigate(anim.slug, platform)} style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 16px', border: 'none', background: 'transparent',
+                    cursor: 'pointer', textAlign: 'left',
+                    borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                    transition: 'background 0.1s',
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: 'var(--font-power)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 1 }}>{loc.title}</div>
+                      <div style={{ fontFamily: 'var(--font-outfit)', fontSize: 11, color: 'var(--text-tertiary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{loc.tagline}</div>
+                    </div>
+                    <span style={{
+                      fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 600, letterSpacing: '0.07em',
+                      color: CAT_COLORS[anim.category] ?? '#534AB7', textTransform: 'uppercase' as const, flexShrink: 0,
+                    }}>{anim.category}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: 16 }}>
+              {([['Enter', lang === 'fr' ? 'ouvrir' : 'open'], ['Esc', lang === 'fr' ? 'fermer' : 'close']] as [string, string][]).map(([key, label]) => (
+                <span key={key} style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-outfit)', fontSize: 10, color: 'var(--text-tertiary)' }}>
+                  <kbd style={{ padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border)', background: 'var(--bg-secondary)', fontSize: 10 }}>{key}</kbd>
+                  {label}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+
+const CAT_ICONS: Record<string, string> = {}
+

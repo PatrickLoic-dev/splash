@@ -9035,6 +9035,2083 @@ const flipList: StepMap = {
   flutter:        flipListFlutter,
 }
 
+/* ─────────────────────────────────────────────────────────────────── */
+/*  morphing-button                                                      */
+/* ─────────────────────────────────────────────────────────────────── */
+
+const morphingButtonReact: Step[] = [
+  {
+    title: 'Static button',
+    description: 'Start with a plain HTML button. Get the size, font, and border-radius right first. This is the idle state baseline everything else animates from.',
+    fr: { title: 'Bouton statique', description: 'Commencez par un bouton HTML simple. Definissez la taille, la police et le rayon de bordure. C\'est la base de l\'etat inactif depuis laquelle tout s\'anime.' },
+    code: `export function MorphingButton() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <button style={{
+        borderRadius: 999,
+        border: 'none',
+        background: '#A3E635',
+        color: '#0a0a0a',
+        height: 48,
+        width: 160,
+        fontFamily: 'system-ui',
+        fontWeight: 600,
+        fontSize: 15,
+        cursor: 'pointer',
+      }}>
+        Submit
+      </button>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Add state machine',
+    description: 'Introduce a `state` variable that cycles idle -> loading -> success. The click handler drives the transitions. Nothing animates yet — verify the state changes work correctly in isolation.',
+    fr: { title: 'Ajouter la machine d\'etat', description: 'Introduire une variable `state` qui cycle idle -> loading -> success. Le gestionnaire de clic pilote les transitions. Rien n\'anime encore — verifiez que les changements d\'etat fonctionnent correctement.' },
+    code: `import { useState } from 'react'
+
+type State = 'idle' | 'loading' | 'success'
+
+export function MorphingButton() {
+  const [state, setState] = useState<State>('idle')
+
+  async function handleClick() {
+    if (state !== 'idle') return
+    setState('loading')
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => setState('idle'), 2200)
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <button onClick={handleClick} style={{
+        borderRadius: 999, border: 'none',
+        background: state === 'success' ? '#22c55e' : '#A3E635',
+        color: '#0a0a0a', height: 48, width: state === 'idle' ? 160 : 48,
+        fontFamily: 'system-ui', fontWeight: 600, fontSize: 15,
+        cursor: state === 'idle' ? 'pointer' : 'default',
+      }}>
+        {state === 'idle' ? 'Submit' : state === 'loading' ? '...' : 'OK'}
+      </button>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Animate width with motion.button layout',
+    description: 'Replace the plain `button` with `motion.button` and add the `layout` prop. Framer Motion now animates the width change automatically using a spring. The button collapses to a circle on click.',
+    fr: { title: 'Animer la largeur avec layout', description: 'Remplacer le `button` par `motion.button` avec la prop `layout`. Framer Motion anime maintenant le changement de largeur automatiquement avec un ressort. Le bouton se retrecit en cercle au clic.' },
+    code: `import { useState } from 'react'
+import { motion } from 'framer-motion'
+
+type State = 'idle' | 'loading' | 'success'
+
+export function MorphingButton() {
+  const [state, setState] = useState<State>('idle')
+
+  async function handleClick() {
+    if (state !== 'idle') return
+    setState('loading')
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => setState('idle'), 2200)
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <motion.button
+        layout
+        onClick={handleClick}
+        transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+        style={{
+          borderRadius: 999, border: 'none',
+          background: state === 'success' ? '#22c55e' : '#A3E635',
+          color: '#0a0a0a', height: 48,
+          width: state === 'idle' ? 160 : 48,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden',
+          fontFamily: 'system-ui', fontWeight: 600, fontSize: 15,
+          cursor: state === 'idle' ? 'pointer' : 'default',
+        }}
+      >
+        {state === 'idle' ? 'Submit' : state === 'loading' ? '...' : 'OK'}
+      </motion.button>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Swap inner content with AnimatePresence',
+    description: 'Wrap the inner content in `AnimatePresence mode="wait"` so each state\'s icon fades out before the next fades in. Add an SVG spinner for loading and an SVG checkmark for success — the check uses `pathLength` animation.',
+    fr: { title: 'Alterner le contenu avec AnimatePresence', description: 'Envelopper le contenu interne dans `AnimatePresence mode="wait"` pour que chaque icone fade out avant que la suivante fade in. Ajouter un spinner SVG et une coche SVG animee via `pathLength`.' },
+    code: `import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+
+type State = 'idle' | 'loading' | 'success'
+
+export function MorphingButton() {
+  const [state, setState] = useState<State>('idle')
+
+  async function handleClick() {
+    if (state !== 'idle') return
+    setState('loading')
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => setState('idle'), 2200)
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <motion.button
+        layout
+        onClick={handleClick}
+        transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+        style={{
+          borderRadius: 999, border: 'none',
+          cursor: state === 'idle' ? 'pointer' : 'default',
+          background: state === 'success' ? '#22c55e' : '#A3E635',
+          color: '#0a0a0a', height: 48, width: state === 'idle' ? 160 : 48,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden', fontFamily: 'system-ui', fontWeight: 600, fontSize: 15,
+        }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {state === 'idle' && (
+            <motion.span key="label"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >Submit</motion.span>
+          )}
+          {state === 'loading' && (
+            <motion.svg key="spinner"
+              initial={{ opacity: 0, rotate: 0 }} animate={{ opacity: 1, rotate: 360 }}
+              exit={{ opacity: 0 }}
+              transition={{ opacity: { duration: 0.15 }, rotate: { repeat: Infinity, duration: 0.8, ease: 'linear' } }}
+              width="20" height="20" viewBox="0 0 20 20" fill="none"
+            >
+              <circle cx="10" cy="10" r="8" stroke="rgba(0,0,0,0.2)" strokeWidth="2.5"/>
+              <path d="M10 2a8 8 0 018 8" stroke="#0a0a0a" strokeWidth="2.5" strokeLinecap="round"/>
+            </motion.svg>
+          )}
+          {state === 'success' && (
+            <motion.svg key="check"
+              initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              width="20" height="20" viewBox="0 0 20 20" fill="none"
+            >
+              <motion.path
+                d="M4 10l4.5 4.5 7.5-8"
+                stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              />
+            </motion.svg>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </div>
+  )
+}`,
+  },
+]
+
+const morphingButtonNextjs: Step[] = [
+  {
+    title: 'Static button in a Client Component',
+    description: 'Next.js requires the `"use client"` directive for any component with state or event handlers. Add it at the top — everything else is identical to the React version.',
+    fr: { title: 'Bouton statique dans un composant client', description: 'Next.js exige la directive `"use client"` pour tout composant avec un etat ou des gestionnaires d\'evenements. Ajoutez-la en haut — tout le reste est identique a la version React.' },
+    code: `'use client'
+
+export function MorphingButton() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <button style={{
+        borderRadius: 999, border: 'none',
+        background: '#A3E635', color: '#0a0a0a',
+        height: 48, width: 160,
+        fontFamily: 'system-ui', fontWeight: 600, fontSize: 15,
+        cursor: 'pointer',
+      }}>
+        Submit
+      </button>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Add state machine',
+    description: 'Same state machine as React — `useState` works identically inside a Client Component. The `"use client"` directive unlocks all React hooks.',
+    fr: { title: 'Ajouter la machine d\'etat', description: 'Meme machine d\'etat qu\'en React — `useState` fonctionne identiquement dans un composant client. La directive `"use client"` debloque tous les hooks React.' },
+    code: `'use client'
+import { useState } from 'react'
+
+type State = 'idle' | 'loading' | 'success'
+
+export function MorphingButton() {
+  const [state, setState] = useState<State>('idle')
+
+  async function handleClick() {
+    if (state !== 'idle') return
+    setState('loading')
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => setState('idle'), 2200)
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <button onClick={handleClick} style={{
+        borderRadius: 999, border: 'none',
+        background: state === 'success' ? '#22c55e' : '#A3E635',
+        color: '#0a0a0a', height: 48, width: state === 'idle' ? 160 : 48,
+        fontFamily: 'system-ui', fontWeight: 600, fontSize: 15,
+        cursor: state === 'idle' ? 'pointer' : 'default',
+      }}>
+        {state === 'idle' ? 'Submit' : state === 'loading' ? '...' : 'OK'}
+      </button>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Add motion.button layout animation',
+    description: 'Framer Motion works the same in Next.js Client Components. Add `motion.button` with `layout` and a spring transition to animate the width collapse.',
+    fr: { title: 'Ajouter l\'animation layout avec motion.button', description: 'Framer Motion fonctionne de la meme facon dans les composants client Next.js. Ajoutez `motion.button` avec `layout` et une transition ressort pour animer la contraction de la largeur.' },
+    code: `'use client'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+
+type State = 'idle' | 'loading' | 'success'
+
+export function MorphingButton() {
+  const [state, setState] = useState<State>('idle')
+
+  async function handleClick() {
+    if (state !== 'idle') return
+    setState('loading')
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => setState('idle'), 2200)
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <motion.button
+        layout
+        onClick={handleClick}
+        transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+        style={{
+          borderRadius: 999, border: 'none',
+          background: state === 'success' ? '#22c55e' : '#A3E635',
+          color: '#0a0a0a', height: 48, width: state === 'idle' ? 160 : 48,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden',
+          fontFamily: 'system-ui', fontWeight: 600, fontSize: 15,
+          cursor: state === 'idle' ? 'pointer' : 'default',
+        }}
+      >
+        {state === 'idle' ? 'Submit' : state === 'loading' ? '...' : 'OK'}
+      </motion.button>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'AnimatePresence for inner content swap',
+    description: 'Complete the component with `AnimatePresence` for the spinner and check SVGs. The result is a fully functional morphing button as a Next.js Client Component ready for any App Router page.',
+    fr: { title: 'AnimatePresence pour l\'echange de contenu', description: 'Completer le composant avec `AnimatePresence` pour le spinner et la coche SVG. Le resultat est un bouton morphing complet en composant client Next.js pret pour tout page App Router.' },
+    code: `'use client'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+
+type State = 'idle' | 'loading' | 'success'
+
+export function MorphingButton() {
+  const [state, setState] = useState<State>('idle')
+
+  async function handleClick() {
+    if (state !== 'idle') return
+    setState('loading')
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => setState('idle'), 2200)
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <motion.button
+        layout
+        onClick={handleClick}
+        transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+        style={{
+          borderRadius: 999, border: 'none',
+          cursor: state === 'idle' ? 'pointer' : 'default',
+          background: state === 'success' ? '#22c55e' : '#A3E635',
+          color: '#0a0a0a', height: 48, width: state === 'idle' ? 160 : 48,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden', fontFamily: 'system-ui', fontWeight: 600, fontSize: 15,
+        }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {state === 'idle' && (
+            <motion.span key="label"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >Submit</motion.span>
+          )}
+          {state === 'loading' && (
+            <motion.svg key="spinner"
+              initial={{ opacity: 0, rotate: 0 }} animate={{ opacity: 1, rotate: 360 }}
+              exit={{ opacity: 0 }}
+              transition={{ opacity: { duration: 0.15 }, rotate: { repeat: Infinity, duration: 0.8, ease: 'linear' } }}
+              width="20" height="20" viewBox="0 0 20 20" fill="none"
+            >
+              <circle cx="10" cy="10" r="8" stroke="rgba(0,0,0,0.2)" strokeWidth="2.5"/>
+              <path d="M10 2a8 8 0 018 8" stroke="#0a0a0a" strokeWidth="2.5" strokeLinecap="round"/>
+            </motion.svg>
+          )}
+          {state === 'success' && (
+            <motion.svg key="check"
+              initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              width="20" height="20" viewBox="0 0 20 20" fill="none"
+            >
+              <motion.path
+                d="M4 10l4.5 4.5 7.5-8"
+                stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              />
+            </motion.svg>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </div>
+  )
+}`,
+  },
+]
+
+const morphingButtonVue: Step[] = [
+  {
+    title: 'Static button',
+    description: 'Start with a plain Vue `<button>`. Define the styles for the idle state. This establishes the visual baseline before any reactive state or animation.',
+    fr: { title: 'Bouton statique', description: 'Commencez avec un simple `<button>` Vue. Definissez les styles pour l\'etat inactif. Cela etablit la base visuelle avant tout etat reactif ou animation.' },
+    code: `<template>
+  <div style="display:flex;justify-content:center;padding:40px">
+    <button :style="{
+      borderRadius: '999px', border: 'none',
+      background: '#A3E635', color: '#0a0a0a',
+      height: '48px', width: '160px',
+      fontFamily: 'system-ui', fontWeight: 600, fontSize: '15px',
+      cursor: 'pointer',
+    }">
+      Submit
+    </button>
+  </div>
+</template>`,
+  },
+  {
+    title: 'Add reactive state',
+    description: 'Use `ref` from Vue 3 Composition API to track the button state. The `handleClick` async function drives the idle -> loading -> success cycle.',
+    fr: { title: 'Ajouter l\'etat reactif', description: 'Utiliser `ref` de l\'API de composition Vue 3 pour suivre l\'etat du bouton. La fonction async `handleClick` pilote le cycle idle -> loading -> success.' },
+    code: `<script setup>
+import { ref } from 'vue'
+
+const state = ref('idle') // 'idle' | 'loading' | 'success'
+
+async function handleClick() {
+  if (state.value !== 'idle') return
+  state.value = 'loading'
+  await new Promise(r => setTimeout(r, 1800))
+  state.value = 'success'
+  setTimeout(() => { state.value = 'idle' }, 2200)
+}
+</script>
+
+<template>
+  <div style="display:flex;justify-content:center;padding:40px">
+    <button @click="handleClick" :style="{
+      borderRadius: '999px', border: 'none',
+      background: state === 'success' ? '#22c55e' : '#A3E635',
+      color: '#0a0a0a', height: '48px',
+      width: state === 'idle' ? '160px' : '48px',
+      fontFamily: 'system-ui', fontWeight: 600, fontSize: '15px',
+      cursor: state === 'idle' ? 'pointer' : 'default',
+      transition: 'width 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.3s',
+      overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <span v-if="state === 'idle'">Submit</span>
+      <span v-else-if="state === 'loading'">...</span>
+      <span v-else>OK</span>
+    </button>
+  </div>
+</template>`,
+  },
+  {
+    title: 'Add CSS transitions and v-if content swap',
+    description: 'Use Vue `<Transition>` component to fade content in and out between states. The `mode="out-in"` ensures the old content leaves before the new content enters — same behaviour as Framer Motion\'s `AnimatePresence mode="wait"`.',
+    fr: { title: 'Ajouter des transitions CSS et l\'echange de contenu v-if', description: 'Utiliser le composant `<Transition>` de Vue pour faire apparaitre et disparaitre le contenu entre les etats. Le `mode="out-in"` garantit que l\'ancien contenu part avant que le nouveau arrive.' },
+    code: `<script setup>
+import { ref } from 'vue'
+
+const state = ref('idle')
+
+async function handleClick() {
+  if (state.value !== 'idle') return
+  state.value = 'loading'
+  await new Promise(r => setTimeout(r, 1800))
+  state.value = 'success'
+  setTimeout(() => { state.value = 'idle' }, 2200)
+}
+</script>
+
+<template>
+  <div style="display:flex;justify-content:center;padding:40px">
+    <button @click="handleClick" :style="{
+      borderRadius: '999px', border: 'none',
+      background: state === 'success' ? '#22c55e' : '#A3E635',
+      color: '#0a0a0a', height: '48px',
+      width: state === 'idle' ? '160px' : '48px',
+      transition: 'width 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.3s',
+      overflow: 'hidden', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      cursor: state === 'idle' ? 'pointer' : 'default',
+      fontFamily: 'system-ui', fontWeight: 600, fontSize: '15px',
+    }">
+      <Transition mode="out-in">
+        <span v-if="state === 'idle'" key="label">Submit</span>
+        <svg v-else-if="state === 'loading'" key="spinner"
+          width="20" height="20" viewBox="0 0 20 20" fill="none"
+          style="animation: spin 0.8s linear infinite">
+          <circle cx="10" cy="10" r="8" stroke="rgba(0,0,0,0.2)" stroke-width="2.5"/>
+          <path d="M10 2a8 8 0 018 8" stroke="#0a0a0a" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <svg v-else key="check" width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10l4.5 4.5 7.5-8" stroke="#fff" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </Transition>
+    </button>
+  </div>
+</template>
+
+<style scoped>
+@keyframes spin { to { transform: rotate(360deg) } }
+.v-enter-active, .v-leave-active { transition: opacity 0.15s }
+.v-enter-from, .v-leave-to { opacity: 0 }
+</style>`,
+  },
+]
+
+const morphingButtonRN: Step[] = [
+  {
+    title: 'Static button with TouchableOpacity',
+    description: 'Start with a plain `TouchableOpacity` and `View` in React Native. Define the dimensions for the idle state. React Native uses `StyleSheet` for performance-optimised styles.',
+    fr: { title: 'Bouton statique avec TouchableOpacity', description: 'Commencez avec un simple `TouchableOpacity` et `View` en React Native. Definissez les dimensions pour l\'etat inactif. React Native utilise `StyleSheet` pour des styles optimises.' },
+    code: `import { TouchableOpacity, Text, StyleSheet, View } from 'react-native'
+
+export function MorphingButton() {
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.label}>Submit</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: { alignItems: 'center', padding: 40 },
+  button: {
+    height: 48, width: 160,
+    borderRadius: 999,
+    backgroundColor: '#A3E635',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  label: { fontWeight: '600', fontSize: 15, color: '#0a0a0a' },
+})`,
+  },
+  {
+    title: 'Add state and animated width',
+    description: 'Use `Animated.Value` for the button width and `Animated.spring` to animate it when state changes. React Native\'s `Animated` API drives native-thread animations without JS bridge overhead.',
+    fr: { title: 'Ajouter l\'etat et la largeur animee', description: 'Utiliser `Animated.Value` pour la largeur du bouton et `Animated.spring` pour l\'animer lors des changements d\'etat. L\'API `Animated` de React Native pilote les animations sur le thread natif.' },
+    code: `import { useRef, useState } from 'react'
+import { TouchableOpacity, Text, StyleSheet, View, Animated } from 'react-native'
+
+export function MorphingButton() {
+  const [state, setState] = useState('idle')
+  const widthAnim = useRef(new Animated.Value(160)).current
+
+  async function handlePress() {
+    if (state !== 'idle') return
+    setState('loading')
+    Animated.spring(widthAnim, { toValue: 48, useNativeDriver: false }).start()
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => {
+      setState('idle')
+      Animated.spring(widthAnim, { toValue: 160, useNativeDriver: false }).start()
+    }, 2200)
+  }
+
+  return (
+    <View style={styles.container}>
+      <Animated.View style={[styles.button, { width: widthAnim,
+        backgroundColor: state === 'success' ? '#22c55e' : '#A3E635' }]}>
+        <TouchableOpacity onPress={handlePress} style={styles.inner}>
+          <Text style={styles.label}>
+            {state === 'idle' ? 'Submit' : state === 'loading' ? '...' : 'OK'}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: { alignItems: 'center', padding: 40 },
+  button: { height: 48, borderRadius: 999, overflow: 'hidden' },
+  inner: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  label: { fontWeight: '600', fontSize: 15, color: '#0a0a0a' },
+})`,
+  },
+  {
+    title: 'Add ActivityIndicator and checkmark',
+    description: 'Replace the text labels with `ActivityIndicator` for the loading state and a custom SVG checkmark for success. Use conditional rendering to swap the inner content.',
+    fr: { title: 'Ajouter ActivityIndicator et coche', description: 'Remplacer les labels texte par `ActivityIndicator` pour l\'etat loading et une coche personnalisee pour le succes. Utiliser le rendu conditionnel pour echanger le contenu interne.' },
+    code: `import { useRef, useState } from 'react'
+import {
+  TouchableOpacity, Text, StyleSheet, View,
+  Animated, ActivityIndicator
+} from 'react-native'
+
+export function MorphingButton() {
+  const [state, setState] = useState('idle')
+  const widthAnim = useRef(new Animated.Value(160)).current
+
+  async function handlePress() {
+    if (state !== 'idle') return
+    setState('loading')
+    Animated.spring(widthAnim, { toValue: 48, useNativeDriver: false }).start()
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => {
+      setState('idle')
+      Animated.spring(widthAnim, { toValue: 160, useNativeDriver: false }).start()
+    }, 2200)
+  }
+
+  return (
+    <View style={styles.container}>
+      <Animated.View style={[styles.button, {
+        width: widthAnim,
+        backgroundColor: state === 'success' ? '#22c55e' : '#A3E635',
+      }]}>
+        <TouchableOpacity onPress={handlePress} style={styles.inner}>
+          {state === 'idle' && <Text style={styles.label}>Submit</Text>}
+          {state === 'loading' && <ActivityIndicator color="#0a0a0a" size="small" />}
+          {state === 'success' && <Text style={styles.check}>OK</Text>}
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: { alignItems: 'center', padding: 40 },
+  button: { height: 48, borderRadius: 999, overflow: 'hidden' },
+  inner: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  label: { fontWeight: '600', fontSize: 15, color: '#0a0a0a' },
+  check: { fontWeight: '700', fontSize: 16, color: '#fff' },
+})`,
+  },
+]
+
+const morphingButtonFlutter: Step[] = [
+  {
+    title: 'Static ElevatedButton',
+    description: 'Start with a plain `ElevatedButton` styled to the idle shape. Flutter\'s `BorderRadius.circular` with a large value produces the pill shape. No state or animation yet.',
+    fr: { title: 'ElevatedButton statique', description: 'Commencez avec un simple `ElevatedButton` style en forme de pilule. Le `BorderRadius.circular` de Flutter avec une grande valeur produit la forme pilule. Pas d\'etat ni d\'animation.' },
+    code: `import 'package:flutter/material.dart';
+
+class MorphingButton extends StatelessWidget {
+  const MorphingButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {},
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFA3E635),
+          foregroundColor: const Color(0xFF0A0A0A),
+          shape: const StadiumBorder(),
+          minimumSize: const Size(160, 48),
+        ),
+        child: const Text('Submit',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+      ),
+    );
+  }
+}`,
+  },
+  {
+    title: 'Add state with StatefulWidget',
+    description: 'Convert to a `StatefulWidget` and add a `_ButtonState` enum. `setState` drives the rebuild when the state changes — this is Flutter\'s equivalent of React\'s `useState`.',
+    fr: { title: 'Ajouter l\'etat avec StatefulWidget', description: 'Convertir en `StatefulWidget` et ajouter un enum `_ButtonState`. `setState` declenche le rebuild lors des changements d\'etat — c\'est l\'equivalent Flutter de `useState` en React.' },
+    code: `import 'package:flutter/material.dart';
+
+enum _Btn { idle, loading, success }
+
+class MorphingButton extends StatefulWidget {
+  const MorphingButton({super.key});
+  @override
+  State<MorphingButton> createState() => _MorphingButtonState();
+}
+
+class _MorphingButtonState extends State<MorphingButton> {
+  _Btn _state = _Btn.idle;
+
+  Future<void> _handleTap() async {
+    if (_state != _Btn.idle) return;
+    setState(() => _state = _Btn.loading);
+    await Future.delayed(const Duration(milliseconds: 1800));
+    setState(() => _state = _Btn.success);
+    await Future.delayed(const Duration(milliseconds: 2200));
+    setState(() => _state = _Btn.idle);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ElevatedButton(
+        onPressed: _handleTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _state == _Btn.success
+            ? const Color(0xFF22C55E) : const Color(0xFFA3E635),
+          foregroundColor: const Color(0xFF0A0A0A),
+          shape: const StadiumBorder(),
+          minimumSize: Size(_state == _Btn.idle ? 160 : 48, 48),
+        ),
+        child: Text(_state == _Btn.idle ? 'Submit'
+          : _state == _Btn.loading ? '...' : 'OK'),
+      ),
+    );
+  }
+}`,
+  },
+  {
+    title: 'Animate width with AnimatedContainer',
+    description: 'Wrap the button content in `AnimatedContainer` to smoothly interpolate the width change. The `duration` and `curve` control the spring-like feel. `AnimatedContainer` automatically animates any property change.',
+    fr: { title: 'Animer la largeur avec AnimatedContainer', description: 'Envelopper le contenu dans `AnimatedContainer` pour interpoler en douceur le changement de largeur. La `duration` et la `curve` controlent l\'effet ressort. `AnimatedContainer` anime automatiquement tout changement de propriete.' },
+    code: `import 'package:flutter/material.dart';
+
+enum _Btn { idle, loading, success }
+
+class MorphingButton extends StatefulWidget {
+  const MorphingButton({super.key});
+  @override
+  State<MorphingButton> createState() => _MorphingButtonState();
+}
+
+class _MorphingButtonState extends State<MorphingButton> {
+  _Btn _state = _Btn.idle;
+
+  Future<void> _handleTap() async {
+    if (_state != _Btn.idle) return;
+    setState(() => _state = _Btn.loading);
+    await Future.delayed(const Duration(milliseconds: 1800));
+    setState(() => _state = _Btn.success);
+    await Future.delayed(const Duration(milliseconds: 2200));
+    setState(() => _state = _Btn.idle);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        onTap: _handleTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.elasticOut,
+          height: 48,
+          width: _state == _Btn.idle ? 160 : 48,
+          decoration: BoxDecoration(
+            color: _state == _Btn.success
+              ? const Color(0xFF22C55E) : const Color(0xFFA3E635),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Center(
+            child: _state == _Btn.idle
+              ? const Text('Submit',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF0A0A0A)))
+              : _state == _Btn.loading
+                ? const SizedBox(width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF0A0A0A)))
+                : const Icon(Icons.check, color: Colors.white, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+}`,
+  },
+]
+
+const morphingButton: StepMap = {
+  react:          morphingButtonReact,
+  nextjs:         morphingButtonNextjs,
+  vue:            morphingButtonVue,
+  'react-native': morphingButtonRN,
+  flutter:        morphingButtonFlutter,
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  drag-reorder                                                         */
+/* ─────────────────────────────────────────────────────────────────── */
+
+const dragReorderReact: Step[] = [
+  {
+    title: 'Static list',
+    description: 'Render a plain list of items with a drag handle icon. No dragging yet — focus on getting the layout, spacing, and handle position right.',
+    fr: { title: 'Liste statique', description: 'Afficher une liste simple avec une icone de poignee. Pas de glisser encore — concentrez-vous sur la mise en page et la position de la poignee.' },
+    code: `const ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+]
+
+export function DragReorder() {
+  return (
+    <ul style={{ listStyle: 'none', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {ITEMS.map(item => (
+        <li key={item.id} style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 10, padding: '12px 14px',
+        }}>
+          <span style={{ cursor: 'grab', color: 'var(--text-tertiary)' }}>::::</span>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color }} />
+          <span style={{ fontFamily: 'system-ui', fontSize: 14 }}>{item.label}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}`,
+  },
+  {
+    title: 'Add Reorder.Group and Reorder.Item',
+    description: 'Replace `ul`/`li` with Framer Motion\'s `Reorder.Group` and `Reorder.Item`. Pass the `values` array and `onReorder` callback. Framer Motion now tracks drag position and reorders the array automatically.',
+    fr: { title: 'Ajouter Reorder.Group et Reorder.Item', description: 'Remplacer `ul`/`li` par `Reorder.Group` et `Reorder.Item` de Framer Motion. Passer le tableau `values` et le callback `onReorder`. Framer Motion suit maintenant la position de glisser et reordonne le tableau automatiquement.' },
+    code: `import { useState } from 'react'
+import { Reorder } from 'framer-motion'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+]
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+
+  return (
+    <Reorder.Group axis="y" values={items} onReorder={setItems}
+      style={{ listStyle: 'none', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {items.map(item => (
+        <Reorder.Item key={item.id} value={item}
+          style={{ display: 'flex', alignItems: 'center', gap: 12,
+            background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+            borderRadius: 10, padding: '12px 14px', listStyle: 'none' }}>
+          <span style={{ cursor: 'grab', color: 'var(--text-tertiary)' }}>::::</span>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color }} />
+          <span style={{ fontFamily: 'system-ui', fontSize: 14 }}>{item.label}</span>
+        </Reorder.Item>
+      ))}
+    </Reorder.Group>
+  )
+}`,
+  },
+  {
+    title: 'Restrict drag to handle only',
+    description: 'Add `useDragControls` and set `dragListener={false}` on `Reorder.Item`. The `onPointerDown` on the handle element starts the drag — this prevents accidental drags when clicking on text.',
+    fr: { title: 'Restreindre le glisser a la poignee', description: 'Ajouter `useDragControls` et definir `dragListener={false}` sur `Reorder.Item`. Le `onPointerDown` sur la poignee demarre le glisser — cela evite les glissers accidentels lors d\'un clic sur le texte.' },
+    code: `import { useState } from 'react'
+import { Reorder, useDragControls } from 'framer-motion'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+]
+
+function ReorderItem({ item }) {
+  const controls = useDragControls()
+  return (
+    <Reorder.Item value={item} dragListener={false} dragControls={controls}
+      style={{ listStyle: 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12,
+        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+        borderRadius: 10, padding: '12px 14px', userSelect: 'none' }}>
+        <div onPointerDown={e => controls.start(e)}
+          style={{ cursor: 'grab', color: 'var(--text-tertiary)' }}>::::</div>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color }} />
+        <span style={{ fontFamily: 'system-ui', fontSize: 14 }}>{item.label}</span>
+      </div>
+    </Reorder.Item>
+  )
+}
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+  return (
+    <Reorder.Group axis="y" values={items} onReorder={setItems}
+      style={{ listStyle: 'none', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {items.map(item => <ReorderItem key={item.id} item={item} />)}
+    </Reorder.Group>
+  )
+}`,
+  },
+  {
+    title: 'Add lift effect on drag',
+    description: 'Add `whileDrag` to the `Reorder.Item` to apply scale, shadow, and z-index while dragging. This gives the user clear visual feedback that an item is "picked up" and floating above the list.',
+    fr: { title: 'Ajouter l\'effet de levee au glisser', description: 'Ajouter `whileDrag` a `Reorder.Item` pour appliquer scale, ombre et z-index pendant le glisser. Cela donne a l\'utilisateur un retour visuel clair que l\'element est "souleve" au-dessus de la liste.' },
+    code: `import { useState } from 'react'
+import { Reorder, useDragControls } from 'framer-motion'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+  { id: '5', label: 'Performance review',     color: '#E6C430' },
+]
+
+function ReorderItem({ item }) {
+  const controls = useDragControls()
+  return (
+    <Reorder.Item value={item} dragListener={false} dragControls={controls}
+      style={{ listStyle: 'none' }}
+      whileDrag={{ scale: 1.03, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 99 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12,
+        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+        borderRadius: 10, padding: '12px 14px', userSelect: 'none' }}>
+        <div onPointerDown={e => controls.start(e)}
+          style={{ cursor: 'grab', color: 'var(--text-tertiary)',
+            display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
+          {[0,1,2].map(i => (
+            <div key={i} style={{ display: 'flex', gap: 3 }}>
+              <div style={{ width: 3, height: 3, borderRadius: 1, background: 'currentColor' }} />
+              <div style={{ width: 3, height: 3, borderRadius: 1, background: 'currentColor' }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+        <span style={{ fontFamily: 'system-ui', fontSize: 14, color: 'var(--text-primary)', flex: 1 }}>
+          {item.label}
+        </span>
+      </div>
+    </Reorder.Item>
+  )
+}
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+  return (
+    <Reorder.Group axis="y" values={items} onReorder={setItems}
+      style={{ listStyle: 'none', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {items.map(item => <ReorderItem key={item.id} item={item} />)}
+    </Reorder.Group>
+  )
+}`,
+  },
+]
+
+const dragReorderNextjs: Step[] = [
+  {
+    title: 'Static list as Client Component',
+    description: 'Add `"use client"` — Framer Motion\'s drag features require browser APIs and must run on the client. The static list structure is identical to React.',
+    fr: { title: 'Liste statique en composant client', description: 'Ajouter `"use client"` — les fonctionnalites de glisser de Framer Motion necessitent les APIs du navigateur et doivent s\'executer cote client.' },
+    code: `'use client'
+
+const ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+]
+
+export function DragReorder() {
+  return (
+    <ul style={{ listStyle: 'none', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {ITEMS.map(item => (
+        <li key={item.id} style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 10, padding: '12px 14px',
+        }}>
+          <span style={{ cursor: 'grab', color: 'var(--text-tertiary)' }}>::::</span>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color }} />
+          <span style={{ fontFamily: 'system-ui', fontSize: 14 }}>{item.label}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}`,
+  },
+  {
+    title: 'Add Reorder.Group',
+    description: 'Wire up `Reorder.Group` and `useState`. Identical to the React version — Next.js Client Components use the same React hooks and Framer Motion API.',
+    fr: { title: 'Ajouter Reorder.Group', description: 'Brancher `Reorder.Group` et `useState`. Identique a la version React — les composants client Next.js utilisent les memes hooks React et la meme API Framer Motion.' },
+    code: `'use client'
+import { useState } from 'react'
+import { Reorder } from 'framer-motion'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+]
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+  return (
+    <Reorder.Group axis="y" values={items} onReorder={setItems}
+      style={{ listStyle: 'none', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {items.map(item => (
+        <Reorder.Item key={item.id} value={item} style={{ listStyle: 'none',
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 10, padding: '12px 14px' }}>
+          <span style={{ cursor: 'grab' }}>::::</span>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color }} />
+          <span style={{ fontFamily: 'system-ui', fontSize: 14 }}>{item.label}</span>
+        </Reorder.Item>
+      ))}
+    </Reorder.Group>
+  )
+}`,
+  },
+  {
+    title: 'Add drag handle and whileDrag lift',
+    description: 'Extract `ReorderItem` as a separate Client Component with `useDragControls`. The `whileDrag` prop adds the lifted appearance. Both components need `"use client"` when they live in separate files.',
+    fr: { title: 'Ajouter la poignee et l\'effet de levee', description: 'Extraire `ReorderItem` en composant client separe avec `useDragControls`. La prop `whileDrag` ajoute l\'apparence soulevee. Les deux composants ont besoin de `"use client"` dans des fichiers separes.' },
+    code: `'use client'
+import { useState } from 'react'
+import { Reorder, useDragControls } from 'framer-motion'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+  { id: '5', label: 'Performance review',     color: '#E6C430' },
+]
+
+function ReorderItem({ item }) {
+  const controls = useDragControls()
+  return (
+    <Reorder.Item value={item} dragListener={false} dragControls={controls}
+      style={{ listStyle: 'none' }}
+      whileDrag={{ scale: 1.03, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 99 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12,
+        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+        borderRadius: 10, padding: '12px 14px', userSelect: 'none' }}>
+        <div onPointerDown={e => controls.start(e)}
+          style={{ cursor: 'grab', color: 'var(--text-tertiary)',
+            display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {[0,1,2].map(i => (
+            <div key={i} style={{ display: 'flex', gap: 3 }}>
+              <div style={{ width: 3, height: 3, borderRadius: 1, background: 'currentColor' }} />
+              <div style={{ width: 3, height: 3, borderRadius: 1, background: 'currentColor' }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color }} />
+        <span style={{ fontFamily: 'system-ui', fontSize: 14, color: 'var(--text-primary)', flex: 1 }}>
+          {item.label}
+        </span>
+      </div>
+    </Reorder.Item>
+  )
+}
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+  return (
+    <Reorder.Group axis="y" values={items} onReorder={setItems}
+      style={{ listStyle: 'none', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {items.map(item => <ReorderItem key={item.id} item={item} />)}
+    </Reorder.Group>
+  )
+}`,
+  },
+]
+
+const dragReorderVue: Step[] = [
+  {
+    title: 'Static list',
+    description: 'Render a plain `v-for` list with a drag handle. No drag yet — establish the visual layout first.',
+    fr: { title: 'Liste statique', description: 'Afficher une liste `v-for` simple avec une poignee. Pas de glisser encore — etablissez d\'abord la mise en page visuelle.' },
+    code: `<script setup>
+const items = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+]
+</script>
+
+<template>
+  <ul style="list-style:none;padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+    <li v-for="item in items" :key="item.id"
+      style="display:flex;align-items:center;gap:12px;
+        background:var(--bg-secondary);border:1px solid var(--border);
+        border-radius:10px;padding:12px 14px">
+      <span style="cursor:grab;color:var(--text-tertiary)">::::</span>
+      <div :style="{ width:'10px', height:'10px', borderRadius:'50%', background: item.color }" />
+      <span style="font-family:system-ui;font-size:14px">{{ item.label }}</span>
+    </li>
+  </ul>
+</template>`,
+  },
+  {
+    title: 'Install and configure vuedraggable',
+    description: 'Install `vuedraggable` (wraps SortableJS). Replace the `ul` with `<draggable>` and bind `v-model` to the reactive items array. SortableJS handles the DOM drag detection and array mutation.',
+    fr: { title: 'Installer et configurer vuedraggable', description: 'Installer `vuedraggable` (encapsule SortableJS). Remplacer le `ul` par `<draggable>` et lier `v-model` au tableau reactif. SortableJS gere la detection du drag et la mutation du tableau.' },
+    code: `<script setup>
+import { ref } from 'vue'
+import draggable from 'vuedraggable'
+
+const items = ref([
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+])
+</script>
+
+<template>
+  <draggable v-model="items" item-key="id" tag="ul"
+    style="list-style:none;padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+    <template #item="{ element }">
+      <li style="display:flex;align-items:center;gap:12px;
+        background:var(--bg-secondary);border:1px solid var(--border);
+        border-radius:10px;padding:12px 14px;cursor:grab">
+        <span style="color:var(--text-tertiary)">::::</span>
+        <div :style="{ width:'10px', height:'10px', borderRadius:'50%', background: element.color }" />
+        <span style="font-family:system-ui;font-size:14px">{{ element.label }}</span>
+      </li>
+    </template>
+  </draggable>
+</template>`,
+  },
+  {
+    title: 'Add animation and lift on drag',
+    description: 'Pass `animation` to `<draggable>` for the sibling shuffle animation. Add a CSS class for the ghost (dragged item) and a chosen class for the lifted appearance.',
+    fr: { title: 'Ajouter animation et levee au glisser', description: 'Passer `animation` a `<draggable>` pour l\'animation des voisins. Ajouter une classe CSS pour le ghost (element glisse) et une classe chosen pour l\'apparence soulevee.' },
+    code: `<script setup>
+import { ref } from 'vue'
+import draggable from 'vuedraggable'
+
+const items = ref([
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+  { id: '5', label: 'Performance review',     color: '#E6C430' },
+])
+</script>
+
+<template>
+  <draggable v-model="items" item-key="id" tag="ul"
+    :animation="200"
+    ghost-class="drag-ghost"
+    chosen-class="drag-chosen"
+    style="list-style:none;padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+    <template #item="{ element }">
+      <li style="display:flex;align-items:center;gap:12px;
+        background:var(--bg-secondary);border:1px solid var(--border);
+        border-radius:10px;padding:12px 14px;user-select:none;cursor:grab">
+        <span style="color:var(--text-tertiary)">::::</span>
+        <div :style="{ width:'10px', height:'10px', borderRadius:'50%', background: element.color, flexShrink:0 }" />
+        <span style="font-family:system-ui;font-size:14px;color:var(--text-primary);flex:1">
+          {{ element.label }}
+        </span>
+      </li>
+    </template>
+  </draggable>
+</template>
+
+<style scoped>
+.drag-ghost { opacity: 0.3; }
+.drag-chosen { transform: scale(1.03); box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 99; }
+</style>`,
+  },
+]
+
+const dragReorderRN: Step[] = [
+  {
+    title: 'Static FlatList',
+    description: 'Render a plain `FlatList` with a drag handle indicator. No drag yet — verify the list renders correctly and items are spaced properly.',
+    fr: { title: 'FlatList statique', description: 'Afficher un simple `FlatList` avec un indicateur de poignee. Pas de glisser encore — verifiez que la liste s\'affiche correctement.' },
+    code: `import { View, Text, FlatList, StyleSheet } from 'react-native'
+
+const ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+]
+
+export function DragReorder() {
+  return (
+    <FlatList
+      data={ITEMS}
+      keyExtractor={item => item.id}
+      contentContainerStyle={{ padding: 16, gap: 8 }}
+      renderItem={({ item }) => (
+        <View style={styles.row}>
+          <Text style={styles.handle}>::</Text>
+          <View style={[styles.dot, { backgroundColor: item.color }]} />
+          <Text style={styles.label}>{item.label}</Text>
+        </View>
+      )}
+    />
+  )
+}
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
+    borderRadius: 10, padding: 12 },
+  handle: { color: '#666', fontSize: 16 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  label: { fontFamily: 'System', fontSize: 14, color: '#fff', flex: 1 },
+})`,
+  },
+  {
+    title: 'Install react-native-draggable-flatlist',
+    description: 'Replace `FlatList` with `DraggableFlatList` from `react-native-draggable-flatlist`. Pass `onDragEnd` to update the data array. The library uses `react-native-reanimated` internally for smooth native-thread animations.',
+    fr: { title: 'Installer react-native-draggable-flatlist', description: 'Remplacer `FlatList` par `DraggableFlatList` de `react-native-draggable-flatlist`. Passer `onDragEnd` pour mettre a jour le tableau. La bibliotheque utilise `react-native-reanimated` en interne.' },
+    code: `import { useState } from 'react'
+import { View, Text, StyleSheet } from 'react-native'
+import DraggableFlatList from 'react-native-draggable-flatlist'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+]
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+
+  return (
+    <DraggableFlatList
+      data={items}
+      keyExtractor={item => item.id}
+      onDragEnd={({ data }) => setItems(data)}
+      contentContainerStyle={{ padding: 16, gap: 8 }}
+      renderItem={({ item, drag }) => (
+        <View style={styles.row}>
+          <Text style={styles.handle} onLongPress={drag}>::</Text>
+          <View style={[styles.dot, { backgroundColor: item.color }]} />
+          <Text style={styles.label}>{item.label}</Text>
+        </View>
+      )}
+    />
+  )
+}
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
+    borderRadius: 10, padding: 12 },
+  handle: { color: '#666', fontSize: 16 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  label: { fontFamily: 'System', fontSize: 14, color: '#fff', flex: 1 },
+})`,
+  },
+  {
+    title: 'Add visual lift on drag',
+    description: 'Use `isActive` from the `renderItem` callback to apply a lifted style (scale + shadow) while an item is being dragged. This gives the same visual feedback as `whileDrag` in Framer Motion.',
+    fr: { title: 'Ajouter l\'effet visuel de levee', description: 'Utiliser `isActive` du callback `renderItem` pour appliquer un style souleve (scale + ombre) pendant le glisser. Cela donne le meme retour visuel que `whileDrag` dans Framer Motion.' },
+    code: `import { useState } from 'react'
+import { View, Text, StyleSheet } from 'react-native'
+import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+  { id: '5', label: 'Performance review',     color: '#E6C430' },
+]
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+
+  return (
+    <DraggableFlatList
+      data={items}
+      keyExtractor={item => item.id}
+      onDragEnd={({ data }) => setItems(data)}
+      contentContainerStyle={{ padding: 16, gap: 8 }}
+      renderItem={({ item, drag, isActive }) => (
+        <ScaleDecorator>
+          <View style={[styles.row, isActive && styles.rowActive]}>
+            <Text style={styles.handle} onLongPress={drag}>::</Text>
+            <View style={[styles.dot, { backgroundColor: item.color }]} />
+            <Text style={styles.label}>{item.label}</Text>
+          </View>
+        </ScaleDecorator>
+      )}
+    />
+  )
+}
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
+    borderRadius: 10, padding: 12 },
+  rowActive: { shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  handle: { color: '#666', fontSize: 16 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  label: { fontFamily: 'System', fontSize: 14, color: '#fff', flex: 1 },
+})`,
+  },
+]
+
+const dragReorderFlutter: Step[] = [
+  {
+    title: 'Static list with drag handle icons',
+    description: 'Build a plain `ListView` with `ListTile` and a `drag_handle` icon. No drag yet — confirm the layout renders correctly.',
+    fr: { title: 'Liste statique avec icones de poignee', description: 'Construire un `ListView` simple avec `ListTile` et une icone `drag_handle`. Pas de glisser encore — verifiez que la mise en page s\'affiche correctement.' },
+    code: `import 'package:flutter/material.dart';
+
+const _items = [
+  (label: 'Design system tokens', color: Color(0xFF534AB7)),
+  (label: 'Component architecture', color: Color(0xFF1D9E75)),
+  (label: 'Animation library',      color: Color(0xFFD85A30)),
+  (label: 'Accessibility audit',    color: Color(0xFFA3E635)),
+];
+
+class DragReorder extends StatelessWidget {
+  const DragReorder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: _items.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final item = _items[index];
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey[800]!),
+          ),
+          child: Row(children: [
+            const Icon(Icons.drag_handle, color: Colors.grey),
+            const SizedBox(width: 12),
+            Container(width: 10, height: 10,
+              decoration: BoxDecoration(color: item.color, shape: BoxShape.circle)),
+            const SizedBox(width: 12),
+            Text(item.label, style: const TextStyle(fontSize: 14, color: Colors.white)),
+          ]),
+        );
+      },
+    );
+  }
+}`,
+  },
+  {
+    title: 'Convert to ReorderableListView',
+    description: 'Replace `ListView` with Flutter\'s built-in `ReorderableListView`. It provides drag-to-reorder out of the box. The `onReorder` callback gives you the `oldIndex` and `newIndex` to update the list.',
+    fr: { title: 'Convertir en ReorderableListView', description: 'Remplacer `ListView` par le `ReorderableListView` integre de Flutter. Il fournit le glisser-pour-reordonner directement. Le callback `onReorder` donne les index pour mettre a jour la liste.' },
+    code: `import 'package:flutter/material.dart';
+
+class DragReorder extends StatefulWidget {
+  const DragReorder({super.key});
+  @override
+  State<DragReorder> createState() => _DragReorderState();
+}
+
+class _DragReorderState extends State<DragReorder> {
+  final _items = [
+    (id: '1', label: 'Design system tokens', color: const Color(0xFF534AB7)),
+    (id: '2', label: 'Component architecture', color: const Color(0xFF1D9E75)),
+    (id: '3', label: 'Animation library',      color: const Color(0xFFD85A30)),
+    (id: '4', label: 'Accessibility audit',    color: const Color(0xFFA3E635)),
+  ];
+
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex--;
+      final item = _items.removeAt(oldIndex);
+      _items.insert(newIndex, item);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _items.length,
+      onReorder: _onReorder,
+      itemBuilder: (context, index) {
+        final item = _items[index];
+        return Container(
+          key: ValueKey(item.id),
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey[800]!),
+          ),
+          child: Row(children: [
+            const Icon(Icons.drag_handle, color: Colors.grey),
+            const SizedBox(width: 12),
+            Container(width: 10, height: 10,
+              decoration: BoxDecoration(color: item.color, shape: BoxShape.circle)),
+            const SizedBox(width: 12),
+            Text(item.label, style: const TextStyle(fontSize: 14, color: Colors.white)),
+          ]),
+        );
+      },
+    );
+  }
+}`,
+  },
+  {
+    title: 'Custom drag handle and animated lift',
+    description: 'Use `ReorderableDragStartListener` to restrict dragging to the handle icon only. Wrap each item in an `AnimatedContainer` to apply a scale effect when active — Flutter\'s `ReorderableListView` passes a drag proxy that animates automatically.',
+    fr: { title: 'Poignee personnalisee et levee animee', description: 'Utiliser `ReorderableDragStartListener` pour restreindre le glisser a la poignee uniquement. Envelopper dans `AnimatedContainer` pour l\'effet scale — le proxy de glisser de Flutter anime automatiquement.' },
+    code: `import 'package:flutter/material.dart';
+
+class DragReorder extends StatefulWidget {
+  const DragReorder({super.key});
+  @override
+  State<DragReorder> createState() => _DragReorderState();
+}
+
+class _DragReorderState extends State<DragReorder> {
+  final _items = [
+    {'id': '1', 'label': 'Design system tokens', 'color': const Color(0xFF534AB7)},
+    {'id': '2', 'label': 'Component architecture', 'color': const Color(0xFF1D9E75)},
+    {'id': '3', 'label': 'Animation library',      'color': const Color(0xFFD85A30)},
+    {'id': '4', 'label': 'Accessibility audit',    'color': const Color(0xFFA3E635)},
+    {'id': '5', 'label': 'Performance review',     'color': const Color(0xFFE6C430)},
+  ];
+
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex--;
+      final item = _items.removeAt(oldIndex);
+      _items.insert(newIndex, item);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _items.length,
+      onReorder: _onReorder,
+      proxyDecorator: (child, index, animation) => AnimatedBuilder(
+        animation: animation,
+        builder: (context, child) => Transform.scale(
+          scale: 1.03,
+          child: Material(elevation: 8, borderRadius: BorderRadius.circular(10), child: child),
+        ),
+        child: child,
+      ),
+      itemBuilder: (context, index) {
+        final item = _items[index];
+        return Container(
+          key: ValueKey(item['id']),
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey[800]!),
+          ),
+          child: Row(children: [
+            ReorderableDragStartListener(
+              index: index,
+              child: const Icon(Icons.drag_handle, color: Colors.grey),
+            ),
+            const SizedBox(width: 12),
+            Container(width: 10, height: 10,
+              decoration: BoxDecoration(
+                color: item['color'] as Color, shape: BoxShape.circle)),
+            const SizedBox(width: 12),
+            Expanded(child: Text(item['label'] as String,
+              style: const TextStyle(fontSize: 14, color: Colors.white))),
+          ]),
+        );
+      },
+    );
+  }
+}`,
+  },
+]
+
+const dragReorder: StepMap = {
+  react:          dragReorderReact,
+  nextjs:         dragReorderNextjs,
+  vue:            dragReorderVue,
+  'react-native': dragReorderRN,
+  flutter:        dragReorderFlutter,
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  number-counter                                                       */
+/* ─────────────────────────────────────────────────────────────────── */
+
+const numberCounterReact: Step[] = [
+  {
+    title: 'Static number display',
+    description: 'Start with a plain `span` showing the target number. Get the typography, font size, and container layout right before adding any animation.',
+    fr: { title: 'Affichage statique du nombre', description: 'Commencez avec un simple `span` affichant le nombre cible. Reglez la typographie et la mise en page du conteneur avant d\'ajouter une animation.' },
+    code: `export function Counter() {
+  return (
+    <div style={{ display: 'flex', gap: 24, padding: 32, justifyContent: 'center' }}>
+      <div style={{
+        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+        borderRadius: 14, padding: '20px 28px', textAlign: 'center',
+      }}>
+        <div style={{ fontFamily: 'system-ui', fontSize: 32, fontWeight: 800,
+          color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+          2,400,000
+        </div>
+        <div style={{ fontFamily: 'system-ui', fontSize: 12,
+          color: 'var(--text-tertiary)', marginTop: 4 }}>Revenue</div>
+      </div>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Add useMotionValue and animate',
+    description: 'Import `useMotionValue` and `animate` from Framer Motion. The `animate` function drives the motion value from 0 to the target on mount. `useTransform` converts the raw float to a formatted string.',
+    fr: { title: 'Ajouter useMotionValue et animate', description: 'Importer `useMotionValue` et `animate` de Framer Motion. La fonction `animate` pilote la valeur de 0 vers la cible au montage. `useTransform` convertit le flottant en chaine formatee.' },
+    code: `import { useEffect } from 'react'
+import { useMotionValue, useTransform, animate, motion } from 'framer-motion'
+
+export function Counter({ to = 2400000, prefix = '$' }) {
+  const val  = useMotionValue(0)
+  const disp = useTransform(val, v =>
+    prefix + Math.round(v).toLocaleString()
+  )
+
+  useEffect(() => {
+    const ctrl = animate(val, to, { duration: 1.8, ease: [0.16, 1, 0.3, 1] })
+    return () => ctrl.stop()
+  }, [val, to])
+
+  return (
+    <div style={{ display: 'flex', gap: 24, padding: 32, justifyContent: 'center' }}>
+      <div style={{
+        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+        borderRadius: 14, padding: '20px 28px', textAlign: 'center',
+      }}>
+        <motion.div style={{
+          fontFamily: 'system-ui', fontSize: 32, fontWeight: 800,
+          color: 'var(--text-primary)', letterSpacing: '-0.03em',
+        }}>
+          {disp}
+        </motion.div>
+        <div style={{ fontFamily: 'system-ui', fontSize: 12,
+          color: 'var(--text-tertiary)', marginTop: 4 }}>Revenue</div>
+      </div>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Trigger on viewport enter with useInView',
+    description: 'Replace the immediate `useEffect` trigger with `useInView`. The counter only starts counting when it scrolls into the viewport — use `once: true` so it does not replay on scroll-back.',
+    fr: { title: 'Declencher a l\'entree dans le viewport avec useInView', description: 'Remplacer le declenchement immediat de `useEffect` par `useInView`. Le compteur ne commence a compter que lorsqu\'il entre dans le viewport — utiliser `once: true` pour ne pas rejouer au defilement.' },
+    code: `import { useEffect, useRef } from 'react'
+import { useMotionValue, useTransform, animate, motion, useInView } from 'framer-motion'
+
+export function Counter({ to = 2400000, prefix = '$', duration = 1.8 }) {
+  const ref    = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-10% 0px' })
+  const val    = useMotionValue(0)
+  const disp   = useTransform(val, v => prefix + Math.round(v).toLocaleString())
+
+  useEffect(() => {
+    if (!inView) return
+    const ctrl = animate(val, to, { duration, ease: [0.16, 1, 0.3, 1] })
+    return () => ctrl.stop()
+  }, [inView, val, to, duration])
+
+  return (
+    <div ref={ref} style={{
+      background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+      borderRadius: 14, padding: '20px 28px', textAlign: 'center',
+    }}>
+      <motion.div style={{
+        fontFamily: 'system-ui', fontSize: 32, fontWeight: 800,
+        color: 'var(--text-primary)', letterSpacing: '-0.03em',
+      }}>
+        {disp}
+      </motion.div>
+      <div style={{ fontFamily: 'system-ui', fontSize: 12,
+        color: 'var(--text-tertiary)', marginTop: 4 }}>Revenue</div>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Full dashboard with multiple counters',
+    description: 'Extract the counter into a reusable component that accepts `from`, `to`, `prefix`, `suffix`, and `decimals`. Render a stat card grid. Each counter starts independently when its card enters the viewport.',
+    fr: { title: 'Tableau de bord complet avec plusieurs compteurs', description: 'Extraire le compteur en composant reutilisable acceptant `from`, `to`, `prefix`, `suffix` et `decimals`. Afficher une grille de cartes de statistiques. Chaque compteur demarre independamment quand sa carte entre dans le viewport.' },
+    code: `import { useEffect, useRef } from 'react'
+import { useMotionValue, useTransform, animate, motion, useInView } from 'framer-motion'
+
+interface CounterProps {
+  from?: number; to: number; duration?: number
+  prefix?: string; suffix?: string; decimals?: number
+}
+
+export function Counter({ from = 0, to, duration = 1.8, prefix = '', suffix = '', decimals = 0 }: CounterProps) {
+  const ref  = useRef<HTMLSpanElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-10% 0px' })
+  const val  = useMotionValue(from)
+  const disp = useTransform(val, v =>
+    prefix + v.toFixed(decimals).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + suffix
+  )
+
+  useEffect(() => {
+    if (!inView) return
+    const ctrl = animate(val, to, { duration, ease: [0.16, 1, 0.3, 1] })
+    return () => ctrl.stop()
+  }, [inView, val, to, duration])
+
+  return <motion.span ref={ref}>{disp}</motion.span>
+}
+
+const STATS = [
+  { to: 2400000, prefix: '$', label: 'Revenue', duration: 2 },
+  { to: 98.6, suffix: '%', label: 'Uptime', decimals: 1, duration: 1.6 },
+  { to: 14832, label: 'Users', duration: 1.8 },
+]
+
+export function Dashboard() {
+  return (
+    <div style={{ display: 'flex', gap: 24, padding: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+      {STATS.map(s => (
+        <div key={s.label} style={{
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 14, padding: '20px 28px', textAlign: 'center', minWidth: 140,
+        }}>
+          <div style={{ fontFamily: 'system-ui', fontSize: 32, fontWeight: 800,
+            color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+            <Counter {...s} />
+          </div>
+          <div style={{ fontFamily: 'system-ui', fontSize: 12,
+            color: 'var(--text-tertiary)', marginTop: 4 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+  )
+}`,
+  },
+]
+
+const numberCounterNextjs: Step[] = [
+  {
+    title: 'Static counter as Client Component',
+    description: 'Add `"use client"` — the counter uses `useEffect` and `useRef` which require a browser environment. Static server rendering would output the raw number without animation.',
+    fr: { title: 'Compteur statique en composant client', description: 'Ajouter `"use client"` — le compteur utilise `useEffect` et `useRef` qui necessitent un environnement navigateur. Le rendu serveur statique afficherait le nombre brut sans animation.' },
+    code: `'use client'
+
+export function Counter() {
+  return (
+    <div style={{
+      background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+      borderRadius: 14, padding: '20px 28px', textAlign: 'center',
+    }}>
+      <div style={{ fontFamily: 'system-ui', fontSize: 32, fontWeight: 800,
+        color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+        2,400,000
+      </div>
+      <div style={{ fontFamily: 'system-ui', fontSize: 12,
+        color: 'var(--text-tertiary)', marginTop: 4 }}>Revenue</div>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Add animation with useMotionValue',
+    description: 'Same as React — `useMotionValue`, `useTransform`, and `animate` work identically in Next.js Client Components. The `"use client"` directive is the only difference.',
+    fr: { title: 'Ajouter l\'animation avec useMotionValue', description: 'Identique a React — `useMotionValue`, `useTransform` et `animate` fonctionnent de facon identique dans les composants client Next.js. La directive `"use client"` est la seule difference.' },
+    code: `'use client'
+import { useEffect } from 'react'
+import { useMotionValue, useTransform, animate, motion } from 'framer-motion'
+
+export function Counter({ to = 2400000, prefix = '$', duration = 1.8 }) {
+  const val  = useMotionValue(0)
+  const disp = useTransform(val, v => prefix + Math.round(v).toLocaleString())
+
+  useEffect(() => {
+    const ctrl = animate(val, to, { duration, ease: [0.16, 1, 0.3, 1] })
+    return () => ctrl.stop()
+  }, [val, to, duration])
+
+  return (
+    <div style={{
+      background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+      borderRadius: 14, padding: '20px 28px', textAlign: 'center',
+    }}>
+      <motion.div style={{ fontFamily: 'system-ui', fontSize: 32, fontWeight: 800,
+        color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+        {disp}
+      </motion.div>
+      <div style={{ fontFamily: 'system-ui', fontSize: 12,
+        color: 'var(--text-tertiary)', marginTop: 4 }}>Revenue</div>
+    </div>
+  )
+}`,
+  },
+  {
+    title: 'Trigger on scroll with useInView',
+    description: 'Add `useInView` so the counter only animates when in the viewport. In Next.js, the page can be long — triggering on scroll rather than mount is especially important for below-the-fold stat sections.',
+    fr: { title: 'Declencher au defilement avec useInView', description: 'Ajouter `useInView` pour que le compteur ne s\'anime qu\'au scroll. Dans Next.js, la page peut etre longue — declencher au defilement plutot qu\'au montage est particulierement important pour les sections statistiques.' },
+    code: `'use client'
+import { useEffect, useRef } from 'react'
+import { useMotionValue, useTransform, animate, motion, useInView } from 'framer-motion'
+
+interface CounterProps {
+  from?: number; to: number; duration?: number
+  prefix?: string; suffix?: string; decimals?: number
+}
+
+export function Counter({ from = 0, to, duration = 1.8, prefix = '', suffix = '', decimals = 0 }: CounterProps) {
+  const ref    = useRef<HTMLSpanElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-10% 0px' })
+  const val    = useMotionValue(from)
+  const disp   = useTransform(val, v =>
+    prefix + v.toFixed(decimals).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + suffix
+  )
+
+  useEffect(() => {
+    if (!inView) return
+    const ctrl = animate(val, to, { duration, ease: [0.16, 1, 0.3, 1] })
+    return () => ctrl.stop()
+  }, [inView, val, to, duration])
+
+  return <motion.span ref={ref}>{disp}</motion.span>
+}
+
+const STATS = [
+  { to: 2400000, prefix: '$', label: 'Revenue', duration: 2 },
+  { to: 98.6, suffix: '%', label: 'Uptime', decimals: 1, duration: 1.6 },
+  { to: 14832, label: 'Users', duration: 1.8 },
+]
+
+export function Dashboard() {
+  return (
+    <div style={{ display: 'flex', gap: 24, padding: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+      {STATS.map(s => (
+        <div key={s.label} style={{
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 14, padding: '20px 28px', textAlign: 'center', minWidth: 140,
+        }}>
+          <div style={{ fontFamily: 'system-ui', fontSize: 32, fontWeight: 800,
+            color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+            <Counter {...s} />
+          </div>
+          <div style={{ fontFamily: 'system-ui', fontSize: 12,
+            color: 'var(--text-tertiary)', marginTop: 4 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+  )
+}`,
+  },
+]
+
+const numberCounterVue: Step[] = [
+  {
+    title: 'Static counter',
+    description: 'Start with a plain template showing a hardcoded number. Establish the card layout and typography before adding reactivity.',
+    fr: { title: 'Compteur statique', description: 'Commencez par un template simple affichant un nombre en dur. Etablissez la mise en page de la carte et la typographie avant d\'ajouter la reactivite.' },
+    code: `<template>
+  <div style="display:flex;gap:24px;padding:32px;flex-wrap:wrap;justify-content:center">
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);
+      border-radius:14px;padding:20px 28px;text-align:center;min-width:140px">
+      <div style="font-family:system-ui;font-size:32px;font-weight:800;
+        color:var(--text-primary);letter-spacing:-0.03em">
+        2,400,000
+      </div>
+      <div style="font-family:system-ui;font-size:12px;color:var(--text-tertiary);margin-top:4px">
+        Revenue
+      </div>
+    </div>
+  </div>
+</template>`,
+  },
+  {
+    title: 'Animate with GSAP on mount',
+    description: 'Install `gsap` and use `gsap.to` to animate a reactive `count` ref from 0 to the target on `onMounted`. GSAP\'s `onUpdate` callback updates the ref each frame.',
+    fr: { title: 'Animer avec GSAP au montage', description: 'Installer `gsap` et utiliser `gsap.to` pour animer un ref reactif `count` de 0 vers la cible dans `onMounted`. Le callback `onUpdate` de GSAP met a jour le ref a chaque frame.' },
+    code: `<script setup>
+import { ref, onMounted } from 'vue'
+import gsap from 'gsap'
+
+const props = defineProps({ to: { type: Number, default: 2400000 } })
+const count = ref(0)
+
+onMounted(() => {
+  gsap.to(count, {
+    value: props.to,
+    duration: 1.8,
+    ease: 'power3.out',
+    onUpdate: () => { count.value = count.value },
+  })
+})
+</script>
+
+<template>
+  <div style="background:var(--bg-secondary);border:1px solid var(--border);
+    border-radius:14px;padding:20px 28px;text-align:center;min-width:140px">
+    <div style="font-family:system-ui;font-size:32px;font-weight:800;
+      color:var(--text-primary);letter-spacing:-0.03em">
+      {{ Math.round(count).toLocaleString() }}
+    </div>
+  </div>
+</template>`,
+  },
+  {
+    title: 'Trigger on viewport entry with IntersectionObserver',
+    description: 'Use `useIntersectionObserver` (from VueUse) or a manual `IntersectionObserver` to delay the animation until the element scrolls into view. Disconnect after first trigger.',
+    fr: { title: 'Declencher a l\'entree dans le viewport', description: 'Utiliser `useIntersectionObserver` (de VueUse) ou un `IntersectionObserver` manuel pour retarder l\'animation jusqu\'a ce que l\'element entre dans le viewport. Deconnecter apres le premier declenchement.' },
+    code: `<script setup>
+import { ref, onMounted } from 'vue'
+import gsap from 'gsap'
+
+const props = defineProps({
+  to:       { type: Number, default: 2400000 },
+  prefix:   { type: String, default: '' },
+  suffix:   { type: String, default: '' },
+  decimals: { type: Number, default: 0 },
+  duration: { type: Number, default: 1.8 },
+})
+
+const el    = ref(null)
+const count = ref({ value: 0 })
+
+onMounted(() => {
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry.isIntersecting) return
+      observer.disconnect()
+      gsap.to(count.value, {
+        value: props.to, duration: props.duration, ease: 'power3.out',
+      })
+    },
+    { threshold: 0.1 }
+  )
+  if (el.value) observer.observe(el.value)
+})
+
+function fmt(v) {
+  return props.prefix + Number(v).toFixed(props.decimals)
+    .replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + props.suffix
+}
+</script>
+
+<template>
+  <div ref="el" style="background:var(--bg-secondary);border:1px solid var(--border);
+    border-radius:14px;padding:20px 28px;text-align:center;min-width:140px">
+    <div style="font-family:system-ui;font-size:32px;font-weight:800;
+      color:var(--text-primary);letter-spacing:-0.03em">
+      {{ fmt(count.value) }}
+    </div>
+  </div>
+</template>`,
+  },
+]
+
+const numberCounterRN: Step[] = [
+  {
+    title: 'Static number display',
+    description: 'Render a plain `Text` component with the target value. Get the card styles and typography right before adding animation.',
+    fr: { title: 'Affichage statique du nombre', description: 'Afficher un simple composant `Text` avec la valeur cible. Reglez les styles de la carte et la typographie avant d\'ajouter l\'animation.' },
+    code: `import { View, Text, StyleSheet } from 'react-native'
+
+export function Counter() {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.number}>2,400,000</Text>
+      <Text style={styles.label}>Revenue</Text>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
+    borderRadius: 14, padding: 20, alignItems: 'center', minWidth: 140,
+  },
+  number: { fontFamily: 'System', fontSize: 32, fontWeight: '800', color: '#fff' },
+  label:  { fontFamily: 'System', fontSize: 12, color: '#666', marginTop: 4 },
+})`,
+  },
+  {
+    title: 'Animate with Animated.timing',
+    description: 'Use `Animated.Value` starting at 0 and `Animated.timing` to animate it to the target on mount. An `addListener` extracts the raw value each frame to update the displayed text.',
+    fr: { title: 'Animer avec Animated.timing', description: 'Utiliser `Animated.Value` partant de 0 et `Animated.timing` pour l\'animer vers la cible au montage. Un `addListener` extrait la valeur brute a chaque frame pour mettre a jour le texte affiche.' },
+    code: `import { useRef, useState, useEffect } from 'react'
+import { View, Text, Animated, StyleSheet } from 'react-native'
+
+export function Counter({ to = 2400000, prefix = '$', duration = 1800 }) {
+  const anim = useRef(new Animated.Value(0)).current
+  const [display, setDisplay] = useState('0')
+
+  useEffect(() => {
+    anim.addListener(({ value }) => {
+      setDisplay(prefix + Math.round(value).toLocaleString())
+    })
+    Animated.timing(anim, {
+      toValue: to, duration, easing: t => 1 - Math.pow(1 - t, 3),
+      useNativeDriver: false,
+    }).start()
+    return () => anim.removeAllListeners()
+  }, [to, duration])
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.number}>{display}</Text>
+      <Text style={styles.label}>Revenue</Text>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  card: { backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
+    borderRadius: 14, padding: 20, alignItems: 'center', minWidth: 140 },
+  number: { fontFamily: 'System', fontSize: 32, fontWeight: '800', color: '#fff' },
+  label:  { fontFamily: 'System', fontSize: 12, color: '#666', marginTop: 4 },
+})`,
+  },
+  {
+    title: 'Trigger on screen entry with useIsFocused',
+    description: 'In React Native, screens mount when navigated to. Use `useIsFocused` (React Navigation) or track the component mount to start the animation. For scroll-triggered, use the `onLayout` + scroll position approach.',
+    fr: { title: 'Declencher a l\'entree a l\'ecran', description: 'En React Native, les ecrans se montent a la navigation. Utiliser `useIsFocused` (React Navigation) ou suivre le montage du composant pour demarrer l\'animation.' },
+    code: `import { useRef, useState, useEffect } from 'react'
+import { View, Text, Animated, StyleSheet } from 'react-native'
+
+interface CounterProps {
+  to: number; prefix?: string; suffix?: string; duration?: number
+}
+
+export function Counter({ to, prefix = '', suffix = '', duration = 1800 }: CounterProps) {
+  const anim    = useRef(new Animated.Value(0)).current
+  const [display, setDisplay] = useState(prefix + '0' + suffix)
+
+  useEffect(() => {
+    const id = anim.addListener(({ value }) => {
+      setDisplay(prefix + Math.round(value).toLocaleString() + suffix)
+    })
+    Animated.timing(anim, {
+      toValue: to, duration,
+      easing: t => 1 - Math.pow(1 - t, 3),
+      useNativeDriver: false,
+    }).start()
+    return () => anim.removeListener(id)
+  }, [to, duration])
+
+  return <Text style={styles.number}>{display}</Text>
+}
+
+const STATS = [
+  { to: 2400000, prefix: '$', label: 'Revenue', duration: 2000 },
+  { to: 14832,               label: 'Users',   duration: 1800 },
+]
+
+export function Dashboard() {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, padding: 24, justifyContent: 'center' }}>
+      {STATS.map(s => (
+        <View key={s.label} style={styles.card}>
+          <Counter {...s} />
+          <Text style={styles.label}>{s.label}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  card: { backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
+    borderRadius: 14, padding: 20, alignItems: 'center', minWidth: 140 },
+  number: { fontFamily: 'System', fontSize: 32, fontWeight: '800', color: '#fff' },
+  label:  { fontFamily: 'System', fontSize: 12, color: '#666', marginTop: 4 },
+})`,
+  },
+]
+
+const numberCounterFlutter: Step[] = [
+  {
+    title: 'Static counter card',
+    description: 'Build a plain `Container` with styled `Text` widgets. This is the target visual state the animation counts up to.',
+    fr: { title: 'Carte compteur statique', description: 'Construire un simple `Container` avec des widgets `Text` styles. C\'est l\'etat visuel cible vers lequel l\'animation compte.' },
+    code: `import 'package:flutter/material.dart';
+
+class CounterCard extends StatelessWidget {
+  const CounterCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF333333)),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: const [
+        Text('2,400,000',
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800,
+            color: Colors.white, letterSpacing: -1)),
+        SizedBox(height: 4),
+        Text('Revenue',
+          style: TextStyle(fontSize: 12, color: Colors.grey)),
+      ]),
+    );
+  }
+}`,
+  },
+  {
+    title: 'Animate with TweenAnimationBuilder',
+    description: '`TweenAnimationBuilder` animates a `double` from 0 to the target over a duration. The `builder` callback receives the current value each frame — format it and display it in the `Text` widget.',
+    fr: { title: 'Animer avec TweenAnimationBuilder', description: '`TweenAnimationBuilder` anime un `double` de 0 vers la cible sur une duree. Le callback `builder` recoit la valeur actuelle a chaque frame — formatez-la et affichez-la dans le widget `Text`.' },
+    code: `import 'package:flutter/material.dart';
+
+class CounterCard extends StatelessWidget {
+  final double to;
+  final String prefix;
+  final String label;
+  const CounterCard({super.key, required this.to, this.prefix = '', required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF333333)),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: to),
+          duration: const Duration(milliseconds: 1800),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, _) {
+            final formatted = prefix +
+              value.round().toString().replaceAllMapped(
+                RegExp(r'(\\d)(?=(\\d{3})+(?!\\d))'), (m) => '\${m[1]},');
+            return Text(formatted,
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800,
+                color: Colors.white, letterSpacing: -1));
+          },
+        ),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ]),
+    );
+  }
+}`,
+  },
+  {
+    title: 'Trigger on visibility with VisibilityDetector',
+    description: 'Add the `visibility_detector` package. Wrap the counter in `VisibilityDetector` and use a `StatefulWidget` to track whether the card is visible. The `Tween` `end` switches from 0 to the target when visibility is detected.',
+    fr: { title: 'Declencher sur la visibilite avec VisibilityDetector', description: 'Ajouter le package `visibility_detector`. Envelopper le compteur dans `VisibilityDetector` et utiliser un `StatefulWidget` pour suivre la visibilite. L\'`end` du `Tween` passe de 0 a la cible quand la visibilite est detectee.' },
+    code: `import 'package:flutter/material.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+
+class CounterCard extends StatefulWidget {
+  final double to;
+  final String prefix;
+  final String label;
+  const CounterCard({super.key, required this.to, this.prefix = '', required this.label});
+  @override
+  State<CounterCard> createState() => _CounterCardState();
+}
+
+class _CounterCardState extends State<CounterCard> {
+  bool _visible = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: Key('counter-\${widget.label}'),
+      onVisibilityChanged: (info) {
+        if (info.visibleFraction > 0.1 && !_visible) {
+          setState(() => _visible = true);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF333333)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: _visible ? widget.to : 0),
+            duration: const Duration(milliseconds: 1800),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) {
+              final formatted = widget.prefix +
+                value.round().toString().replaceAllMapped(
+                  RegExp(r'(\\d)(?=(\\d{3})+(?!\\d))'), (m) => '\${m[1]},');
+              return Text(formatted,
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800,
+                  color: Colors.white, letterSpacing: -1));
+            },
+          ),
+          const SizedBox(height: 4),
+          Text(widget.label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        ]),
+      ),
+    );
+  }
+}`,
+  },
+]
+
+const numberCounter: StepMap = {
+  react:          numberCounterReact,
+  nextjs:         numberCounterNextjs,
+  vue:            numberCounterVue,
+  'react-native': numberCounterRN,
+  flutter:        numberCounterFlutter,
+}
+
 export const ALL_STEPS: Record<string, StepMap> = {
   'entrance-reveal':   entranceReveal,
   'page-transitions':  pageTransitions,
@@ -9050,6 +11127,9 @@ export const ALL_STEPS: Record<string, StepMap> = {
   'flutter-hero':      flutterHero,
   'view-transitions':  viewTransitions,
   'flip-list':         flipList,
+  'morphing-button':   morphingButton,
+  'drag-reorder':      dragReorder,
+  'number-counter':    numberCounter,
 }
 
 export function getSteps(slug: string, platform: PlatformId): Step[] {

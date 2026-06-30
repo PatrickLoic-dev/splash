@@ -44,7 +44,7 @@ export interface AnimationFr {
 export interface Animation {
   slug: string
   title: string
-  category: 'Entrance' | 'Navigation' | 'Scroll' | 'Feedback' | 'Loading' | 'List' | 'Carousel'
+  category: 'Entrance' | 'Navigation' | 'Scroll' | 'Feedback' | 'Loading' | 'List' | 'Carousel' | 'Morphing' | 'Spring'
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
   tagline: string
   concept: string
@@ -4806,6 +4806,1100 @@ class _FlipListState extends State<FlipList> {
         'Dans Framer Motion, `mode="popLayout"` dans `<AnimatePresence>` supprime immédiatement les éléments qui partent du flux de mise en page, permettant aux éléments restants de démarrer leur animation FLIP sans attendre.',
         'N\'ajouter `layout` qu\'aux éléments qui changent réellement de position — animer chaque élément d\'une grande liste peut causer des chutes de frames. Utiliser `layoutId` uniquement pour les éléments qui persistent entre les rendus.',
         'Éviter de mélanger les animations FLIP avec les transitions CSS sur le même élément — elles se combattent. Utiliser l\'un ou l\'autre par élément.',
+      ],
+    },
+  },
+
+  /* ── 15. Morphing Button ── */
+  {
+    slug: 'morphing-button',
+    title: 'Morphing Button',
+    category: 'Feedback',
+    difficulty: 'Beginner',
+    tagline: 'A button that morphs into a spinner, then a success state — all in one element',
+    concept:
+      'The Morphing Button pattern replaces the classic disabled-state-loading spinner with a single element that transitions through three states: idle → loading → success. Instead of toggling visibility between separate elements, the button\'s shape, text, and icon all animate within one DOM node using layout animations. The result feels native, smooth, and communicates progress without visual jumps.',
+    howItWorks: [
+      'On click, the button width collapses to a circle via a layout animation — the text fades out simultaneously.',
+      'A spinner SVG fades in at the center of the now-circular button.',
+      'On completion, the spinner fades out and a checkmark draws itself via an SVG stroke dash animation.',
+      'After a short hold, the button expands back to its original width with the idle label — or remains in success state.',
+    ],
+    implementations: [
+      {
+        platform: 'react',
+        deps: ['framer-motion'],
+        notes: 'Use Framer Motion `layout` on the button and `AnimatePresence` to swap inner content (text/spinner/check).',
+        code: `import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+
+type State = 'idle' | 'loading' | 'success'
+
+export function MorphingButton() {
+  const [state, setState] = useState<State>('idle')
+
+  async function handleClick() {
+    if (state !== 'idle') return
+    setState('loading')
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => setState('idle'), 2200)
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <motion.button
+        layout
+        onClick={handleClick}
+        transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+        style={{
+          borderRadius: 999,
+          border: 'none',
+          cursor: state === 'idle' ? 'pointer' : 'default',
+          background: state === 'success' ? '#22c55e' : '#A3E635',
+          color: '#0a0a0a',
+          height: 48,
+          width: state === 'idle' ? 160 : 48,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden',
+          fontFamily: 'system-ui', fontWeight: 600, fontSize: 15,
+        }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {state === 'idle' && (
+            <motion.span key="label"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >Submit</motion.span>
+          )}
+          {state === 'loading' && (
+            <motion.svg key="spinner"
+              initial={{ opacity: 0, rotate: 0 }} animate={{ opacity: 1, rotate: 360 }}
+              exit={{ opacity: 0 }}
+              transition={{ opacity: { duration: 0.15 }, rotate: { repeat: Infinity, duration: 0.8, ease: 'linear' } }}
+              width="20" height="20" viewBox="0 0 20 20" fill="none"
+            >
+              <circle cx="10" cy="10" r="8" stroke="rgba(0,0,0,0.2)" strokeWidth="2.5"/>
+              <path d="M10 2a8 8 0 018 8" stroke="#0a0a0a" strokeWidth="2.5" strokeLinecap="round"/>
+            </motion.svg>
+          )}
+          {state === 'success' && (
+            <motion.svg key="check"
+              initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              width="20" height="20" viewBox="0 0 20 20" fill="none"
+            >
+              <motion.path
+                d="M4 10l4.5 4.5 7.5-8"
+                stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              />
+            </motion.svg>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </div>
+  )
+}`,
+      },
+      {
+        platform: 'nextjs',
+        deps: ['framer-motion'],
+        notes: 'Add `"use client"` at the top — framer-motion layout animations require browser APIs. The rest of the implementation is identical to React.',
+        code: `'use client'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+
+type State = 'idle' | 'loading' | 'success'
+
+export function MorphingButton() {
+  const [state, setState] = useState<State>('idle')
+
+  async function handleClick() {
+    if (state !== 'idle') return
+    setState('loading')
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => setState('idle'), 2200)
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <motion.button
+        layout
+        onClick={handleClick}
+        transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+        style={{
+          borderRadius: 999,
+          border: 'none',
+          cursor: state === 'idle' ? 'pointer' : 'default',
+          background: state === 'success' ? '#22c55e' : '#A3E635',
+          color: '#0a0a0a',
+          height: 48,
+          width: state === 'idle' ? 160 : 48,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden',
+          fontFamily: 'system-ui', fontWeight: 600, fontSize: 15,
+        }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {state === 'idle' && (
+            <motion.span key="label"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >Submit</motion.span>
+          )}
+          {state === 'loading' && (
+            <motion.svg key="spinner"
+              initial={{ opacity: 0, rotate: 0 }} animate={{ opacity: 1, rotate: 360 }}
+              exit={{ opacity: 0 }}
+              transition={{ opacity: { duration: 0.15 }, rotate: { repeat: Infinity, duration: 0.8, ease: 'linear' } }}
+              width="20" height="20" viewBox="0 0 20 20" fill="none"
+            >
+              <circle cx="10" cy="10" r="8" stroke="rgba(0,0,0,0.2)" strokeWidth="2.5"/>
+              <path d="M10 2a8 8 0 018 8" stroke="#0a0a0a" strokeWidth="2.5" strokeLinecap="round"/>
+            </motion.svg>
+          )}
+          {state === 'success' && (
+            <motion.svg key="check"
+              initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              width="20" height="20" viewBox="0 0 20 20" fill="none"
+            >
+              <motion.path
+                d="M4 10l4.5 4.5 7.5-8"
+                stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              />
+            </motion.svg>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </div>
+  )
+}`,
+      },
+      {
+        platform: 'vue',
+        deps: [],
+        notes: 'Uses Vue 3 Composition API `ref` for state, CSS `transition` for width animation, and `<Transition mode="out-in">` for content swap between states.',
+        code: `<script setup>
+import { ref } from 'vue'
+
+const state = ref('idle') // 'idle' | 'loading' | 'success'
+
+async function handleClick() {
+  if (state.value !== 'idle') return
+  state.value = 'loading'
+  await new Promise(r => setTimeout(r, 1800))
+  state.value = 'success'
+  setTimeout(() => { state.value = 'idle' }, 2200)
+}
+</script>
+
+<template>
+  <div style="display:flex;justify-content:center;padding:40px">
+    <button @click="handleClick" :style="{
+      borderRadius: '999px',
+      border: 'none',
+      background: state === 'success' ? '#22c55e' : '#A3E635',
+      color: '#0a0a0a',
+      height: '48px',
+      width: state === 'idle' ? '160px' : '48px',
+      transition: 'width 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.3s',
+      overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      cursor: state === 'idle' ? 'pointer' : 'default',
+      fontFamily: 'system-ui', fontWeight: 600, fontSize: '15px',
+    }">
+      <Transition mode="out-in">
+        <span v-if="state === 'idle'" key="label">Submit</span>
+        <svg v-else-if="state === 'loading'" key="spinner"
+          width="20" height="20" viewBox="0 0 20 20" fill="none"
+          style="animation: spin 0.8s linear infinite">
+          <circle cx="10" cy="10" r="8" stroke="rgba(0,0,0,0.2)" stroke-width="2.5"/>
+          <path d="M10 2a8 8 0 018 8" stroke="#0a0a0a" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <svg v-else key="check" width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10l4.5 4.5 7.5-8" stroke="#fff" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </Transition>
+    </button>
+  </div>
+</template>
+
+<style scoped>
+@keyframes spin { to { transform: rotate(360deg) } }
+.v-enter-active, .v-leave-active { transition: opacity 0.15s }
+.v-enter-from, .v-leave-to { opacity: 0 }
+</style>`,
+      },
+      {
+        platform: 'react-native',
+        deps: [],
+        notes: 'Uses `Animated.Value` + `Animated.spring` for the width morph and `ActivityIndicator` for the loading spinner. No external dependencies.',
+        code: `import { useRef, useState } from 'react'
+import {
+  TouchableOpacity, Text, StyleSheet, View,
+  Animated, ActivityIndicator
+} from 'react-native'
+
+export function MorphingButton() {
+  const [state, setState] = useState<'idle' | 'loading' | 'success'>('idle')
+  const widthAnim = useRef(new Animated.Value(160)).current
+
+  async function handlePress() {
+    if (state !== 'idle') return
+    setState('loading')
+    Animated.spring(widthAnim, { toValue: 48, useNativeDriver: false }).start()
+    await new Promise(r => setTimeout(r, 1800))
+    setState('success')
+    setTimeout(() => {
+      setState('idle')
+      Animated.spring(widthAnim, { toValue: 160, useNativeDriver: false }).start()
+    }, 2200)
+  }
+
+  return (
+    <View style={styles.container}>
+      <Animated.View style={[styles.button, {
+        width: widthAnim,
+        backgroundColor: state === 'success' ? '#22c55e' : '#A3E635',
+      }]}>
+        <TouchableOpacity onPress={handlePress} style={styles.inner}>
+          {state === 'idle'    && <Text style={styles.label}>Submit</Text>}
+          {state === 'loading' && <ActivityIndicator color="#0a0a0a" size="small" />}
+          {state === 'success' && <Text style={styles.check}>OK</Text>}
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: { alignItems: 'center', padding: 40 },
+  button:    { height: 48, borderRadius: 999, overflow: 'hidden' },
+  inner:     { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  label:     { fontWeight: '600', fontSize: 15, color: '#0a0a0a' },
+  check:     { fontWeight: '700', fontSize: 16, color: '#fff' },
+})`,
+      },
+      {
+        platform: 'flutter',
+        deps: [],
+        notes: 'Uses `AnimatedContainer` for the width morph with an elastic curve and `CircularProgressIndicator` for loading. Pure Flutter — no external packages.',
+        code: `import 'package:flutter/material.dart';
+
+enum _Btn { idle, loading, success }
+
+class MorphingButton extends StatefulWidget {
+  const MorphingButton({super.key});
+  @override
+  State<MorphingButton> createState() => _MorphingButtonState();
+}
+
+class _MorphingButtonState extends State<MorphingButton> {
+  _Btn _state = _Btn.idle;
+
+  Future<void> _handleTap() async {
+    if (_state != _Btn.idle) return;
+    setState(() => _state = _Btn.loading);
+    await Future.delayed(const Duration(milliseconds: 1800));
+    setState(() => _state = _Btn.success);
+    await Future.delayed(const Duration(milliseconds: 2200));
+    setState(() => _state = _Btn.idle);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        onTap: _handleTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.elasticOut,
+          height: 48,
+          width: _state == _Btn.idle ? 160 : 48,
+          decoration: BoxDecoration(
+            color: _state == _Btn.success
+              ? const Color(0xFF22C55E)
+              : const Color(0xFFA3E635),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Center(
+            child: _state == _Btn.idle
+              ? const Text('Submit',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15,
+                    color: Color(0xFF0A0A0A)))
+              : _state == _Btn.loading
+                ? const SizedBox(width: 20, height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5, color: Color(0xFF0A0A0A)))
+                : const Icon(Icons.check, color: Colors.white, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+}`,
+      },
+    ],
+    useCases: [
+      { label: 'Form submit', example: 'A contact form Submit button that morphs into a spinner while the API call runs, then shows a green check on success.' },
+      { label: 'Payment flow', example: 'A "Pay now" button in a checkout that prevents double-taps by transitioning to a loading state immediately on press.' },
+      { label: 'File upload', example: 'An upload button that collapses to a spinner while uploading, then expands back with "Uploaded ✓" on completion.' },
+      { label: 'Auth button', example: 'A "Sign in" button that enters loading while credentials are verified, preventing user confusion during async operations.' },
+    ],
+    tips: [
+      'Always lock pointer-events during loading/success states to prevent double submissions.',
+      'The spring stiffness on the width layout animation is critical — too stiff feels mechanical, too loose feels laggy. 400–500 stiffness with damping ~30 is the sweet spot.',
+      'Use `mode="wait"` in AnimatePresence so the outgoing content fully fades before the incoming content appears — prevents a crowded overlap.',
+      'On mobile, add haptic feedback (navigator.vibrate) on the success state for a more native feel.',
+    ],
+    fr: {
+      title: 'Bouton Morphique',
+      tagline: 'Un bouton qui se transforme en spinner puis en état de succès — dans un seul élément',
+      concept: 'Le pattern Bouton Morphique remplace le classique spinner de chargement par un seul élément qui passe par trois états : inactif → chargement → succès. Au lieu de basculer la visibilité entre des éléments séparés, la forme, le texte et l\'icône du bouton s\'animent au sein d\'un seul nœud DOM grâce aux animations de mise en page.',
+      howItWorks: [
+        'Au clic, la largeur du bouton se réduit en cercle via une animation de layout — le texte s\'efface simultanément.',
+        'Un SVG spinner apparaît en fondu au centre du bouton désormais circulaire.',
+        'À la fin, le spinner disparaît et une coche se dessine via une animation de tiret SVG.',
+        'Après un bref maintien, le bouton s\'élargit vers sa largeur d\'origine avec l\'étiquette initiale.',
+      ],
+      useCases: [
+        { label: 'Soumission de formulaire', example: 'Un bouton Envoyer qui se morphe en spinner pendant l\'appel API, puis affiche une coche verte au succès.' },
+        { label: 'Paiement', example: 'Un bouton "Payer maintenant" qui passe immédiatement en état de chargement pour éviter les doubles clics.' },
+        { label: 'Upload de fichier', example: 'Un bouton d\'upload qui se réduit pendant le transfert, puis revient avec "Envoyé ✓".' },
+        { label: 'Authentification', example: 'Un bouton "Se connecter" qui entre en chargement pendant la vérification des identifiants.' },
+      ],
+      tips: [
+        'Toujours bloquer les événements pointeur pendant les états chargement/succès pour éviter les doubles soumissions.',
+        'La raideur du spring sur l\'animation de largeur est critique — 400–500 avec un amortissement ~30 est la zone idéale.',
+        'Utiliser `mode="wait"` dans AnimatePresence pour que le contenu sortant disparaisse complètement avant l\'arrivée du suivant.',
+        'Sur mobile, ajouter un retour haptique (navigator.vibrate) à l\'état succès pour un ressenti plus natif.',
+      ],
+    },
+  },
+
+  /* ── 16. Drag to Reorder ── */
+  {
+    slug: 'drag-reorder',
+    title: 'Drag to Reorder',
+    category: 'List',
+    difficulty: 'Intermediate',
+    tagline: 'List items smoothly shuffle as you drag one to a new position',
+    concept:
+      'Drag-to-reorder lets users rearrange list items by grabbing and dragging them. The key challenge is that other items need to shift out of the way in real time as the dragged item moves — not just snap into place after drop. This requires tracking the dragged item\'s position, detecting which slot it\'s hovering over, and applying FLIP layout animations to the surrounding items continuously during the drag.',
+    howItWorks: [
+      'Each item has a drag handle. On drag start, the item lifts visually (scale up, shadow, z-index) and decouples from the layout flow.',
+      'As the dragged item moves, its Y position is compared against the midpoints of sibling items to determine the target index.',
+      'Siblings animate to their new positions using layout animations — they shift up or down to make room.',
+      'On drag end, the array is reordered to match the target index, and all items animate to their final positions.',
+    ],
+    implementations: [
+      {
+        platform: 'react',
+        deps: ['framer-motion'],
+        notes: 'Framer Motion\'s `Reorder` component handles the hit detection and array reordering automatically.',
+        code: `import { useState } from 'react'
+import { Reorder, useDragControls } from 'framer-motion'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+  { id: '5', label: 'Performance review',     color: '#E6C430' },
+]
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+
+  return (
+    <Reorder.Group
+      axis="y"
+      values={items}
+      onReorder={setItems}
+      style={{ listStyle: 'none', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}
+    >
+      {items.map(item => (
+        <ReorderItem key={item.id} item={item} />
+      ))}
+    </Reorder.Group>
+  )
+}
+
+function ReorderItem({ item }: { item: typeof INITIAL_ITEMS[0] }) {
+  const controls = useDragControls()
+
+  return (
+    <Reorder.Item
+      value={item}
+      dragListener={false}
+      dragControls={controls}
+      style={{ listStyle: 'none' }}
+      whileDrag={{ scale: 1.03, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 99 }}
+    >
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+        borderRadius: 10, padding: '12px 14px',
+        userSelect: 'none',
+      }}>
+        {/* Drag handle */}
+        <div
+          onPointerDown={e => controls.start(e)}
+          style={{ cursor: 'grab', color: 'var(--text-tertiary)', display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}
+        >
+          {[0,1,2].map(i => (
+            <div key={i} style={{ display: 'flex', gap: 3 }}>
+              <div style={{ width: 3, height: 3, borderRadius: 1, background: 'currentColor' }} />
+              <div style={{ width: 3, height: 3, borderRadius: 1, background: 'currentColor' }} />
+            </div>
+          ))}
+        </div>
+        {/* Color dot */}
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+        <span style={{ fontFamily: 'system-ui', fontSize: 14, color: 'var(--text-primary)', flex: 1 }}>{item.label}</span>
+      </div>
+    </Reorder.Item>
+  )
+}`,
+      },
+      {
+        platform: 'nextjs',
+        deps: ['framer-motion'],
+        notes: 'Add `"use client"` — Framer Motion Reorder uses pointer events and must run in the browser. Otherwise identical to the React implementation.',
+        code: `'use client'
+import { useState } from 'react'
+import { Reorder, useDragControls } from 'framer-motion'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+  { id: '5', label: 'Performance review',     color: '#E6C430' },
+]
+
+function ReorderItem({ item }: { item: typeof INITIAL_ITEMS[0] }) {
+  const controls = useDragControls()
+  return (
+    <Reorder.Item value={item} dragListener={false} dragControls={controls}
+      style={{ listStyle: 'none' }}
+      whileDrag={{ scale: 1.03, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 99 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12,
+        background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+        borderRadius: 10, padding: '12px 14px', userSelect: 'none' }}>
+        <div onPointerDown={e => controls.start(e)}
+          style={{ cursor: 'grab', color: 'var(--text-tertiary)',
+            display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
+          {[0,1,2].map(i => (
+            <div key={i} style={{ display: 'flex', gap: 3 }}>
+              <div style={{ width: 3, height: 3, borderRadius: 1, background: 'currentColor' }} />
+              <div style={{ width: 3, height: 3, borderRadius: 1, background: 'currentColor' }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+        <span style={{ fontFamily: 'system-ui', fontSize: 14, color: 'var(--text-primary)', flex: 1 }}>
+          {item.label}
+        </span>
+      </div>
+    </Reorder.Item>
+  )
+}
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+  return (
+    <Reorder.Group axis="y" values={items} onReorder={setItems}
+      style={{ listStyle: 'none', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {items.map(item => <ReorderItem key={item.id} item={item} />)}
+    </Reorder.Group>
+  )
+}`,
+      },
+      {
+        platform: 'vue',
+        deps: ['vuedraggable'],
+        notes: 'Uses `vuedraggable` (a Vue 3 wrapper around SortableJS). Bind `v-model` to the reactive items array and use the `animation` prop for the sibling shuffle effect.',
+        code: `<script setup>
+import { ref } from 'vue'
+import draggable from 'vuedraggable'
+
+const items = ref([
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+  { id: '5', label: 'Performance review',     color: '#E6C430' },
+])
+</script>
+
+<template>
+  <draggable v-model="items" item-key="id" tag="ul"
+    :animation="200"
+    ghost-class="drag-ghost"
+    chosen-class="drag-chosen"
+    style="list-style:none;padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+    <template #item="{ element }">
+      <li style="display:flex;align-items:center;gap:12px;
+        background:var(--bg-secondary);border:1px solid var(--border);
+        border-radius:10px;padding:12px 14px;user-select:none;cursor:grab">
+        <span style="color:var(--text-tertiary);letter-spacing:1px">:: :: ::</span>
+        <div :style="{ width:'10px', height:'10px', borderRadius:'50%',
+          background: element.color, flexShrink:0 }" />
+        <span style="font-family:system-ui;font-size:14px;color:var(--text-primary);flex:1">
+          {{ element.label }}
+        </span>
+      </li>
+    </template>
+  </draggable>
+</template>
+
+<style scoped>
+.drag-ghost { opacity: 0.3; }
+.drag-chosen { transform: scale(1.03); box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 99; }
+</style>`,
+      },
+      {
+        platform: 'react-native',
+        deps: ['react-native-draggable-flatlist', 'react-native-reanimated', 'react-native-gesture-handler'],
+        notes: 'Uses `react-native-draggable-flatlist` which wraps Reanimated for smooth native-thread animations. `ScaleDecorator` provides the lift effect on drag.',
+        code: `import { useState } from 'react'
+import { View, Text, StyleSheet } from 'react-native'
+import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist'
+
+const INITIAL_ITEMS = [
+  { id: '1', label: 'Design system tokens', color: '#534AB7' },
+  { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  { id: '3', label: 'Animation library',      color: '#D85A30' },
+  { id: '4', label: 'Accessibility audit',    color: '#A3E635' },
+  { id: '5', label: 'Performance review',     color: '#E6C430' },
+]
+
+type Item = typeof INITIAL_ITEMS[0]
+
+export function DragReorder() {
+  const [items, setItems] = useState(INITIAL_ITEMS)
+
+  return (
+    <DraggableFlatList
+      data={items}
+      keyExtractor={item => item.id}
+      onDragEnd={({ data }) => setItems(data)}
+      contentContainerStyle={{ padding: 16, gap: 8 }}
+      renderItem={({ item, drag, isActive }: { item: Item; drag: () => void; isActive: boolean }) => (
+        <ScaleDecorator>
+          <View style={[styles.row, isActive && styles.rowActive]}>
+            <Text style={styles.handle} onLongPress={drag}>::</Text>
+            <View style={[styles.dot, { backgroundColor: item.color }]} />
+            <Text style={styles.label}>{item.label}</Text>
+          </View>
+        </ScaleDecorator>
+      )}
+    />
+  )
+}
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
+    borderRadius: 10, padding: 12 },
+  rowActive: { shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  handle: { color: '#666', fontSize: 16 },
+  dot:    { width: 10, height: 10, borderRadius: 5 },
+  label:  { fontFamily: 'System', fontSize: 14, color: '#fff', flex: 1 },
+})`,
+      },
+      {
+        platform: 'flutter',
+        deps: [],
+        notes: 'Flutter\'s built-in `ReorderableListView` handles drag detection and array reordering. Use `ReorderableDragStartListener` to restrict drag to the handle icon and `proxyDecorator` for the lift effect.',
+        code: `import 'package:flutter/material.dart';
+
+class DragReorder extends StatefulWidget {
+  const DragReorder({super.key});
+  @override
+  State<DragReorder> createState() => _DragReorderState();
+}
+
+class _DragReorderState extends State<DragReorder> {
+  final _items = [
+    {'id': '1', 'label': 'Design system tokens', 'color': const Color(0xFF534AB7)},
+    {'id': '2', 'label': 'Component architecture', 'color': const Color(0xFF1D9E75)},
+    {'id': '3', 'label': 'Animation library',      'color': const Color(0xFFD85A30)},
+    {'id': '4', 'label': 'Accessibility audit',    'color': const Color(0xFFA3E635)},
+    {'id': '5', 'label': 'Performance review',     'color': const Color(0xFFE6C430)},
+  ];
+
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex--;
+      final item = _items.removeAt(oldIndex);
+      _items.insert(newIndex, item);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _items.length,
+      onReorder: _onReorder,
+      proxyDecorator: (child, index, animation) => AnimatedBuilder(
+        animation: animation,
+        builder: (context, child) => Transform.scale(
+          scale: 1.03,
+          child: Material(elevation: 8, borderRadius: BorderRadius.circular(10), child: child),
+        ),
+        child: child,
+      ),
+      itemBuilder: (context, index) {
+        final item = _items[index];
+        return Container(
+          key: ValueKey(item['id']),
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey[800]!),
+          ),
+          child: Row(children: [
+            ReorderableDragStartListener(
+              index: index,
+              child: const Icon(Icons.drag_handle, color: Colors.grey),
+            ),
+            const SizedBox(width: 12),
+            Container(width: 10, height: 10,
+              decoration: BoxDecoration(
+                color: item['color'] as Color, shape: BoxShape.circle)),
+            const SizedBox(width: 12),
+            Expanded(child: Text(item['label'] as String,
+              style: const TextStyle(fontSize: 14, color: Colors.white))),
+          ]),
+        );
+      },
+    );
+  }
+}`,
+      },
+    ],
+    useCases: [
+      { label: 'Task management', example: 'A to-do list where tasks can be dragged to reprioritize order, with siblings animating to make space as you drag.' },
+      { label: 'Playlist editor', example: 'A music queue where tracks can be reordered by dragging — the playlist updates live as you move songs.' },
+      { label: 'Form builder', example: 'A settings panel where sections (notifications, appearance, privacy) can be rearranged by the user.' },
+      { label: 'Kanban columns', example: 'Column headers in a kanban board that can be dragged to reorder the overall workflow layout.' },
+    ],
+    tips: [
+      'Use `dragListener={false}` + `dragControls` to restrict dragging to the handle only — prevents accidental drags on clickable content.',
+      'Add `layout` to sibling elements so they animate when the array reorders after drop — without it they snap.',
+      'Lift the dragged item visually with scale and z-index (`whileDrag`) so users always know what they\'re moving.',
+      'On touch devices, add a slight delay before drag starts (200–300ms) to differentiate a tap from a drag intent.',
+    ],
+    fr: {
+      title: 'Glisser pour Réordonner',
+      tagline: 'Les éléments de la liste se réorganisent en douceur pendant le glisser',
+      concept: 'Le glisser-réordonner permet aux utilisateurs de réarranger des éléments de liste en les faisant glisser. Le défi clé est que les autres éléments doivent se déplacer en temps réel pendant le glisser — pas seulement se repositionner après le lâcher.',
+      howItWorks: [
+        'Chaque élément a une poignée. Au début du glisser, l\'élément se soulève visuellement (scale, ombre, z-index) et se découple du flux de mise en page.',
+        'Pendant le déplacement, la position Y est comparée aux points médians des éléments voisins pour déterminer l\'index cible.',
+        'Les voisins s\'animent vers leurs nouvelles positions via des animations de layout.',
+        'Au lâcher, le tableau est réordonné et tous les éléments s\'animent vers leurs positions finales.',
+      ],
+      useCases: [
+        { label: 'Gestion de tâches', example: 'Une liste de tâches où les éléments peuvent être glissés pour changer leur priorité.' },
+        { label: 'Éditeur de playlist', example: 'Une file d\'attente musicale où les pistes peuvent être réordonnées par glisser.' },
+        { label: 'Constructeur de formulaire', example: 'Un panneau de paramètres où les sections peuvent être réarrangées par l\'utilisateur.' },
+        { label: 'Colonnes Kanban', example: 'Les en-têtes de colonnes d\'un tableau kanban peuvent être réordonnés par glisser.' },
+      ],
+      tips: [
+        'Utiliser `dragListener={false}` + `dragControls` pour restreindre le glisser à la poignée uniquement.',
+        'Ajouter `layout` aux éléments frères pour qu\'ils s\'animent lors du réordonnancement.',
+        'Soulever visuellement l\'élément glissé avec scale et z-index (`whileDrag`).',
+        'Sur mobile, ajouter un délai de 200–300ms avant de démarrer le glisser pour différencier un tap d\'un drag.',
+      ],
+    },
+  },
+
+  /* ── 17. Number Counter ── */
+  {
+    slug: 'number-counter',
+    title: 'Animated Counter',
+    category: 'Entrance',
+    difficulty: 'Beginner',
+    tagline: 'Numbers count up smoothly on enter — dashboards, stats, and KPIs come alive',
+    concept:
+      'The Animated Counter pattern brings attention to key metrics by animating numeric values from zero (or a previous value) to their target when they enter the viewport. Rather than a number simply appearing, it counts up with an easing curve — fast at first, then decelerating as it approaches the final value. This draws the eye and creates a sense of the value being "earned".',
+    howItWorks: [
+      'An IntersectionObserver detects when the counter enters the viewport and triggers the animation.',
+      'A `useMotionValue` or `requestAnimationFrame` loop drives a numeric value from 0 to the target over a set duration.',
+      'An easing function (ease-out cubic) makes the count start fast and slow down near the target — mimicking natural deceleration.',
+      'The raw float is formatted with `Intl.NumberFormat` or a custom formatter to display as currency, percentage, or integer.',
+    ],
+    implementations: [
+      {
+        platform: 'react',
+        deps: ['framer-motion'],
+        notes: 'Framer Motion\'s `useMotionValue`, `useTransform`, and `animate` make this trivial — no manual RAF loop needed.',
+        code: `import { useEffect, useRef } from 'react'
+import { useMotionValue, useTransform, animate, motion, useInView } from 'framer-motion'
+
+interface CounterProps {
+  from?: number
+  to: number
+  duration?: number
+  prefix?: string
+  suffix?: string
+  decimals?: number
+}
+
+export function Counter({ from = 0, to, duration = 1.8, prefix = '', suffix = '', decimals = 0 }: CounterProps) {
+  const ref  = useRef<HTMLSpanElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-10% 0px' })
+  const val  = useMotionValue(from)
+  const disp = useTransform(val, v => prefix + v.toFixed(decimals).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + suffix)
+
+  useEffect(() => {
+    if (!inView) return
+    const ctrl = animate(val, to, {
+      duration,
+      ease: [0.16, 1, 0.3, 1],
+    })
+    return () => ctrl.stop()
+  }, [inView, val, to, duration])
+
+  return <motion.span ref={ref}>{disp}</motion.span>
+}
+
+/* Demo */
+const STATS = [
+  { to: 2400000, prefix: '$', label: 'Revenue', duration: 2   },
+  { to: 98.6,    suffix: '%', label: 'Uptime',  decimals: 1, duration: 1.6 },
+  { to: 14832,               label: 'Users',    duration: 1.8 },
+]
+
+export function Dashboard() {
+  return (
+    <div style={{ display: 'flex', gap: 24, padding: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+      {STATS.map(s => (
+        <div key={s.label} style={{
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 14, padding: '20px 28px', textAlign: 'center', minWidth: 140,
+        }}>
+          <div style={{ fontFamily: 'system-ui', fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+            <Counter {...s} />
+          </div>
+          <div style={{ fontFamily: 'system-ui', fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+  )
+}`,
+      },
+      {
+        platform: 'nextjs',
+        deps: ['framer-motion'],
+        notes: 'Add `"use client"` — `useEffect`, `useRef`, and Framer Motion\'s motion values all require the browser. The Server Component that imports this can still SSR the surrounding page layout.',
+        code: `'use client'
+import { useEffect, useRef } from 'react'
+import { useMotionValue, useTransform, animate, motion, useInView } from 'framer-motion'
+
+interface CounterProps {
+  from?: number
+  to: number
+  duration?: number
+  prefix?: string
+  suffix?: string
+  decimals?: number
+}
+
+export function Counter({ from = 0, to, duration = 1.8, prefix = '', suffix = '', decimals = 0 }: CounterProps) {
+  const ref    = useRef<HTMLSpanElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-10% 0px' })
+  const val    = useMotionValue(from)
+  const disp   = useTransform(val, v =>
+    prefix + v.toFixed(decimals).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + suffix
+  )
+
+  useEffect(() => {
+    if (!inView) return
+    const ctrl = animate(val, to, { duration, ease: [0.16, 1, 0.3, 1] })
+    return () => ctrl.stop()
+  }, [inView, val, to, duration])
+
+  return <motion.span ref={ref}>{disp}</motion.span>
+}
+
+const STATS = [
+  { to: 2400000, prefix: '$', label: 'Revenue', duration: 2   },
+  { to: 98.6,    suffix: '%', label: 'Uptime',  decimals: 1, duration: 1.6 },
+  { to: 14832,               label: 'Users',    duration: 1.8 },
+]
+
+export function Dashboard() {
+  return (
+    <div style={{ display: 'flex', gap: 24, padding: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+      {STATS.map(s => (
+        <div key={s.label} style={{
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 14, padding: '20px 28px', textAlign: 'center', minWidth: 140,
+        }}>
+          <div style={{ fontFamily: 'system-ui', fontSize: 32, fontWeight: 800,
+            color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+            <Counter {...s} />
+          </div>
+          <div style={{ fontFamily: 'system-ui', fontSize: 12,
+            color: 'var(--text-tertiary)', marginTop: 4 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+  )
+}`,
+      },
+      {
+        platform: 'vue',
+        deps: ['gsap'],
+        notes: 'Uses GSAP for the animation loop and a manual `IntersectionObserver` for viewport detection. `gsap.to` drives a reactive `count` object; the template reads `count.value` each frame.',
+        code: `<script setup>
+import { ref, onMounted } from 'vue'
+import gsap from 'gsap'
+
+const props = defineProps({
+  to:       { type: Number, default: 2400000 },
+  prefix:   { type: String, default: '' },
+  suffix:   { type: String, default: '' },
+  decimals: { type: Number, default: 0 },
+  duration: { type: Number, default: 1.8 },
+  label:    { type: String, default: '' },
+})
+
+const el    = ref(null)
+const count = ref({ value: 0 })
+
+function fmt(v: number) {
+  return props.prefix + Number(v).toFixed(props.decimals)
+    .replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + props.suffix
+}
+
+onMounted(() => {
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry.isIntersecting) return
+      observer.disconnect()
+      gsap.to(count.value, {
+        value: props.to,
+        duration: props.duration,
+        ease: 'power3.out',
+      })
+    },
+    { threshold: 0.1 }
+  )
+  if (el.value) observer.observe(el.value)
+})
+</script>
+
+<template>
+  <div ref="el" style="background:var(--bg-secondary);border:1px solid var(--border);
+    border-radius:14px;padding:20px 28px;text-align:center;min-width:140px">
+    <div style="font-family:system-ui;font-size:32px;font-weight:800;
+      color:var(--text-primary);letter-spacing:-0.03em">
+      {{ fmt(count.value) }}
+    </div>
+    <div style="font-family:system-ui;font-size:12px;color:var(--text-tertiary);margin-top:4px">
+      {{ label }}
+    </div>
+  </div>
+</template>`,
+      },
+      {
+        platform: 'react-native',
+        deps: [],
+        notes: 'Uses `Animated.Value` + `Animated.timing` with a cubic ease-out easing function. An `addListener` reads the raw value each frame to update the displayed text. No external packages needed.',
+        code: `import { useRef, useState, useEffect } from 'react'
+import { View, Text, Animated, StyleSheet } from 'react-native'
+
+interface CounterProps {
+  to: number
+  prefix?: string
+  suffix?: string
+  duration?: number
+  label?: string
+}
+
+export function Counter({ to, prefix = '', suffix = '', duration = 1800, label = '' }: CounterProps) {
+  const anim    = useRef(new Animated.Value(0)).current
+  const [display, setDisplay] = useState(prefix + '0' + suffix)
+
+  useEffect(() => {
+    const id = anim.addListener(({ value }) => {
+      setDisplay(prefix + Math.round(value).toLocaleString() + suffix)
+    })
+    Animated.timing(anim, {
+      toValue: to,
+      duration,
+      easing: t => 1 - Math.pow(1 - t, 3),
+      useNativeDriver: false,
+    }).start()
+    return () => anim.removeListener(id)
+  }, [to, duration])
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.number}>{display}</Text>
+      {!!label && <Text style={styles.label}>{label}</Text>}
+    </View>
+  )
+}
+
+const STATS = [
+  { to: 2400000, prefix: '$', label: 'Revenue', duration: 2000 },
+  { to: 14832,               label: 'Users',   duration: 1800 },
+]
+
+export function Dashboard() {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16,
+      padding: 24, justifyContent: 'center' }}>
+      {STATS.map(s => <Counter key={s.label} {...s} />)}
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  card:   { backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
+    borderRadius: 14, padding: 20, alignItems: 'center', minWidth: 140 },
+  number: { fontFamily: 'System', fontSize: 32, fontWeight: '800', color: '#fff' },
+  label:  { fontFamily: 'System', fontSize: 12, color: '#666', marginTop: 4 },
+})`,
+      },
+      {
+        platform: 'flutter',
+        deps: ['visibility_detector'],
+        notes: 'Uses Flutter\'s built-in `TweenAnimationBuilder` for the count-up animation and the `visibility_detector` package to trigger on viewport entry. No Rive or Lottie needed.',
+        code: `import 'package:flutter/material.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+
+class CounterCard extends StatefulWidget {
+  final double to;
+  final String prefix;
+  final String suffix;
+  final String label;
+  final int decimals;
+  const CounterCard({
+    super.key,
+    required this.to,
+    this.prefix = '',
+    this.suffix = '',
+    required this.label,
+    this.decimals = 0,
+  });
+
+  @override
+  State<CounterCard> createState() => _CounterCardState();
+}
+
+class _CounterCardState extends State<CounterCard> {
+  bool _visible = false;
+
+  String _format(double v) {
+    final fixed = v.toStringAsFixed(widget.decimals);
+    final parts = fixed.split('.');
+    final intPart = parts[0].replaceAllMapped(
+      RegExp(r'(\\d)(?=(\\d{3})+(?!\\d))'), (m) => '\${m[1]},');
+    return widget.prefix +
+      (parts.length > 1 ? '\$intPart.\${parts[1]}' : intPart) +
+      widget.suffix;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: Key('counter-\${widget.label}'),
+      onVisibilityChanged: (info) {
+        if (info.visibleFraction > 0.1 && !_visible) {
+          setState(() => _visible = true);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF333333)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: _visible ? widget.to : 0),
+            duration: const Duration(milliseconds: 1800),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) => Text(_format(value),
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800,
+                color: Colors.white, letterSpacing: -1)),
+          ),
+          const SizedBox(height: 4),
+          Text(widget.label,
+            style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        ]),
+      ),
+    );
+  }
+}
+
+class Dashboard extends StatelessWidget {
+  const Dashboard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(spacing: 16, runSpacing: 16,
+      children: const [
+        CounterCard(to: 2400000, prefix: r'$', label: 'Revenue'),
+        CounterCard(to: 98.6,    suffix: '%',  label: 'Uptime', decimals: 1),
+        CounterCard(to: 14832,                 label: 'Users'),
+      ]);
+  }
+}`,
+      },
+    ],
+    useCases: [
+      { label: 'SaaS marketing page', example: 'A "10,000+ teams trust us" stat that counts up from 0 as the section scrolls into view.' },
+      { label: 'Analytics dashboard', example: 'KPI cards that animate their values when the dashboard first loads, drawing attention to key metrics.' },
+      { label: 'Fundraising tracker', example: 'A progress counter showing "$248,320 raised" counting up to the current amount when the page loads.' },
+      { label: 'Score reveal', example: 'A quiz result screen where the score counts up dramatically from 0 to the final value after completion.' },
+    ],
+    tips: [
+      'Use `useInView` with `once: true` so the counter only animates once — re-triggering on scroll-back feels broken.',
+      'The easing curve `[0.16, 1, 0.3, 1]` (expo-out) gives a satisfying deceleration. Avoid linear — it feels mechanical.',
+      'For large numbers (millions), animate from a nearby value (e.g. 1.8M → 2.4M) rather than from 0 — the count takes too long otherwise.',
+      'Add `aria-live="polite"` to the counter element so screen readers announce the final value after the animation completes.',
+    ],
+    fr: {
+      title: 'Compteur Animé',
+      tagline: 'Les chiffres montent en douceur à l\'entrée — tableaux de bord et KPIs prennent vie',
+      concept: 'Le pattern Compteur Animé attire l\'attention sur les métriques clés en animant les valeurs numériques de zéro vers leur cible lorsqu\'elles entrent dans la zone visible. Le compteur monte rapidement puis décélère à l\'approche de la valeur finale.',
+      howItWorks: [
+        'Un IntersectionObserver détecte l\'entrée dans la zone visible et déclenche l\'animation.',
+        'Une `useMotionValue` ou une boucle `requestAnimationFrame` anime la valeur de 0 vers la cible sur une durée définie.',
+        'Une fonction d\'easing (ease-out cubique) fait démarrer le compteur vite et ralentit près de la cible.',
+        'Le flottant brut est formaté avec `Intl.NumberFormat` pour afficher devises, pourcentages ou entiers.',
+      ],
+      useCases: [
+        { label: 'Page marketing SaaS', example: 'Une stat "10 000+ équipes nous font confiance" qui compte depuis 0 au défilement.' },
+        { label: 'Tableau de bord analytique', example: 'Des cartes KPI qui animent leurs valeurs au chargement initial du tableau de bord.' },
+        { label: 'Suivi de collecte de fonds', example: 'Un compteur de progression affichant "248 320 € collectés" comptant jusqu\'au montant actuel.' },
+        { label: 'Révélation de score', example: 'Un écran de résultat de quiz où le score monte dramatiquement de 0 à la valeur finale.' },
+      ],
+      tips: [
+        'Utiliser `useInView` avec `once: true` pour que le compteur ne s\'anime qu\'une seule fois.',
+        'La courbe d\'easing `[0.16, 1, 0.3, 1]` (expo-out) donne une décélération satisfaisante. Éviter le linéaire.',
+        'Pour les grands nombres, animer depuis une valeur proche plutôt que depuis 0.',
+        'Ajouter `aria-live="polite"` pour que les lecteurs d\'écran annoncent la valeur finale après l\'animation.',
       ],
     },
   },

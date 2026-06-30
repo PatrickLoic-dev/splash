@@ -34,7 +34,7 @@ function useScrollDirection() {
   return visible
 }
 
-export function Navbar() {
+export function Navbar({ onOpenCmd }: { onOpenCmd?: () => void } = {}) {
   const { theme, toggle } = useTheme()
   const { lang, setLang, t } = useI18n()
   const visible  = useScrollDirection()
@@ -112,6 +112,31 @@ export function Navbar() {
 
           {/* ── Right: controls ── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+
+            {/* Cmd+K search — desktop only */}
+            {!isMobile && onOpenCmd && (
+              <button
+                onClick={onOpenCmd}
+                aria-label="Search"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  height: 34, padding: '0 12px', borderRadius: 8,
+                  border: '1px solid var(--border-strong)',
+                  background: 'var(--bg-secondary)',
+                  cursor: 'pointer', color: 'var(--text-tertiary)',
+                  fontFamily: 'var(--font-outfit)', fontSize: 12,
+                  transition: 'border-color 0.15s, color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.color = 'var(--text-tertiary)' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <span>{t('nav_learn')}</span>
+                <kbd style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, border: '1px solid var(--border)', background: 'var(--bg)', marginLeft: 2 }}>⌘K</kbd>
+              </button>
+            )}
 
             {/* GitHub icon — desktop only */}
             {!isMobile && (
