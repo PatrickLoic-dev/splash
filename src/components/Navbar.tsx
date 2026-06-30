@@ -107,7 +107,6 @@ export function Navbar({ onOpenCmd }: { onOpenCmd?: () => void } = {}) {
               display: 'flex', alignItems: 'center', gap: 4,
             }}>
               <NavLink href="/learn">{t('nav_learn')}</NavLink>
-              <NavLink href="/changelog">{lang === 'fr' ? 'Nouveautés' : 'Changelog'}</NavLink>
             </div>
           )}
 
@@ -286,7 +285,6 @@ export function Navbar({ onOpenCmd }: { onOpenCmd?: () => void } = {}) {
               {[
                 { href: '/', label: t('nav_home') },
                 { href: '/learn', label: t('nav_learn') },
-                { href: '/changelog', label: lang === 'fr' ? 'Nouveautés' : 'Changelog' },
               ].map((item, i) => (
                 <motion.a
                   key={item.href}

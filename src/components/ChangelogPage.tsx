@@ -13,21 +13,21 @@ interface ChangelogEntry {
 const ENTRIES: ChangelogEntry[] = [
   {
     version: 'v1.5',
-    date: 'June 2025',
+    date: 'June 2026',
     items: [
       'URL sharing — deep links encode animation + platform + step',
       'Cmd+K command palette — global search and navigation',
-      'Progress tracking — per-animation completion, badge unlock per category',
-      'Phase accordion — steps grouped into Setup / Core / Polish',
+      'Progress tracking — per-animation completion stored in localStorage, badge unlock per category',
+      'Phase accordion — steps grouped into Setup / Core / Polish, auto-expands to current step',
       '3 new animations — Morphing Button, Drag Reorder, Number Counter',
       '404 page — canvas particle animation with spring entrance',
-      'Flutter Hero fix — layoutId transition now works correctly',
-      'Mobile cursor fix — custom cursor disabled on touch devices',
+      'Flutter Hero fix — Framer Motion layoutId transition now works correctly (grid card kept in DOM at opacity 0 while detail is open)',
+      'Mobile cursor fix — custom cursor disabled entirely on pointer: coarse devices',
     ],
   },
   {
     version: 'v1.4',
-    date: 'May 2025',
+    date: 'May 2026',
     items: [
       'Bookmarks / favorites system',
       'Keyboard shortcuts (step navigation, Esc to close)',
@@ -38,7 +38,7 @@ const ENTRIES: ChangelogEntry[] = [
   },
   {
     version: 'v1.3',
-    date: 'April 2025',
+    date: 'April 2026',
     items: [
       'Obsidian Lime design system — full dark/light mode via CSS custom properties',
       'View Transitions API theme crossfade',
@@ -49,25 +49,26 @@ const ENTRIES: ChangelogEntry[] = [
   },
   {
     version: 'v1.2',
-    date: 'March 2025',
+    date: 'March 2026',
     items: [
-      'Full EN/FR bilingual support',
+      'Full EN / FR bilingual support',
       'Filter sidebar (category + difficulty)',
       'Platform logos and platform selector view',
+      'Skeleton loading for async content',
     ],
   },
   {
     version: 'v1.1',
-    date: 'March 2025',
+    date: 'March 2026',
     items: [
-      'Live preview with browser frame and phone bezel',
+      'Live preview with browser frame (web) and phone bezel (mobile)',
       'Step-by-step stepper with code blocks',
       'Dark mode via system preference detection',
     ],
   },
   {
     version: 'v1.0',
-    date: 'February 2025',
+    date: 'February 2026',
     items: [
       'Initial release — 10 animation patterns, React and Next.js only',
     ],

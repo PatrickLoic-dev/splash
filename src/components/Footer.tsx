@@ -99,6 +99,9 @@ export function Footer() {
                 <a href="/learn" style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
                   {t('sel_h1')}
                 </a>
+                <a href="/changelog" style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
+                  Changelog
+                </a>
                 <a href="https://github.com/PatrickLoic-dev/splash" target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
                   {t('home_github')}
                 </a>
