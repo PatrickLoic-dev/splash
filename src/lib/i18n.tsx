@@ -67,6 +67,7 @@ const T = {
     det_copied:         '✓ copied',
     det_share:          'Share',
     det_shared:         '✓ Copied!',
+    det_playground:     'Playground',
     det_no_impl:        'No implementation for this platform yet.',
     /* ── Favorites ── */
     fav_title:          'Favorites',
@@ -137,6 +138,7 @@ const T = {
     det_copied:         '✓ copié',
     det_share:          'Partager',
     det_shared:         '✓ Copié !',
+    det_playground:     'Playground',
     det_no_impl:        "Pas encore d'implémentation pour cette plateforme.",
     /* ── Favorites ── */
     fav_title:          'Favoris',

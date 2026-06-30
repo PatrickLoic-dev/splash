@@ -629,7 +629,7 @@ Defined in `useBreakpoint.ts`:
 
 ## Changelog
 
-### v1.5 — June 2025
+### v1.5 — June 2026
 
 - **URL sharing** — deep links encode animation + platform + step
 - **Cmd+K command palette** — global search and navigation
@@ -640,7 +640,7 @@ Defined in `useBreakpoint.ts`:
 - **Flutter Hero fix** — Framer Motion `layoutId` transition now works correctly (grid card kept in DOM at `opacity: 0` while detail is open)
 - **Mobile cursor fix** — custom cursor disabled entirely on `pointer: coarse` devices
 
-### v1.4 — May 2025
+### v1.4 — May 2026
 
 - Bookmarks / favorites system
 - Keyboard shortcuts (step navigation, Esc to close)
@@ -648,7 +648,7 @@ Defined in `useBreakpoint.ts`:
 - Resizable split pane (preview ↔ code)
 - Use-case modal with real-world examples
 
-### v1.3 — April 2025
+### v1.3 — April 2026
 
 - Obsidian Lime design system — full dark/light mode via CSS custom properties
 - View Transitions API theme crossfade
@@ -656,20 +656,20 @@ Defined in `useBreakpoint.ts`:
 - Page transitions with Framer Motion `AnimatePresence`
 - Snap scroll on home page
 
-### v1.2 — March 2025
+### v1.2 — March 2026
 
 - Full EN / FR bilingual support
 - Filter sidebar (category + difficulty)
 - Platform logos and platform selector view
 - Skeleton loading for async content
 
-### v1.1 — March 2025
+### v1.1 — March 2026
 
 - Live preview with browser frame (web) and phone bezel (mobile)
 - Step-by-step stepper with code blocks
 - Dark mode via system preference detection
 
-### v1.0 — February 2025
+### v1.0 — February 2026
 
 - Initial release — 10 animation patterns, React and Next.js only
 

@@ -17,6 +17,74 @@ import { GridBackground } from './GridBackground'
 import { useI18n } from '@/lib/i18n'
 import { useBreakpoint } from '@/lib/useBreakpoint'
 
+/* ── Tweak params ── */
+interface TweakParams {
+  type: 'tween' | 'spring'
+  duration: number
+  ease: string
+  delay: number
+  stiffness: number
+  damping: number
+}
+
+const DEFAULT_TWEAKS: TweakParams = {
+  type: 'tween',
+  duration: 0.4,
+  ease: 'easeOut',
+  delay: 0,
+  stiffness: 300,
+  damping: 20,
+}
+
+function applyTweaks(code: string, p: TweakParams): string {
+  return code
+    .replace(/\bduration:\s*[\d.]+/g,  `duration: ${p.duration}`)
+    .replace(/\bdelay:\s*[\d.]+/g,     `delay: ${p.delay}`)
+    .replace(/\bstiffness:\s*[\d.]+/g, `stiffness: ${p.stiffness}`)
+    .replace(/\bdamping:\s*[\d.]+/g,   `damping: ${p.damping}`)
+    .replace(/(['"])easeOut\1|(['"])easeIn\1|(['"])easeInOut\1|(['"])linear\1/g, `'${p.ease}'`)
+}
+
+function openInPlayground(code: string, platform: PlatformId, deps: string[], title: string) {
+  if (platform === 'flutter') {
+    window.open('https://dartpad.dev/', '_blank')
+    return
+  }
+  if (platform === 'react-native') {
+    const url = `https://snack.expo.dev/?name=${encodeURIComponent('Splash — ' + title)}&code=${encodeURIComponent(code)}`
+    window.open(url, '_blank')
+    return
+  }
+  const form = document.createElement('form')
+  form.method = 'POST'
+  form.action = 'https://stackblitz.com/run'
+  form.target = '_blank'
+  const add = (name: string, value: string) => {
+    const inp = document.createElement('input')
+    inp.type = 'hidden'; inp.name = name; inp.value = value
+    form.appendChild(inp)
+  }
+  const depVersions: Record<string, string> = {
+    'framer-motion': '^12.0.0',
+    'react': '^19.0.0',
+    'react-dom': '^19.0.0',
+    'vue': '^3.0.0',
+  }
+  const pkgDeps = deps.reduce((acc, d) => ({ ...acc, [d]: depVersions[d] ?? 'latest' }), {
+    react: '^19.0.0', 'react-dom': '^19.0.0',
+  })
+  add('project[title]', `Splash — ${title}`)
+  add('project[description]', 'Animation pattern from Splash')
+  add('project[template]', platform === 'vue' ? 'node' : 'create-react-app')
+  add('project[files][package.json]', JSON.stringify({ name: 'animation-preview', private: true, dependencies: pkgDeps }, null, 2))
+  add('project[files][src/App.jsx]', code)
+  add('project[files][src/index.jsx]', `import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './App';\nReactDOM.createRoot(document.getElementById('root')).render(<App />);`)
+  add('project[files][public/index.html]', `<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8"><title>Animation Preview</title></head>\n<body><div id="root"></div></body>\n</html>`)
+  document.body.appendChild(form)
+  form.submit()
+  document.body.removeChild(form)
+}
+
 const CAT_COLORS: Record<string, string> = {
   Entrance:   '#534AB7',
   Navigation: '#1D9E75',
@@ -791,6 +859,8 @@ function DetailView({
   const { isMobile, isTablet, isDesktop } = useBreakpoint()
   const useTabs = isMobile || isTablet
   const [activeTab, setActiveTab] = useState<'preview' | 'learn'>('preview')
+  const [tweakParams, setTweakParams] = useState<TweakParams>(DEFAULT_TWEAKS)
+  const [compareMode, setCompareMode] = useState(false)
   const rawAnim     = ANIMATIONS.find(a => a.slug === slug)!
 
   // Keyboard shortcuts
@@ -868,6 +938,49 @@ function DetailView({
         {!isMobile && (
           <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
             <ShareButton slug={slug} platform={platform} stepIndex={stepIndex} />
+            {!isMobile && (
+              <button
+                onClick={() => setCompareMode(c => !c)}
+                style={{
+                  padding: '4px 10px', borderRadius: 6, fontSize: 11,
+                  border: `1px solid ${compareMode ? 'var(--accent)' : 'var(--border)'}`,
+                  background: compareMode ? 'var(--accent-faint)' : 'var(--bg-secondary)',
+                  color: compareMode ? 'var(--accent)' : 'var(--text-secondary)',
+                  cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="1" y="2" width="6" height="12" rx="1"/><rect x="9" y="2" width="6" height="12" rx="1"/>
+                </svg>
+                {lang === 'fr' ? 'Comparer' : 'Compare'}
+              </button>
+            )}
+            {!isMobile && (() => {
+              const currImpl = anim.implementations.find(i => i.platform === platform)
+              const currSteps = getSteps(slug, platform)
+              const currCode = currSteps[stepIndex]?.code ?? currImpl?.code ?? ''
+              const tweaked = applyTweaks(currCode, tweakParams)
+              return (
+                <button
+                  onClick={() => openInPlayground(tweaked, platform, currImpl?.deps ?? [], anim.title)}
+                  style={{
+                    padding: '4px 10px', borderRadius: 6, fontSize: 11,
+                    border: '1px solid var(--border)', background: 'var(--bg-secondary)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer', fontFamily: 'var(--font-outfit)',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                  {t('det_playground')}
+                </button>
+              )
+            })()}
             <button onClick={() => prev && onNavigate(prev.slug, context)} disabled={!prev} style={{
               padding: '4px 10px', borderRadius: 6, fontSize: 11,
               border: '1px solid var(--border)', background: 'var(--bg-secondary)',
@@ -912,7 +1025,7 @@ function DetailView({
                   transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                   style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 16 }}
                 >
-                  <PreviewPanel slug={slug} context={context} replayKey={replayKey} stepIndex={stepIndex} steps={steps} accentColor={accentColor} onStepChange={i => { onStepChange(i); setActiveTab('learn') }} onReplay={onReplay} concept={anim.concept} t={t} />
+                  <PreviewPanel slug={slug} context={context} replayKey={replayKey} stepIndex={stepIndex} steps={steps} accentColor={accentColor} onStepChange={i => { onStepChange(i); setActiveTab('learn') }} onReplay={onReplay} concept={anim.concept} t={t} tweakParams={tweakParams} setTweakParams={setTweakParams} />
                   {steps.length > 0 && (
                     <button onClick={() => setActiveTab('learn')} style={{ padding: '9px 22px', borderRadius: 9, background: accentColor, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-outfit)', fontSize: 13, fontWeight: 600 }}>
                       {t('det_tab_learn')} →
@@ -927,7 +1040,7 @@ function DetailView({
                   transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                   style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '24px 16px 60px' }}
                 >
-                  <LearnPanel anim={anim} rawAnim={rawAnim} pool={pool} platform={platform} impl={impl} steps={steps} stepIndex={stepIndex} currentStep={currentStep} accentColor={accentColor} context={context} onPlatformChange={onPlatformChange} onStepChange={onStepChange} lang={lang} t={t} />
+                  <LearnPanel anim={anim} rawAnim={rawAnim} pool={pool} platform={platform} impl={impl} steps={steps} stepIndex={stepIndex} currentStep={currentStep} accentColor={accentColor} context={context} onPlatformChange={onPlatformChange} onStepChange={onStepChange} lang={lang} t={t} tweakParams={tweakParams} />
                 </motion.div>
               )}
 
@@ -939,8 +1052,12 @@ function DetailView({
       {/* ══ DESKTOP → side-by-side ══ */}
       {!useTabs && (
         <ResizableSplitView
-          left={<PreviewPanel slug={slug} context={context} replayKey={replayKey} stepIndex={stepIndex} steps={steps} accentColor={accentColor} onStepChange={onStepChange} onReplay={onReplay} concept={anim.concept} t={t} />}
-          right={<LearnPanel anim={anim} rawAnim={rawAnim} pool={pool} platform={platform} impl={impl} steps={steps} stepIndex={stepIndex} currentStep={currentStep} accentColor={accentColor} context={context} onPlatformChange={onPlatformChange} onStepChange={onStepChange} lang={lang} t={t} />}
+          left={<PreviewPanel slug={slug} context={context} replayKey={replayKey} stepIndex={stepIndex} steps={steps} accentColor={accentColor} onStepChange={onStepChange} onReplay={onReplay} concept={anim.concept} t={t} tweakParams={tweakParams} setTweakParams={setTweakParams} />}
+          right={
+            compareMode
+              ? <ComparePanel slug={slug} context={context} pool={pool} stepIndex={stepIndex} tweakParams={tweakParams} accentColor={accentColor} lang={lang} t={t} />
+              : <LearnPanel anim={anim} rawAnim={rawAnim} pool={pool} platform={platform} impl={impl} steps={steps} stepIndex={stepIndex} currentStep={currentStep} accentColor={accentColor} context={context} onPlatformChange={onPlatformChange} onStepChange={onStepChange} lang={lang} t={t} tweakParams={tweakParams} />
+          }
         />
       )}
     </div>
@@ -1003,10 +1120,131 @@ function ResizableSplitView({ left, right }: { left: React.ReactNode; right: Rea
   )
 }
 
+/* ── TweakerPanel ── */
+function TweakerPanel({ params, onChange, accentColor }: {
+  params: TweakParams
+  onChange: (p: TweakParams) => void
+  accentColor: string
+}) {
+  const [open, setOpen] = useState(false)
+  const { lang } = useI18n()
+
+  const sliders = [
+    params.type === 'tween' && { key: 'duration', label: 'Duration', min: 0.1, max: 2, step: 0.05, value: params.duration, unit: 's' },
+    params.type === 'tween' && { key: 'delay',    label: 'Delay',    min: 0,   max: 1.5, step: 0.05, value: params.delay, unit: 's' },
+    params.type === 'spring' && { key: 'stiffness', label: 'Stiffness', min: 50, max: 800, step: 10, value: params.stiffness, unit: '' },
+    params.type === 'spring' && { key: 'damping',   label: 'Damping',   min: 5,  max: 60,  step: 1,  value: params.damping,   unit: '' },
+  ].filter(Boolean) as { key: string; label: string; min: number; max: number; step: number; value: number; unit: string }[]
+
+  const easeOptions = ['easeOut', 'easeIn', 'easeInOut', 'linear']
+
+  return (
+    <div style={{ width: '100%', borderRadius: 10, border: `1px solid ${accentColor}30`, background: accentColor + '07', overflow: 'hidden' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+          padding: '9px 14px', border: 'none', background: 'transparent',
+          cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        <svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke={accentColor} strokeWidth="2" strokeLinecap="round">
+          <line x1="2" y1="4" x2="16" y2="4"/><circle cx="6" cy="4" r="2" fill={accentColor} stroke="none"/>
+          <line x1="2" y1="9" x2="16" y2="9"/><circle cx="12" cy="9" r="2" fill={accentColor} stroke="none"/>
+          <line x1="2" y1="14" x2="16" y2="14"/><circle cx="7" cy="14" r="2" fill={accentColor} stroke="none"/>
+        </svg>
+        <span style={{ fontFamily: 'var(--font-outfit)', fontSize: 11, fontWeight: 700, color: accentColor, letterSpacing: '0.07em', textTransform: 'uppercase', flex: 1 }}>
+          {lang === 'fr' ? 'Paramètres' : 'Tweaker'}
+        </span>
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} style={{ fontSize: 9, color: accentColor, display: 'inline-block' }}>▾</motion.span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{ padding: '4px 14px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Type toggle */}
+              <div style={{ display: 'flex', gap: 4, padding: '3px', background: 'var(--bg-tertiary)', borderRadius: 7 }}>
+                {(['tween', 'spring'] as const).map(ty => (
+                  <button key={ty} onClick={() => onChange({ ...params, type: ty })} style={{
+                    flex: 1, padding: '4px 0', borderRadius: 5, border: 'none', cursor: 'pointer',
+                    background: params.type === ty ? accentColor : 'transparent',
+                    color: params.type === ty ? '#fff' : 'var(--text-tertiary)',
+                    fontFamily: 'var(--font-outfit)', fontSize: 11, fontWeight: 600,
+                    transition: 'all 0.15s',
+                  }}>{ty}</button>
+                ))}
+              </div>
+
+              {/* Ease select (tween only) */}
+              {params.type === 'tween' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: 10, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5 }}>
+                    Easing
+                  </label>
+                  <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                    {easeOptions.map(e => (
+                      <button key={e} onClick={() => onChange({ ...params, ease: e })} style={{
+                        padding: '3px 9px', borderRadius: 5, border: '1px solid',
+                        borderColor: params.ease === e ? accentColor : 'var(--border)',
+                        background: params.ease === e ? accentColor + '18' : 'var(--bg)',
+                        color: params.ease === e ? accentColor : 'var(--text-secondary)',
+                        fontFamily: 'ui-monospace, monospace', fontSize: 10, cursor: 'pointer',
+                        transition: 'all 0.12s',
+                      }}>{e}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sliders */}
+              {sliders.map(s => (
+                <div key={s.key}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <label style={{ fontSize: 10, fontFamily: 'var(--font-outfit)', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{s.label}</label>
+                    <span style={{ fontSize: 10, fontFamily: 'ui-monospace, monospace', color: accentColor }}>{s.value}{s.unit}</span>
+                  </div>
+                  <input
+                    type="range" min={s.min} max={s.max} step={s.step} value={s.value}
+                    onChange={e => onChange({ ...params, [s.key]: parseFloat(e.target.value) })}
+                    style={{ width: '100%', accentColor, height: 4, cursor: 'pointer' }}
+                  />
+                </div>
+              ))}
+
+              {/* Reset button */}
+              <button
+                onClick={() => onChange(DEFAULT_TWEAKS)}
+                style={{
+                  alignSelf: 'flex-start', padding: '3px 10px', borderRadius: 5,
+                  border: '1px solid var(--border)', background: 'var(--bg)',
+                  fontFamily: 'var(--font-outfit)', fontSize: 10, color: 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.color = accentColor }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-tertiary)' }}
+              >
+                {lang === 'fr' ? 'Réinitialiser' : 'Reset'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 /* ── Shared preview panel (used in both tab and side-by-side layouts) ── */
-function PreviewPanel({ slug, context, replayKey, stepIndex, steps, accentColor, onStepChange, onReplay, concept, t }: {
+function PreviewPanel({ slug, context, replayKey, stepIndex, steps, accentColor, onStepChange, onReplay, concept, t, tweakParams, setTweakParams }: {
   slug: string; context: Context; replayKey: number; stepIndex: number; steps: Step[]; accentColor: string
   onStepChange: (i: number) => void; onReplay: () => void; concept: string; t: (k: Parameters<ReturnType<typeof useI18n>['t']>[0]) => string
+  tweakParams: TweakParams; setTweakParams: (p: TweakParams) => void
 }) {
   return (
     <>
@@ -1047,6 +1285,9 @@ function PreviewPanel({ slug, context, replayKey, stepIndex, steps, accentColor,
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
         >{t('det_replay')}</button>
       )}
+
+      {/* TweakerPanel — between step dots and keyboard hint */}
+      <TweakerPanel params={tweakParams} onChange={setTweakParams} accentColor={accentColor} />
 
       {/* Keyboard hint row */}
       {steps.length > 0 && (
@@ -1132,12 +1373,13 @@ function UseCasesSection({ anim, accentColor }: { anim: Animation; accentColor: 
 }
 
 /* ── Shared learn panel (used in both tab and side-by-side layouts) ── */
-function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, currentStep, accentColor, context, onPlatformChange, onStepChange, lang, t }: {
+function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, currentStep, accentColor, context, onPlatformChange, onStepChange, lang, t, tweakParams }: {
   anim: Animation; rawAnim: Animation; pool: PlatformId[]; platform: PlatformId
   impl: PlatformImpl | undefined; steps: Step[]; stepIndex: number; currentStep: Step | undefined
   accentColor: string; context: Context; onPlatformChange: (p: PlatformId) => void
   onStepChange: (i: number) => void; lang: 'en' | 'fr'
   t: (k: Parameters<ReturnType<typeof useI18n>['t']>[0]) => string
+  tweakParams: TweakParams
 }) {
   return (
     <>
@@ -1189,9 +1431,9 @@ function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, cur
               </div>
             )}
             {steps.length > 0 && currentStep ? (
-              <StepperBlock steps={steps} stepIndex={stepIndex} accentColor={accentColor} onStepChange={onStepChange} currentStep={currentStep} lang={lang} />
+              <StepperBlock steps={steps} stepIndex={stepIndex} accentColor={accentColor} onStepChange={onStepChange} currentStep={currentStep} lang={lang} tweakParams={tweakParams} />
             ) : (
-              <CodeBlock code={impl.code} />
+              <CodeBlock code={applyTweaks(impl.code, tweakParams)} />
             )}
           </div>
         ) : (
@@ -1218,8 +1460,8 @@ function LearnPanel({ anim, rawAnim, pool, platform, impl, steps, stepIndex, cur
 }
 
 /* ── Stepper with phase accordions ── */
-function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep, lang }: {
-  steps: Step[]; stepIndex: number; accentColor: string; onStepChange: (i: number) => void; currentStep: Step; lang: 'en' | 'fr'
+function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep, lang, tweakParams }: {
+  steps: Step[]; stepIndex: number; accentColor: string; onStepChange: (i: number) => void; currentStep: Step; lang: 'en' | 'fr'; tweakParams: TweakParams
 }) {
   const n  = steps.length
   const p1 = Math.ceil(n / 3)
@@ -1367,9 +1609,10 @@ function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep
                                   </p>
                                 </div>
                                 {(() => {
+                                  const tweakedCode = applyTweaks(currCode, tweakParams)
                                   const prevSet2 = new Set(prevCode.split('\n'))
-                                  const addedSet = i > 0 ? new Set(currCode.split('\n').filter(l => !prevSet2.has(l))) : new Set<string>()
-                                  return <CodeBlock code={currCode} addedLines={addedSet} accentColor={accentColor} />
+                                  const addedSet = i > 0 ? new Set(tweakedCode.split('\n').filter(l => !prevSet2.has(l))) : new Set<string>()
+                                  return <CodeBlock code={tweakedCode} addedLines={addedSet} accentColor={accentColor} />
                                 })()}
                               </motion.div>
                             )}
@@ -1384,6 +1627,63 @@ function StepperBlock({ steps, stepIndex, accentColor, onStepChange, currentStep
           </div>
         )
       })}
+    </div>
+  )
+}
+
+/* ── Compare panel ── */
+function ComparePanel({
+  slug, context, pool, stepIndex, tweakParams, accentColor, lang, t
+}: {
+  slug: string; context: Context; pool: PlatformId[]; stepIndex: number
+  tweakParams: TweakParams; accentColor: string; lang: 'en' | 'fr'
+  t: (k: Parameters<ReturnType<typeof useI18n>['t']>[0]) => string
+}) {
+  const rawAnim = ANIMATIONS.find(a => a.slug === slug)!
+  const [leftPlatform,  setLeftPlatform]  = useState<PlatformId>(pool[0])
+  const [rightPlatform, setRightPlatform] = useState<PlatformId>(pool[1] ?? pool[0])
+
+  function renderCodeFor(platform: PlatformId, setPlatform: (p: PlatformId) => void) {
+    const impl = rawAnim.implementations.find(i => i.platform === platform)
+    const steps = getSteps(slug, platform)
+    const code = steps[stepIndex]?.code ?? impl?.code ?? ''
+    const tweaked = applyTweaks(code, tweakParams)
+    return (
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <div style={{ display: 'flex', gap: 2, background: 'var(--bg-secondary)', borderRadius: '10px 10px 0 0', border: '1px solid var(--border)', borderBottom: 'none', padding: '6px 6px 0', overflowX: 'auto' }}>
+          {PLATFORMS.filter(p => pool.includes(p.id)).map(p => {
+            const LComp = PLATFORM_LOGOS[p.id]
+            const isActive = platform === p.id
+            return (
+              <button key={p.id} onClick={() => setPlatform(p.id)} style={{
+                padding: '4px 10px 6px', border: 'none', borderRadius: '6px 6px 0 0',
+                background: isActive ? 'var(--bg-tertiary)' : 'transparent',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                transition: 'background 0.15s',
+              }}>
+                <span style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)', display: 'flex' }}>
+                  {LComp && <LComp size={14} />}
+                </span>
+                <span style={{ fontSize: 8, fontFamily: 'var(--font-outfit)', fontWeight: isActive ? 600 : 400, color: isActive ? accentColor : 'var(--text-tertiary)' }}>{p.label}</span>
+              </button>
+            )
+          })}
+        </div>
+        <CodeBlock code={tweaked} />
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '20px 20px 60px' }}>
+      <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 14, letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700 }}>
+        {lang === 'fr' ? 'Comparer les frameworks' : 'Compare frameworks'} — Step {stepIndex + 1}
+      </p>
+      <div style={{ display: 'flex', gap: 16 }}>
+        {renderCodeFor(leftPlatform, setLeftPlatform)}
+        <div style={{ width: 1, background: 'var(--border)', flexShrink: 0 }} />
+        {renderCodeFor(rightPlatform, setRightPlatform)}
+      </div>
     </div>
   )
 }
