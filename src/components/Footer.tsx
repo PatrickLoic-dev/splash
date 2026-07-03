@@ -1,6 +1,7 @@
 'use client'
 
 import { useI18n } from '@/lib/i18n'
+import { Logo } from './Logo'
 
 function GitHubIcon({ size = 18 }: { size?: number }) {
   return (
@@ -72,17 +73,8 @@ export function Footer() {
 
           {/* Brand */}
           <div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10,
-            }}>
-              <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                <rect width="32" height="32" rx="8" fill="var(--accent)"/>
-                <path d="M10 22L16 10L22 22" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12.5 18H19.5" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round"/>
-              </svg>
-              <span style={{ fontFamily: 'var(--font-power)', fontWeight: 700, fontSize: 18, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-                Splash
-              </span>
+            <div style={{ marginBottom: 10 }}>
+              <Logo size={28} />
             </div>
             <p style={{ fontFamily: 'var(--font-outfit)', fontSize: 13, color: 'var(--text-tertiary)', maxWidth: 260, lineHeight: 1.6 }}>
               {t('home_sub')}

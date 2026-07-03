@@ -7,6 +7,7 @@ import { GridBackground } from './GridBackground'
 import { useI18n } from '@/lib/i18n'
 import { useBreakpoint } from '@/lib/useBreakpoint'
 import { PLATFORM_LOGOS } from './PlatformLogos'
+import { Logo } from './Logo'
 
 const FEATURED_SLUGS = ['entrance-reveal', 'shared-element', 'stagger-list', 'gesture-feedback']
 const FEATURED = ANIMATIONS.filter(a => FEATURED_SLUGS.includes(a.slug))
@@ -394,16 +395,9 @@ export function HomePage() {
                 whileInView={{ scale: 1, opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                style={{
-                  width: 72, height: 72, borderRadius: 20,
-                  background: 'var(--accent)', margin: '0 auto 32px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
+                style={{ margin: '0 auto 32px', display: 'flex', justifyContent: 'center' }}
               >
-                <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
-                  <path d="M10 22L16 10L22 22" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12.5 18H19.5" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round"/>
-                </svg>
+                <Logo size={64} showWordmark={false} />
               </motion.div>
 
               <h2 style={{
