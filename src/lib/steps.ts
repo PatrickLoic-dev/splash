@@ -11112,6 +11112,388 @@ const numberCounter: StepMap = {
   flutter:        numberCounterFlutter,
 }
 
+/* ─────────────────────────────────────────────── */
+/*  Scroll Header Collapse                         */
+/* ─────────────────────────────────────────────── */
+const scrollHeaderCollapseReact: Step[] = [
+  {
+    title: 'Static sticky header',
+    description: 'Start with a plain `position: sticky` header — no scroll-driven behavior yet. This establishes the layout baseline.',
+    code: `<header style={{ position: 'sticky', top: 0, height: 88, padding: '0 24px' }}>
+  <h1>Dashboard</h1>
+  <p>Last updated 2 minutes ago</p>
+</header>`,
+  },
+  {
+    title: 'Track scroll with useScroll',
+    description: '`useScroll()` returns a `MotionValue` for scroll offset that updates without triggering React re-renders — the foundation for scroll-linked styling.',
+    code: `import { useScroll } from 'framer-motion'
+
+const { scrollY } = useScroll()`,
+  },
+  {
+    title: 'Derive height and opacity with useTransform',
+    description: 'Map the scroll `MotionValue` to a height range and a subtitle opacity range. Both update on the compositor thread as the user scrolls.',
+    code: `const height  = useTransform(scrollY, [0, 120], [88, 56])
+const subOpac = useTransform(scrollY, [0, 80], [1, 0])
+
+<motion.header style={{ height }}>
+  <h1>Dashboard</h1>
+  <motion.p style={{ opacity: subOpac }}>Last updated 2 minutes ago</motion.p>
+</motion.header>`,
+  },
+  {
+    title: 'Add blur and background fade',
+    description: 'Layer in a `backdrop-filter` blur and background opacity, both derived from the same scroll value, for a frosted-glass collapse effect.',
+    code: `const blur = useTransform(scrollY, [0, 120], [0, 12])
+const bg   = useTransform(scrollY, [0, 120], ['rgba(255,255,255,0)', 'rgba(255,255,255,0.75)'])
+
+<motion.header style={{
+  height,
+  background: bg,
+  backdropFilter: useTransform(blur, b => \`blur(\${b}px)\`),
+}}>
+  ...
+</motion.header>`,
+  },
+]
+
+const scrollHeaderCollapseNextjs: Step[] = [
+  {
+    title: 'Mark the component client-side',
+    description: '`useScroll` reads `window` scroll position, which only exists in the browser — add `\'use client\'` at the top of the file.',
+    code: `'use client'
+import { motion, useScroll, useTransform } from 'framer-motion'`,
+  },
+  {
+    title: 'Track scroll and derive height',
+    description: 'Same `useScroll` + `useTransform` pattern as React — Next.js App Router components work identically once marked client-side.',
+    code: `const { scrollY } = useScroll()
+const height = useTransform(scrollY, [0, 120], [88, 56])`,
+  },
+  {
+    title: 'Add dark-theme background and blur',
+    description: 'Interpolate an RGBA background string and a blur radius together, matching a dark app shell.',
+    code: `const bg     = useTransform(scrollY, [0, 120], ['rgba(10,10,10,0)', 'rgba(10,10,10,0.8)'])
+const blurPx = useTransform(scrollY, [0, 120], [0, 12])
+
+<motion.header style={{ height, background: bg, backdropFilter: useTransform(blurPx, b => \`blur(\${b}px)\`) }}>
+  <h1 style={{ color: '#fff' }}>Dashboard</h1>
+</motion.header>`,
+  },
+]
+
+const scrollHeaderCollapse: StepMap = {
+  react:  scrollHeaderCollapseReact,
+  nextjs: scrollHeaderCollapseNextjs,
+}
+
+/* ─────────────────────────────────────────────── */
+/*  Magnetic Button                                */
+/* ─────────────────────────────────────────────── */
+const magneticButtonReact: Step[] = [
+  {
+    title: 'Plain button',
+    description: 'Start with a normal button — no motion values yet.',
+    code: `<button className="magnetic-btn">Get started</button>`,
+  },
+  {
+    title: 'Track mouse position on the button',
+    description: 'Compute the cursor\'s offset from the button\'s own center using `getBoundingClientRect()` inside `onMouseMove`.',
+    code: `function handleMouseMove(e) {
+  const rect = ref.current.getBoundingClientRect()
+  const relX = e.clientX - (rect.left + rect.width / 2)
+  const relY = e.clientY - (rect.top + rect.height / 2)
+}`,
+  },
+  {
+    title: 'Drive position with useSpring',
+    description: 'Feed the scaled offset into a `useSpring` motion value so the button eases toward the cursor instead of snapping.',
+    code: `const x = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
+const y = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
+
+x.set(relX * 0.35)
+y.set(relY * 0.35)
+
+<motion.button style={{ x, y }} onMouseMove={handleMouseMove} />`,
+  },
+  {
+    title: 'Reset on mouse leave',
+    description: 'When the cursor leaves the button, set the spring targets back to zero — the same spring animates it back to rest.',
+    code: `function handleMouseLeave() {
+  x.set(0)
+  y.set(0)
+}
+
+<motion.button style={{ x, y }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} />`,
+  },
+]
+
+const magneticButtonNextjs: Step[] = [
+  {
+    title: 'Mark client-side',
+    description: '`mousemove` events and refs require the browser — add `\'use client\'`.',
+    code: `'use client'
+import { motion, useSpring } from 'framer-motion'
+import { useRef } from 'react'`,
+  },
+  {
+    title: 'Set up spring motion values',
+    description: 'Two independent springs for x and y, tuned soft so the pull feels magnetic rather than mechanical.',
+    code: `const x = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
+const y = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })`,
+  },
+  {
+    title: 'Wire up move and leave handlers',
+    description: 'Scale the cursor offset down to ~35% so the button moves a fraction of the actual pointer displacement.',
+    code: `<motion.button
+  ref={ref}
+  style={{ x, y }}
+  onMouseMove={(e) => {
+    const rect = ref.current.getBoundingClientRect()
+    x.set((e.clientX - (rect.left + rect.width / 2)) * 0.35)
+    y.set((e.clientY - (rect.top + rect.height / 2)) * 0.35)
+  }}
+  onMouseLeave={() => { x.set(0); y.set(0) }}
+>
+  Get started
+</motion.button>`,
+  },
+]
+
+const magneticButton: StepMap = {
+  react:  magneticButtonReact,
+  nextjs: magneticButtonNextjs,
+}
+
+/* ─────────────────────────────────────────────── */
+/*  Swipe to Delete                                */
+/* ─────────────────────────────────────────────── */
+const swipeToDeleteRN: Step[] = [
+  {
+    title: 'Static row',
+    description: 'Start with a plain list row — no gesture handling yet.',
+    code: `<View style={styles.row}>
+  <Text style={styles.title}>{item.title}</Text>
+</View>`,
+  },
+  {
+    title: 'Add a horizontal pan gesture',
+    description: 'Restrict the gesture to horizontal drags with `activeOffsetX`, so vertical list scrolling still works undisturbed.',
+    code: `const translateX = useSharedValue(0)
+
+const pan = Gesture.Pan()
+  .activeOffsetX([-10, 10])
+  .onUpdate((e) => {
+    translateX.value = Math.min(0, e.translationX)
+  })`,
+  },
+  {
+    title: 'Reveal delete background and translate the row',
+    description: 'An absolutely-positioned red background sits behind the row; the row itself translates on top of it as the gesture updates.',
+    code: `const rowStyle = useAnimatedStyle(() => ({
+  transform: [{ translateX: translateX.value }],
+}))
+
+<View style={styles.rowWrapper}>
+  <View style={styles.deleteBackground}><Text>Delete</Text></View>
+  <GestureDetector gesture={pan}>
+    <Animated.View style={[styles.row, rowStyle]}>...</Animated.View>
+  </GestureDetector>
+</View>`,
+  },
+  {
+    title: 'Threshold check and commit the delete',
+    description: 'On release, compare the offset to a threshold. Past it, animate off-screen and collapse height, then call `onDelete` via `runOnJS` only once the collapse finishes.',
+    code: `.onEnd(() => {
+  if (translateX.value < SWIPE_THRESHOLD) {
+    translateX.value = withTiming(-400, { duration: 200 })
+    rowHeight.value = withTiming(0, { duration: 200 }, (finished) => {
+      if (finished) runOnJS(onDelete)(item.id)
+    })
+  } else {
+    translateX.value = withSpring(0, { stiffness: 300, damping: 26 })
+  }
+})`,
+  },
+]
+
+const swipeToDelete: StepMap = {
+  'react-native': swipeToDeleteRN,
+}
+
+/* ─────────────────────────────────────────────── */
+/*  Bottom Sheet Snap Points                       */
+/* ─────────────────────────────────────────────── */
+const bottomSheetSnapRN: Step[] = [
+  {
+    title: 'Static sheet at one fixed position',
+    description: 'Start with the sheet pinned at a single translateY offset — no gesture yet.',
+    code: `const translateY = useSharedValue(SCREEN_HEIGHT * 0.9)
+
+<Animated.View style={[styles.sheet, { transform: [{ translateY: translateY.value }] }]}>
+  {children}
+</Animated.View>`,
+  },
+  {
+    title: 'Define snap points',
+    description: 'Express peek, half, and full states as translateY offsets derived from screen height.',
+    code: `const SNAP_POINTS = [
+  SCREEN_HEIGHT * 0.9,  // peek
+  SCREEN_HEIGHT * 0.4,  // half
+  SCREEN_HEIGHT * 0.08, // full
+]`,
+  },
+  {
+    title: 'Drag freely, clamped to the snap range',
+    description: 'During the pan, translate 1:1 with the finger but clamp so the sheet never passes the topmost or bottommost snap point.',
+    code: `const pan = Gesture.Pan()
+  .onStart(() => { startY.value = translateY.value })
+  .onUpdate((e) => {
+    const next = startY.value + e.translationY
+    translateY.value = Math.max(SNAP_POINTS[2], Math.min(SNAP_POINTS[0], next))
+  })`,
+  },
+  {
+    title: 'Snap to nearest point using velocity',
+    description: 'On release, project the position slightly forward using velocity, then pick whichever snap point is closest to that projected value — this makes fast flicks feel intentional.',
+    code: `function nearestSnap(y, velocityY) {
+  'worklet'
+  const projected = y + velocityY * 0.15
+  return SNAP_POINTS.reduce((closest, point) =>
+    Math.abs(point - projected) < Math.abs(closest - projected) ? point : closest
+  )
+}
+
+.onEnd((e) => {
+  const target = nearestSnap(translateY.value, e.velocityY)
+  translateY.value = withSpring(target, { stiffness: 260, damping: 30 })
+})`,
+  },
+]
+
+const bottomSheetSnap: StepMap = {
+  'react-native': bottomSheetSnapRN,
+}
+
+/* ─────────────────────────────────────────────── */
+/*  Implicit Animation (AnimatedContainer)         */
+/* ─────────────────────────────────────────────── */
+const implicitAnimationFlutter: Step[] = [
+  {
+    title: 'Plain Container, no animation',
+    description: 'Start with a static `Container` — changing its properties would jump instantly with no transition.',
+    code: `Container(
+  width: 160,
+  height: 90,
+  color: const Color(0xFFE9E4FB),
+)`,
+  },
+  {
+    title: 'Swap in AnimatedContainer',
+    description: 'Replace `Container` with `AnimatedContainer` and add a `duration` and `curve`. No other code changes yet — the widget is a drop-in replacement.',
+    code: `AnimatedContainer(
+  duration: const Duration(milliseconds: 350),
+  curve: Curves.easeOutCubic,
+  width: 160,
+  height: 90,
+  color: const Color(0xFFE9E4FB),
+)`,
+  },
+  {
+    title: 'Read properties from state',
+    description: 'Drive width, height, color, and radius from a boolean in `State` instead of hardcoding them — this is what makes the widget actually animate.',
+    code: `bool _expanded = false;
+
+AnimatedContainer(
+  duration: const Duration(milliseconds: 350),
+  curve: Curves.easeOutCubic,
+  width: _expanded ? 320 : 160,
+  height: _expanded ? 200 : 90,
+  decoration: BoxDecoration(
+    color: _expanded ? const Color(0xFF7C3AED) : const Color(0xFFE9E4FB),
+    borderRadius: BorderRadius.circular(_expanded ? 24 : 12),
+  ),
+)`,
+  },
+  {
+    title: 'Toggle with setState and animate text style too',
+    description: 'Wrap in `GestureDetector` to toggle `_expanded` via `setState`, and add `AnimatedDefaultTextStyle` so the label\'s size and color tween in lockstep.',
+    code: `GestureDetector(
+  onTap: () => setState(() => _expanded = !_expanded),
+  child: AnimatedContainer(
+    duration: const Duration(milliseconds: 350),
+    curve: Curves.easeOutCubic,
+    width: _expanded ? 320 : 160,
+    height: _expanded ? 200 : 90,
+    child: AnimatedDefaultTextStyle(
+      duration: const Duration(milliseconds: 350),
+      style: TextStyle(fontSize: _expanded ? 20 : 14, color: _expanded ? Colors.white : Colors.black87),
+      child: const Text('Tap to expand'),
+    ),
+  ),
+)`,
+  },
+]
+
+const implicitAnimation: StepMap = {
+  flutter: implicitAnimationFlutter,
+}
+
+/* ─────────────────────────────────────────────── */
+/*  Flutter Staggered List                         */
+/* ─────────────────────────────────────────────── */
+const staggeredListFlutterSteps: Step[] = [
+  {
+    title: 'Plain ListView, no animation',
+    description: 'Start with a normal `ListView.builder` — every row appears instantly.',
+    code: `ListView.builder(
+  itemCount: items.length,
+  itemBuilder: (context, i) => ListTile(title: Text(items[i])),
+)`,
+  },
+  {
+    title: 'Add one shared AnimationController',
+    description: 'Create a single controller in the parent `State`, long enough to cover the whole cascade, and start it once in `initState`.',
+    code: `late final AnimationController _controller;
+
+@override
+void initState() {
+  super.initState();
+  _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..forward();
+}`,
+  },
+  {
+    title: 'Derive a per-row Interval',
+    description: 'Each row computes its own slice of the shared timeline using `Interval`, so every row\'s CurvedAnimation is locked to the same controller.',
+    code: `Animation<double> _intervalFor(int index) {
+  final stagger = 1 / items.length;
+  final start = index * stagger * 0.6;
+  final end = (start + stagger * 1.5).clamp(0.0, 1.0);
+  return CurvedAnimation(parent: _controller, curve: Interval(start, end, curve: Curves.easeOutCubic));
+}`,
+  },
+  {
+    title: 'Drive opacity and translate per row',
+    description: 'Wrap each `ListTile` in an `AnimatedBuilder` that reads its own interval-based animation to fade and slide it into place.',
+    code: `itemBuilder: (context, i) {
+  final animation = _intervalFor(i);
+  return AnimatedBuilder(
+    animation: animation,
+    builder: (context, child) => Opacity(
+      opacity: animation.value,
+      child: Transform.translate(offset: Offset(0, 24 * (1 - animation.value)), child: child),
+    ),
+    child: ListTile(title: Text(items[i])),
+  );
+}`,
+  },
+]
+
+const staggeredListFlutter: StepMap = {
+  flutter: staggeredListFlutterSteps,
+}
+
 export const ALL_STEPS: Record<string, StepMap> = {
   'entrance-reveal':   entranceReveal,
   'page-transitions':  pageTransitions,
@@ -11130,6 +11512,12 @@ export const ALL_STEPS: Record<string, StepMap> = {
   'morphing-button':   morphingButton,
   'drag-reorder':      dragReorder,
   'number-counter':    numberCounter,
+  'scroll-header-collapse': scrollHeaderCollapse,
+  'magnetic-button':        magneticButton,
+  'swipe-to-delete':        swipeToDelete,
+  'bottom-sheet-snap':      bottomSheetSnap,
+  'implicit-animation':     implicitAnimation,
+  'staggered-list-flutter': staggeredListFlutter,
 }
 
 export function getSteps(slug: string, platform: PlatformId): Step[] {

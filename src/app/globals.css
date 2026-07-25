@@ -2,9 +2,6 @@
 @import "./responsive.css";
 
 :root {
-  --font-power: 'Cabinet Grotesk', system-ui, sans-serif;
-  --font-outfit: 'Satoshi', system-ui, sans-serif;
-
   /* Obsidian Lime — light mode (neutral white base) */
   --bg: #FFFFFF;
   --bg-nav: rgba(255,255,255,0.88);

@@ -101,6 +101,28 @@ const DIFF_COLORS: Record<string, string> = {
   Advanced:     '#D85A30',
 }
 
+const NEW_SLUGS = new Set([
+  'scroll-header-collapse',
+  'magnetic-button',
+  'swipe-to-delete',
+  'bottom-sheet-snap',
+  'implicit-animation',
+  'staggered-list-flutter',
+])
+
+function NewBadge() {
+  return (
+    <span style={{
+      padding: '3px 7px', borderRadius: 5,
+      background: 'var(--accent)', color: '#fff',
+      fontSize: 9, fontFamily: 'var(--font-outfit)', fontWeight: 700,
+      letterSpacing: '0.06em', textTransform: 'uppercase' as const,
+    }}>
+      New
+    </span>
+  )
+}
+
 const PLATFORM_CONTEXT: Record<string, Context> = {
   react:          'web',
   nextjs:         'web',
@@ -771,6 +793,7 @@ function FilteredView({
                           {t(`cat_${anim.category}` as Parameters<typeof t>[0])}
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {NEW_SLUGS.has(anim.slug) && <NewBadge />}
                           <span style={{
                             fontSize: 10, fontFamily: 'var(--font-outfit)',
                             color: DIFF_COLORS[anim.difficulty], letterSpacing: '0.04em',
@@ -923,6 +946,7 @@ function DetailView({
             {t(`diff_${anim.difficulty}` as Parameters<typeof t>[0])}
           </span>
         )}
+        {!isMobile && NEW_SLUGS.has(slug) && <NewBadge />}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, flexShrink: 0 }}>
           {(['web', 'mobile'] as Context[]).map(ctx => (

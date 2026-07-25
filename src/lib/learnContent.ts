@@ -5903,4 +5903,559 @@ class Dashboard extends StatelessWidget {
       ],
     },
   },
+
+  /* ─────────────────────────────────────────────── */
+  /*  18. Scroll Header Collapse                     */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'scroll-header-collapse',
+    title: 'Scroll Header Collapse',
+    category: 'Scroll',
+    difficulty: 'Beginner',
+    tagline: 'A sticky header shrinks, blurs, and fades its subtitle as the page scrolls',
+    concept:
+      'A collapsing header ties a nav bar\'s height, background blur, and subtitle opacity directly to scroll position instead of a fixed breakpoint. As the user scrolls down, the header progressively compresses — this reclaims vertical space for content while keeping navigation reachable. It\'s a web-native pattern: it depends on continuous scroll position and `backdrop-filter`, with no direct mobile-native equivalent (native apps use large-title collapse instead, a different mechanism).',
+    howItWorks: [
+      'Read scroll progress with a `MotionValue` (Framer Motion\'s `useScroll`) rather than a scroll event listener — this avoids re-renders on every pixel of scroll.',
+      'Feed that `MotionValue` into one or more `useTransform` calls to derive height, blur, and opacity as pure functions of scroll offset.',
+      'Apply the derived values directly as `style` props on a `motion.header` — Framer Motion updates them on the compositor thread, skipping React re-renders entirely.',
+      'Clamp the input range (e.g. 0–120px of scroll) so the collapse finishes early and the header stays in its compact state for the rest of the scroll.',
+    ],
+    implementations: [
+      {
+        platform: 'react',
+        deps: ['framer-motion'],
+        notes: 'Works with any scrollable container — pass a `target` ref to `useScroll` to track a specific element instead of the window.',
+        code: `import { motion, useScroll, useTransform } from 'framer-motion'
+
+export function CollapsingHeader() {
+  const { scrollY } = useScroll()
+
+  const height  = useTransform(scrollY, [0, 120], [88, 56])
+  const blur    = useTransform(scrollY, [0, 120], [0, 12])
+  const subOpac = useTransform(scrollY, [0, 80],  [1, 0])
+  const bg      = useTransform(scrollY, [0, 120], ['rgba(255,255,255,0)', 'rgba(255,255,255,0.75)'])
+
+  return (
+    <motion.header
+      style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        height,
+        backdropFilter: useTransform(blur, b => \`blur(\${b}px)\`),
+        background: bg,
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        padding: '0 24px', borderBottom: '1px solid rgba(0,0,0,0.06)',
+      }}
+    >
+      <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Dashboard</h1>
+      <motion.p style={{ opacity: subOpac, fontSize: 13, margin: 0, height: 18 }}>
+        Last updated 2 minutes ago
+      </motion.p>
+    </motion.header>
+  )
+}`,
+      },
+      {
+        platform: 'nextjs',
+        deps: ['framer-motion'],
+        notes: 'Add `\'use client\'` — `useScroll` reads `window` and must run in the browser. Works the same inside a layout or page component.',
+        code: `'use client'
+import { motion, useScroll, useTransform } from 'framer-motion'
+
+export function CollapsingHeader() {
+  const { scrollY } = useScroll()
+
+  const height  = useTransform(scrollY, [0, 120], [88, 56])
+  const subOpac = useTransform(scrollY, [0, 80],  [1, 0])
+  const bg      = useTransform(scrollY, [0, 120], ['rgba(10,10,10,0)', 'rgba(10,10,10,0.8)'])
+  const blurPx  = useTransform(scrollY, [0, 120], [0, 12])
+
+  return (
+    <motion.header
+      style={{
+        position: 'sticky', top: 0, zIndex: 50, height,
+        backdropFilter: useTransform(blurPx, b => \`blur(\${b}px)\`),
+        background: bg,
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        padding: '0 24px',
+      }}
+    >
+      <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: '#fff' }}>Dashboard</h1>
+      <motion.p style={{ opacity: subOpac, fontSize: 13, margin: 0, color: '#aaa', height: 18 }}>
+        Last updated 2 minutes ago
+      </motion.p>
+    </motion.header>
+  )
+}`,
+      },
+    ],
+    useCases: [
+      { label: 'Analytics dashboard', example: 'The page title header shrinks and blurs as the user scrolls through a long report, keeping filters accessible without eating screen space.' },
+      { label: 'Documentation site', example: 'A docs nav bar compresses on scroll, trading its tagline for more reading room while keeping the search bar pinned.' },
+      { label: 'Blog post', example: 'The article title bar collapses into a slim reading-progress bar once the reader passes the hero section.' },
+    ],
+    tips: [
+      'Derive `backdropFilter` from a `MotionValue` via a nested `useTransform`, not a plain string — Safari needs the blur value to update continuously, not jump.',
+      'Keep the scroll range small (80–150px) — a collapse that takes 500px of scrolling feels sluggish rather than responsive.',
+      'Pair the header height transform with a `layout` shift on the content below it, or use `padding-top` on the body so content doesn\'t jump under the sticky header.',
+    ],
+  },
+
+  /* ─────────────────────────────────────────────── */
+  /*  19. Magnetic Button                            */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'magnetic-button',
+    title: 'Magnetic Button',
+    category: 'Feedback',
+    difficulty: 'Beginner',
+    tagline: 'A button warps toward the cursor as it approaches, then springs back on leave',
+    concept:
+      'A magnetic button tracks the mouse position relative to its own bounding box and nudges its content toward the cursor within a small radius, as if pulled by a weak magnet. It\'s a pointer-driven micro-interaction — entirely dependent on continuous `mousemove` coordinates and hover state — so it has no real mobile equivalent (touch has no hover, no proximity signal). It is one of the cheapest ways to make a CTA feel alive.',
+    howItWorks: [
+      'Attach a `mousemove` listener to the button itself, and compute the cursor\'s offset from the button\'s center on every event.',
+      'Scale that offset down (e.g. multiply by 0.3–0.4) so the button moves a fraction of the actual cursor displacement — a subtle pull, not a 1:1 drag.',
+      'Feed the scaled offset into a `useSpring` (or CSS spring-based transition) so the button eases toward the target position rather than snapping.',
+      'On `mouseleave`, reset the offset to `{ x: 0, y: 0 }` — the same spring animates it back to rest.',
+    ],
+    implementations: [
+      {
+        platform: 'react',
+        deps: ['framer-motion'],
+        notes: 'The spring config controls the "magnet strength" — higher stiffness snaps back faster, lower damping adds a slight overshoot wobble.',
+        code: `import { motion, useSpring } from 'framer-motion'
+import { useRef } from 'react'
+
+export function MagneticButton({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLButtonElement>(null)
+  const x = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
+  const y = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
+
+  function handleMouseMove(e: React.MouseEvent<HTMLButtonElement>) {
+    const rect = ref.current!.getBoundingClientRect()
+    const relX = e.clientX - (rect.left + rect.width / 2)
+    const relY = e.clientY - (rect.top + rect.height / 2)
+    x.set(relX * 0.35)
+    y.set(relY * 0.35)
+  }
+
+  function handleMouseLeave() {
+    x.set(0)
+    y.set(0)
+  }
+
+  return (
+    <motion.button
+      ref={ref}
+      style={{ x, y }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="magnetic-btn"
+    >
+      {children}
+    </motion.button>
+  )
+}`,
+      },
+      {
+        platform: 'nextjs',
+        deps: ['framer-motion'],
+        notes: 'Add `\'use client\'` since the component relies on `mousemove` events and refs, which only exist in the browser.',
+        code: `'use client'
+import { motion, useSpring } from 'framer-motion'
+import { useRef } from 'react'
+
+export function MagneticButton({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLButtonElement>(null)
+  const x = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
+  const y = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
+
+  return (
+    <motion.button
+      ref={ref}
+      style={{ x, y }}
+      onMouseMove={(e) => {
+        const rect = ref.current!.getBoundingClientRect()
+        x.set((e.clientX - (rect.left + rect.width / 2)) * 0.35)
+        y.set((e.clientY - (rect.top + rect.height / 2)) * 0.35)
+      }}
+      onMouseLeave={() => { x.set(0); y.set(0) }}
+      className="magnetic-btn"
+    >
+      {children}
+    </motion.button>
+  )
+}`,
+      },
+    ],
+    useCases: [
+      { label: 'Hero CTA', example: 'A "Get started" button on a landing page pulls gently toward the cursor as visitors approach it, drawing the click.' },
+      { label: 'Portfolio nav dot', example: 'Circular navigation dots in a portfolio site warp toward the pointer, reinforcing a playful, crafted feel.' },
+      { label: 'Icon-only action button', example: 'A floating action button in a web app tool follows the cursor within a small radius before triggering its click.' },
+    ],
+    tips: [
+      'Cap the pull radius by only attaching the listener within a slightly larger invisible wrapper — outside that zone the button should sit still, not drift from anywhere on screen.',
+      'Keep the multiplier under 0.4; anything higher makes the button feel like it\'s chasing the cursor rather than being pulled by it.',
+      'Combine with a `scale` bump on hover for extra tactility, but keep it under 1.05 — magnetic buttons are about position, not size.',
+    ],
+  },
+
+  /* ─────────────────────────────────────────────── */
+  /*  20. Swipe to Delete                            */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'swipe-to-delete',
+    title: 'Swipe to Delete',
+    category: 'List',
+    difficulty: 'Intermediate',
+    tagline: 'Drag a list row left to reveal a delete action, release past a threshold to confirm',
+    concept:
+      'Swipe-to-delete is a native mobile list gesture: dragging a row horizontally reveals a destructive action underneath, and releasing past a distance threshold commits to deleting the row with a spring collapse. It relies on a continuous pan gesture recognizer tied to the OS touch system — there is no equivalent trackpad/mouse convention on the web, making this a defining mobile-only interaction pattern.',
+    howItWorks: [
+      'Wrap each row in a pan gesture handler that only responds to horizontal drags, so vertical list scrolling still works undisturbed.',
+      'Translate the row by the gesture\'s horizontal delta in real time, and reveal a red delete background clipped behind it as it slides.',
+      'On release, compare the final offset against a threshold (commonly 30–40% of row width). Past it, animate the row fully off-screen and collapse its height to zero; under it, spring back to rest.',
+      'Run the actual list-item removal (e.g. filtering it out of state) only after the collapse animation completes, using a completion callback — never mutate state mid-gesture.',
+    ],
+    implementations: [
+      {
+        platform: 'react-native',
+        deps: ['react-native-gesture-handler', 'react-native-reanimated'],
+        notes: 'Reanimated\'s `useAnimatedStyle` reads shared values on the UI thread, so the row translates at 60fps even while the JS thread is busy.',
+        code: `import { GestureDetector, Gesture } from 'react-native-gesture-handler'
+import Animated, {
+  useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS,
+} from 'react-native-reanimated'
+import { View, Text, StyleSheet } from 'react-native'
+
+const SWIPE_THRESHOLD = -100
+
+function SwipeableRow({ item, onDelete }) {
+  const translateX = useSharedValue(0)
+  const rowHeight = useSharedValue(64)
+
+  const pan = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .onUpdate((e) => {
+      translateX.value = Math.min(0, e.translationX)
+    })
+    .onEnd(() => {
+      if (translateX.value < SWIPE_THRESHOLD) {
+        translateX.value = withTiming(-400, { duration: 200 })
+        rowHeight.value = withTiming(0, { duration: 200 }, (finished) => {
+          if (finished) runOnJS(onDelete)(item.id)
+        })
+      } else {
+        translateX.value = withSpring(0, { stiffness: 300, damping: 26 })
+      }
+    })
+
+  const rowStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+    height: rowHeight.value,
+  }))
+
+  return (
+    <View style={styles.rowWrapper}>
+      <View style={styles.deleteBackground}>
+        <Text style={styles.deleteText}>Delete</Text>
+      </View>
+      <GestureDetector gesture={pan}>
+        <Animated.View style={[styles.row, rowStyle]}>
+          <Text style={styles.title}>{item.title}</Text>
+        </Animated.View>
+      </GestureDetector>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  rowWrapper: { overflow: 'hidden' },
+  row: { backgroundColor: '#fff', padding: 16, justifyContent: 'center' },
+  deleteBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#E5484D', justifyContent: 'center', alignItems: 'flex-end', paddingRight: 24,
+  },
+  deleteText: { color: '#fff', fontWeight: '600' },
+  title: { fontSize: 15 },
+})`,
+      },
+    ],
+    useCases: [
+      { label: 'Mail inbox', example: 'Swiping an email left reveals Archive and Delete actions, a pattern users expect from every native mail client.' },
+      { label: 'Todo list', example: 'Swiping a task row left past the threshold deletes it immediately with a satisfying collapse, no confirmation dialog needed for low-stakes items.' },
+      { label: 'Notification center', example: 'Dismissing an individual notification by swiping it away, matching the OS-level notification tray behavior.' },
+    ],
+    tips: [
+      'Set `activeOffsetX` on the pan gesture so small vertical scroll movements aren\'t hijacked as horizontal swipes — this is the #1 source of janky list feel.',
+      'Never delete from state until the collapse animation\'s completion callback fires; deleting mid-swipe causes the row to unmount and snap instead of animating out.',
+      'Show the delete background at full opacity as soon as any drag starts, not proportional to distance — a fading-in background reads as laggy rather than responsive.',
+    ],
+  },
+
+  /* ─────────────────────────────────────────────── */
+  /*  21. Bottom Sheet Snap Points                   */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'bottom-sheet-snap',
+    title: 'Bottom Sheet Snap Points',
+    category: 'Spring',
+    difficulty: 'Intermediate',
+    tagline: 'A draggable sheet that settles into fixed snap heights with spring physics',
+    concept:
+      'A snap-point bottom sheet is dragged freely along the vertical axis but always settles into one of a few predefined heights (e.g. peek, half, full) when released, rather than stopping wherever the finger lifted. The nearest snap point is chosen based on release position and velocity, then animated to with a spring. This is the defining mobile interaction pattern for maps, media players, and detail overlays — it has no direct web equivalent since it depends on a touch-driven drag gesture layered under other scrollable content.',
+    howItWorks: [
+      'Define snap points as a set of translateY offsets (e.g. `[height * 0.9, height * 0.4, 0]` for peek, half, and full).',
+      'During the pan gesture, translate the sheet 1:1 with the finger, clamping so it can\'t be dragged past the topmost or bottommost snap point.',
+      'On release, use the gesture\'s velocity as a tiebreaker: a fast upward flick snaps to the next point up even if the release position is closer to the current one.',
+      'Animate to the chosen snap point with `withSpring`, and update an `initialSnap`-style shared value so the next gesture starts calculations from the sheet\'s actual resting position.',
+    ],
+    implementations: [
+      {
+        platform: 'react-native',
+        deps: ['react-native-gesture-handler', 'react-native-reanimated'],
+        notes: 'This mirrors the internals of libraries like `@gorhom/bottom-sheet` — those add virtualized content and backdrop handling, but the snap-point math is exactly this.',
+        code: `import { GestureDetector, Gesture } from 'react-native-gesture-handler'
+import Animated, {
+  useSharedValue, useAnimatedStyle, withSpring, runOnJS,
+} from 'react-native-reanimated'
+import { Dimensions, View, StyleSheet } from 'react-native'
+
+const SCREEN_HEIGHT = Dimensions.get('window').height
+const SNAP_POINTS = [SCREEN_HEIGHT * 0.9, SCREEN_HEIGHT * 0.4, SCREEN_HEIGHT * 0.08] // peek, half, full
+
+function BottomSheet({ children }) {
+  const translateY = useSharedValue(SNAP_POINTS[0])
+  const startY = useSharedValue(0)
+
+  function nearestSnap(y: number, velocityY: number) {
+    'worklet'
+    const projected = y + velocityY * 0.15
+    return SNAP_POINTS.reduce((closest, point) =>
+      Math.abs(point - projected) < Math.abs(closest - projected) ? point : closest
+    )
+  }
+
+  const pan = Gesture.Pan()
+    .onStart(() => { startY.value = translateY.value })
+    .onUpdate((e) => {
+      const next = startY.value + e.translationY
+      translateY.value = Math.max(SNAP_POINTS[SNAP_POINTS.length - 1], Math.min(SNAP_POINTS[0], next))
+    })
+    .onEnd((e) => {
+      const target = nearestSnap(translateY.value, e.velocityY)
+      translateY.value = withSpring(target, { stiffness: 260, damping: 30 })
+    })
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }))
+
+  return (
+    <GestureDetector gesture={pan}>
+      <Animated.View style={[styles.sheet, sheetStyle]}>
+        <View style={styles.handle} />
+        {children}
+      </Animated.View>
+    </GestureDetector>
+  )
+}
+
+const styles = StyleSheet.create({
+  sheet: {
+    position: 'absolute', left: 0, right: 0, top: 0, height: SCREEN_HEIGHT,
+    backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 12, shadowOffset: { width: 0, height: -4 },
+  },
+  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#D0D0D5', alignSelf: 'center', marginVertical: 10 },
+})`,
+      },
+    ],
+    useCases: [
+      { label: 'Maps app', example: 'A search-results sheet peeks over the map, and a swipe up expands it to half or full screen for browsing results.' },
+      { label: 'Media player', example: 'A mini player docked at the bottom expands into a full "Now Playing" screen when dragged up.' },
+      { label: 'Product detail overlay', example: 'An e-commerce app shows a peeking product summary sheet that snaps to full detail on swipe-up.' },
+    ],
+    tips: [
+      'Always factor gesture velocity into the snap decision, not just release position — without it, fast flicks feel unresponsive because they snap to the nearest point rather than the intended one.',
+      'Clamp `translateY` during the drag itself (not just on release) so the sheet never visibly overshoots past the topmost or bottommost snap point while dragging.',
+      'Keep spring `damping` above 26 for sheets — a bouncy overshoot on a large surface like this reads as glitchy rather than delightful.',
+    ],
+  },
+
+  /* ─────────────────────────────────────────────── */
+  /*  22. Implicit Animation (AnimatedContainer)     */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'implicit-animation',
+    title: 'Implicit Animation',
+    category: 'Morphing',
+    difficulty: 'Beginner',
+    tagline: 'Change a property, Flutter tweens it automatically — no controllers, no keyframes',
+    concept:
+      'Flutter\'s implicit animation widgets (`AnimatedContainer`, `AnimatedOpacity`, `AnimatedPadding`, and friends) animate automatically whenever their input properties change between rebuilds — there is no `AnimationController`, no explicit `Tween`, no `addListener`. You simply set new values on a stateful rebuild, and the widget interpolates from the old values to the new ones over the given duration and curve. This is architecturally unlike anything in React or the DOM: there\'s no CSS transition to declare and no animation library to import, because the interpolation is a built-in widget behavior.',
+    howItWorks: [
+      'Wrap the content in `AnimatedContainer` (or another `Animated*` widget) and give it a `duration` and `curve`.',
+      'Read animatable properties (`color`, `width`, `height`, `borderRadius`, `padding`, ...) from local state instead of hardcoding them.',
+      'Call `setState` to change that state — Flutter diffs the new widget against the old one and detects that an `AnimatedContainer`\'s properties changed.',
+      'The widget\'s internal `AnimatedContainerState` builds an implicit `Tween` for each changed property and drives it forward over `duration`, calling `setState` on every tick to repaint — all of this is invisible to your code.',
+    ],
+    implementations: [
+      {
+        platform: 'flutter',
+        deps: [],
+        notes: 'No extra packages — every `Animated*` implicit widget ships in the Flutter SDK\'s `material`/`widgets` libraries.',
+        code: `import 'package:flutter/material.dart';
+
+class ExpandingCard extends StatefulWidget {
+  @override
+  State<ExpandingCard> createState() => _ExpandingCardState();
+}
+
+class _ExpandingCardState extends State<ExpandingCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => setState(() => _expanded = !_expanded),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+        width: _expanded ? 320 : 160,
+        height: _expanded ? 200 : 90,
+        padding: EdgeInsets.all(_expanded ? 24 : 12),
+        decoration: BoxDecoration(
+          color: _expanded ? const Color(0xFF7C3AED) : const Color(0xFFE9E4FB),
+          borderRadius: BorderRadius.circular(_expanded ? 24 : 12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(_expanded ? 0.2 : 0.05),
+              blurRadius: _expanded ? 24 : 6,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 350),
+          style: TextStyle(
+            color: _expanded ? Colors.white : Colors.black87,
+            fontSize: _expanded ? 20 : 14,
+            fontWeight: FontWeight.w600,
+          ),
+          child: const Text('Tap to expand'),
+        ),
+      ),
+    );
+  }
+}`,
+      },
+    ],
+    useCases: [
+      { label: 'Expandable card', example: 'A settings card grows in place to reveal more options when tapped, tweening size, color, and radius together.' },
+      { label: 'Selection state', example: 'A chip or filter pill animates its background color and border smoothly when toggled selected/unselected.' },
+      { label: 'Loading-to-content swap', example: 'A skeleton box animates its color and opacity into the real content once data has loaded, using `AnimatedOpacity` layered under `AnimatedContainer`.' },
+    ],
+    tips: [
+      'If you need to run an animation without a state-changing trigger (e.g. an infinite loop, or a gesture-driven scrub), switch to explicit `AnimationController`-based widgets instead — implicit widgets only react to rebuilds.',
+      'Multiple implicit widgets nested together (like `AnimatedContainer` + `AnimatedDefaultTextStyle`) will animate independently on their own `duration`/`curve` — keep them equal unless you deliberately want a staggered feel.',
+      'Avoid putting expensive widgets (large images, complex layouts) directly inside an `AnimatedContainer` that resizes — cache or const-ify children where possible since the container rebuilds every tick.',
+    ],
+  },
+
+  /* ─────────────────────────────────────────────── */
+  /*  23. Flutter Staggered List                     */
+  /* ─────────────────────────────────────────────── */
+  {
+    slug: 'staggered-list-flutter',
+    title: 'Flutter Staggered List',
+    category: 'List',
+    difficulty: 'Intermediate',
+    tagline: 'List items cascade in with per-item delay, driven by one shared AnimationController',
+    concept:
+      'A staggered list reveal animates each row in sequence rather than all at once, cascading down the screen. In Flutter this is built with a single `AnimationController` shared across all rows, where each row derives its own `Interval`-based `CurvedAnimation` from the same controller — one animation clock drives every item\'s individually-timed fade and slide. This differs fundamentally from the web version (independent per-element `transition-delay` or stagger helpers in a JS library): Flutter\'s approach keeps every row\'s timeline mathematically locked to a single source of truth.',
+    howItWorks: [
+      'Create one `AnimationController` in the list\'s parent `State`, with a duration long enough to cover the full cascade (e.g. 800ms for 8 rows).',
+      'For each row at index `i`, build a `CurvedAnimation` using `Interval(i * stagger, i * stagger + itemDuration, curve: Curves.easeOut)` against the shared controller.',
+      'Use that per-row `CurvedAnimation` to drive an `Opacity` + `Transform.translate` (or wrap with `FadeTransition`/`SlideTransition`) for that row\'s widget.',
+      'Call `controller.forward()` once, in `initState` or when the list first becomes visible — every row animates on its own slice of the same timeline automatically.',
+    ],
+    implementations: [
+      {
+        platform: 'flutter',
+        deps: [],
+        notes: 'No package needed for the core technique — `flutter_staggered_animations` exists for a drop-in version, but implementing it directly teaches the `Interval` mechanism.',
+        code: `import 'package:flutter/material.dart';
+
+class StaggeredList extends StatefulWidget {
+  final List<String> items;
+  const StaggeredList({required this.items});
+
+  @override
+  State<StaggeredList> createState() => _StaggeredListState();
+}
+
+class _StaggeredListState extends State<StaggeredList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Animation<double> _intervalFor(int index) {
+    final stagger = 1 / widget.items.length;
+    final start = index * stagger * 0.6;
+    final end = (start + stagger * 1.5).clamp(0.0, 1.0);
+    return CurvedAnimation(
+      parent: _controller,
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: widget.items.length,
+      itemBuilder: (context, i) {
+        final animation = _intervalFor(i);
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) => Opacity(
+            opacity: animation.value,
+            child: Transform.translate(
+              offset: Offset(0, 24 * (1 - animation.value)),
+              child: child,
+            ),
+          ),
+          child: ListTile(title: Text(widget.items[i])),
+        );
+      },
+    );
+  }
+}`,
+      },
+    ],
+    useCases: [
+      { label: 'Onboarding checklist', example: 'A list of setup steps cascades in one by one as the onboarding screen first appears, drawing the eye down the list in order.' },
+      { label: 'Search results', example: 'Result rows fade and slide in with a slight cascade after a search completes, softening the abrupt appearance of a full result set.' },
+      { label: 'Settings screen', example: 'Grouped settings sections stagger into view on first load, giving the screen a sense of assembling rather than snapping into place.' },
+    ],
+    tips: [
+      'Keep the total stagger duration proportional to list length, but cap it — beyond ~10-12 visible rows, stop increasing total duration and instead shrink the per-item stagger so a long list doesn\'t take seconds to finish animating.',
+      'Only stagger on first appearance (e.g. gate with a `hasAnimated` flag), never on every rebuild — re-triggering the cascade on scroll or state changes reads as a bug, not a feature.',
+      'Because every row shares one controller, this doesn\'t work well combined with lazy-loading (`ListView.builder` recycling): rows built after `forward()` has already progressed will appear instantly at full opacity instead of animating in.',
+    ],
+  },
 ]

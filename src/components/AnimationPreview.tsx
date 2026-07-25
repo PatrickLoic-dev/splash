@@ -2098,6 +2098,299 @@ function NumberCounterPreview({ step }: { step: number }) {
   )
 }
 
+/* ── Scroll Header Collapse ─────────────────────────────────────────────── */
+
+function ScrollHeaderCollapseWeb({ step }: { step: number }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const { scrollY } = useScroll({ container: containerRef })
+
+  const height  = useTransform(scrollY, [0, 120], [78, 48])
+  const subOpac = useTransform(scrollY, [0, 80], [1, 0])
+  const blur    = useTransform(scrollY, [0, 120], [0, 12])
+  const bg      = useTransform(scrollY, [0, 120], ['rgba(124,58,237,0)', 'rgba(124,58,237,0.9)'])
+  const blurCss = useTransform(blur, b => `blur(${b}px)`)
+
+  return (
+    <div ref={containerRef} style={{ height: '100%', overflowY: 'auto' }}>
+      <motion.header style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        height: step >= 2 ? height : 78,
+        background: step >= 3 ? bg : 'var(--bg-secondary)',
+        backdropFilter: step >= 3 ? blurCss : undefined,
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        padding: '0 16px', borderBottom: '1px solid var(--border)',
+      }}>
+        <div style={{ fontSize: 17, fontFamily: 'var(--font-power)', color: step >= 3 ? '#fff' : 'var(--text-primary)', fontWeight: 700 }}>Dashboard</div>
+        <motion.div style={{
+          opacity: step >= 1 ? subOpac : 1,
+          fontSize: 11, color: step >= 3 ? 'rgba(255,255,255,0.8)' : 'var(--text-tertiary)', marginTop: 2, height: 14,
+        }}>Last updated 2 minutes ago</motion.div>
+      </motion.header>
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} style={{ height: 44, borderRadius: 10, background: 'var(--bg-tertiary)' }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ScrollHeaderCollapseMobile({ step }: { step: number }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const { scrollY } = useScroll({ container: containerRef })
+
+  const height  = useTransform(scrollY, [0, 100], [66, 42])
+  const subOpac = useTransform(scrollY, [0, 60], [1, 0])
+  const blur    = useTransform(scrollY, [0, 100], [0, 10])
+  const blurCss = useTransform(blur, b => `blur(${b}px)`)
+
+  return (
+    <div ref={containerRef} style={{ height: '100%', overflowY: 'auto' }}>
+      <motion.header style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        height: step >= 2 ? height : 66,
+        background: step >= 3 ? 'rgba(124,58,237,0.85)' : 'var(--bg-secondary)',
+        backdropFilter: step >= 3 ? blurCss : undefined,
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        padding: '0 12px', borderBottom: '1px solid var(--border)',
+      }}>
+        <div style={{ fontSize: 14, fontFamily: 'var(--font-power)', color: step >= 3 ? '#fff' : 'var(--text-primary)', fontWeight: 700 }}>Dashboard</div>
+        <motion.div style={{
+          opacity: step >= 1 ? subOpac : 1,
+          fontSize: 9, color: step >= 3 ? 'rgba(255,255,255,0.8)' : 'var(--text-tertiary)', marginTop: 1, height: 11,
+        }}>Updated 2m ago</motion.div>
+      </motion.header>
+      <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} style={{ height: 34, borderRadius: 8, background: 'var(--bg-tertiary)' }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Magnetic Button ────────────────────────────────────────────────────── */
+
+function MagneticButtonPreview({ step }: { step: number }) {
+  const ref = useRef<HTMLButtonElement>(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+
+  function handleMove(e: React.MouseEvent<HTMLButtonElement>) {
+    if (step < 1) return
+    const rect = ref.current!.getBoundingClientRect()
+    const relX = e.clientX - (rect.left + rect.width / 2)
+    const relY = e.clientY - (rect.top + rect.height / 2)
+    const strength = step >= 2 ? 0.35 : 0.15
+    if (step >= 3) {
+      fmAnimate(x, relX * strength, { type: 'spring', stiffness: 150, damping: 15, mass: 0.1 })
+      fmAnimate(y, relY * strength, { type: 'spring', stiffness: 150, damping: 15, mass: 0.1 })
+    } else {
+      x.set(relX * strength)
+      y.set(relY * strength)
+    }
+  }
+
+  function handleLeave() {
+    if (step >= 3) {
+      fmAnimate(x, 0, { type: 'spring', stiffness: 150, damping: 15, mass: 0.1 })
+      fmAnimate(y, 0, { type: 'spring', stiffness: 150, damping: 15, mass: 0.1 })
+    } else {
+      x.set(0)
+      y.set(0)
+    }
+  }
+
+  useEffect(() => { x.set(0); y.set(0) }, [step, x, y])
+
+  return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <motion.button
+        ref={ref}
+        onMouseMove={handleMove}
+        onMouseLeave={handleLeave}
+        style={{
+          x, y,
+          padding: '14px 32px', borderRadius: 999, border: 'none',
+          background: 'var(--accent)', color: '#fff',
+          fontFamily: 'var(--font-outfit)', fontSize: 14, fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        Get started
+      </motion.button>
+    </div>
+  )
+}
+
+/* ── Swipe to Delete ────────────────────────────────────────────────────── */
+
+const SWIPE_ITEMS = [
+  { id: 'a', title: 'Design review' },
+  { id: 'b', title: 'Update docs' },
+  { id: 'c', title: 'Fix bug #42' },
+  { id: 'd', title: 'Team standup' },
+]
+
+function SwipeToDeletePreview({ step }: { step: number }) {
+  const [items, setItems] = useState(SWIPE_ITEMS)
+  useEffect(() => { setItems(SWIPE_ITEMS) }, [step])
+
+  return (
+    <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <AnimatePresence>
+        {items.map(item => (
+          <motion.div
+            key={item.id}
+            layout
+            exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ position: 'relative', overflow: 'hidden', borderRadius: 10 }}
+          >
+            <div style={{
+              position: 'absolute', inset: 0, background: '#E5484D',
+              display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 20,
+            }}>
+              <span style={{ color: '#fff', fontSize: 11, fontFamily: 'var(--font-outfit)', fontWeight: 600 }}>Delete</span>
+            </div>
+            <motion.div
+              drag={step >= 1 ? 'x' : false}
+              dragConstraints={{ left: -400, right: 0 }}
+              dragElastic={step >= 2 ? 0.05 : 0.4}
+              onDragEnd={step >= 3 ? ((_, { offset }) => {
+                if (offset.x < -80) setItems(p => p.filter(i => i.id !== item.id))
+              }) : undefined}
+              style={{
+                position: 'relative', zIndex: 1,
+                background: 'var(--bg)', border: '1px solid var(--border)',
+                borderRadius: 10, padding: '14px 16px',
+                cursor: step >= 1 ? 'grab' : 'default', userSelect: 'none',
+              }}
+            >
+              <span style={{ fontSize: 13, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)' }}>{item.title}</span>
+            </motion.div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      {items.length === 0 && (
+        <button onClick={() => setItems(SWIPE_ITEMS)} style={{
+          alignSelf: 'center', marginTop: 8, padding: '6px 14px', borderRadius: 8,
+          background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11,
+        }}>Reset</button>
+      )}
+    </div>
+  )
+}
+
+/* ── Bottom Sheet Snap Points ───────────────────────────────────────────── */
+
+const SHEET_SNAPS = { peek: 210, half: 110, full: 14 }
+
+function BottomSheetSnapPreview({ step }: { step: number }) {
+  const y = useMotionValue(SHEET_SNAPS.peek)
+  useEffect(() => { fmAnimate(y, SHEET_SNAPS.peek, { type: 'spring', stiffness: 260, damping: 30 }) }, [step, y])
+
+  function handleDragEnd(_: unknown, info: { offset: { y: number }, velocity: { y: number } }) {
+    if (step < 3) { fmAnimate(y, SHEET_SNAPS.peek, { type: 'spring', stiffness: 260, damping: 30 }); return }
+    const current = y.get()
+    const projected = current + info.velocity.y * 0.15
+    const points = Object.values(SHEET_SNAPS)
+    const target = points.reduce((closest, p) => Math.abs(p - projected) < Math.abs(closest - projected) ? p : closest)
+    fmAnimate(y, target, { type: 'spring', stiffness: 260, damping: 30 })
+  }
+
+  return (
+    <div style={{ height: '100%', position: 'relative', overflow: 'hidden', background: 'var(--bg-tertiary)' }}>
+      <div style={{ position: 'absolute', top: 14, left: 14, fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-outfit)' }}>Map view</div>
+      <motion.div
+        drag={step >= 1 ? 'y' : false}
+        dragConstraints={{ top: SHEET_SNAPS.full, bottom: SHEET_SNAPS.peek }}
+        dragElastic={0}
+        onDragEnd={handleDragEnd}
+        style={{
+          y, position: 'absolute', left: 0, right: 0, bottom: -20, height: '100%',
+          background: 'var(--bg)', borderRadius: '16px 16px 0 0',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.12)',
+          cursor: step >= 1 ? 'grab' : 'default', userSelect: 'none',
+          padding: '10px 16px',
+        }}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border-strong)', margin: '0 auto 12px' }} />
+        <div style={{ fontSize: 13, fontFamily: 'var(--font-power)', color: 'var(--text-primary)', marginBottom: 8 }}>Nearby places</div>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{ height: 30, borderRadius: 8, background: 'var(--bg-tertiary)', marginBottom: 6 }} />
+        ))}
+      </motion.div>
+    </div>
+  )
+}
+
+/* ── Implicit Animation (Flutter AnimatedContainer) ─────────────────────── */
+
+function ImplicitAnimationPreview({ step }: { step: number }) {
+  const [expanded, setExpanded] = useState(false)
+  useEffect(() => { setExpanded(false) }, [step])
+
+  return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <motion.div
+        onClick={() => setExpanded(e => !e)}
+        animate={{
+          width: expanded ? 220 : 130,
+          height: expanded ? 130 : 70,
+          borderRadius: expanded ? 20 : 10,
+          backgroundColor: expanded ? '#7C3AED' : '#E9E4FB',
+        }}
+        transition={step >= 1 ? { duration: 0.35, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
+        style={{
+          display: 'flex', alignItems: 'flex-end', padding: 14, cursor: 'pointer', userSelect: 'none',
+        }}
+      >
+        <motion.span
+          animate={{ color: expanded ? '#fff' : '#3a2e6e', fontSize: expanded ? 15 : 11 }}
+          transition={step >= 1 ? { duration: 0.35 } : { duration: 0 }}
+          style={{ fontFamily: 'var(--font-outfit)', fontWeight: 600 }}
+        >
+          Tap to expand
+        </motion.span>
+      </motion.div>
+    </div>
+  )
+}
+
+/* ── Flutter Staggered List ─────────────────────────────────────────────── */
+
+const STAGGER_ROWS = ['Notifications', 'Dark mode', 'Language', 'Privacy', 'Storage', 'About']
+
+function StaggeredListFlutterPreview({ step }: { step: number }) {
+  const [replayKey, setReplayKey] = useState(0)
+  useEffect(() => { setReplayKey(k => k + 1) }, [step])
+
+  return (
+    <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {STAGGER_ROWS.map((label, i) => (
+        <motion.div
+          key={`${replayKey}-${label}`}
+          initial={step >= 1 ? { opacity: 0, y: 24 } : { opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: step >= 2 ? i * (step >= 3 ? 0.08 : 0.05) : 0,
+            duration: 0.4,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          style={{
+            height: 42, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', paddingLeft: 14,
+            fontSize: 12, fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)',
+          }}
+        >
+          {label}
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
 /* ── Dispatch ───────────────────────────────────────────────────────────── */
 
 const WEB_MAP: Record<string, React.FC<{ step: number }>> = {
@@ -2118,6 +2411,12 @@ const WEB_MAP: Record<string, React.FC<{ step: number }>> = {
   'morphing-button':   MorphingButtonPreview,
   'drag-reorder':      DragReorderPreview,
   'number-counter':    NumberCounterPreview,
+  'scroll-header-collapse': ScrollHeaderCollapseWeb,
+  'magnetic-button':        MagneticButtonPreview,
+  'swipe-to-delete':        SwipeToDeletePreview,
+  'bottom-sheet-snap':      BottomSheetSnapPreview,
+  'implicit-animation':     ImplicitAnimationPreview,
+  'staggered-list-flutter': StaggeredListFlutterPreview,
 }
 
 const MOBILE_MAP: Record<string, React.FC<{ step: number }>> = {
@@ -2138,6 +2437,12 @@ const MOBILE_MAP: Record<string, React.FC<{ step: number }>> = {
   'morphing-button':   MorphingButtonPreview,
   'drag-reorder':      DragReorderPreview,
   'number-counter':    NumberCounterPreview,
+  'scroll-header-collapse': ScrollHeaderCollapseMobile,
+  'magnetic-button':        MagneticButtonPreview,
+  'swipe-to-delete':        SwipeToDeletePreview,
+  'bottom-sheet-snap':      BottomSheetSnapPreview,
+  'implicit-animation':     ImplicitAnimationPreview,
+  'staggered-list-flutter': StaggeredListFlutterPreview,
 }
 
 export function AnimationPreview({ slug, context, stepIndex = 3 }: {
