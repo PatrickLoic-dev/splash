@@ -188,10 +188,11 @@ export function LearnPage() {
   const bookmarks = useSyncExternalStore(bookmarksStore.subscribe, bookmarksStore.getSnapshot, bookmarksStore.getServerSnapshot)
   const progress  = useSyncExternalStore(progressStore.subscribe, progressStore.getSnapshot, progressStore.getServerSnapshot)
   const [cmdOpen,    setCmdOpen]    = useState(false)
-  const skipUrlSync = useRef(false)
-
-  useEffect(() => { setBookmarks(loadBookmarks()) }, [])
-  useEffect(() => { setProgress(loadProgress()) }, [])
+  const skipUrlSync    = useRef(false)
+  const viewRef        = useRef<ViewState>(view)
+  const lastListView   = useRef<ViewState>({ kind: 'selector' })
+  const prevSyncedView = useRef<ViewState>({ kind: 'selector' })
+  useEffect(() => { viewRef.current = view }, [view])
 
   function toggleBookmark(slug: string) {
     const prev = bookmarksStore.getSnapshot()
@@ -205,12 +206,20 @@ export function LearnPage() {
     progressStore.set({ ...prev, [slug]: best })
   }
 
-  // Sync URL → state on mount / param change
+  // Sync URL → state on mount / param change (including browser back/forward)
   useEffect(() => {
     const slug     = searchParams.get('slug')
     const platform = searchParams.get('platform') as PlatformId | null
     const step     = parseInt(searchParams.get('step') ?? '0', 10)
-    if (!slug) return
+    if (!slug) {
+      // Browser back/forward landed on a slug-less /learn — leave detail view
+      // and restore whichever list view (selector/filtered) preceded it.
+      if (viewRef.current.kind === 'detail') {
+        skipUrlSync.current = true
+        setView(lastListView.current)
+      }
+      return
+    }
     const anim = ANIMATIONS.find(a => a.slug === slug)
     if (!anim) return
     const resolvedPlatform = platform ?? anim.implementations[0]?.platform ?? 'react'
@@ -222,14 +231,28 @@ export function LearnPage() {
 
   // Sync state → URL when in detail view
   useEffect(() => {
+    const prevView = prevSyncedView.current
+    prevSyncedView.current = view
+    if (view.kind !== 'detail') lastListView.current = view
+
     if (skipUrlSync.current) { skipUrlSync.current = false; return }
+
     if (view.kind === 'detail') {
       const params = new URLSearchParams({
         slug:     view.slug,
         platform: view.platform,
         step:     String(stepIndex),
       })
-      router.replace(`/learn?${params.toString()}`, { scroll: false })
+      const url = `/learn?${params.toString()}`
+      // Opening a new pattern (from a list view, or a different slug) pushes
+      // a history entry so /learn stays reachable via back; step/platform
+      // tweaks within the same pattern just replace to avoid history spam.
+      const enteringDetail = prevView.kind !== 'detail' || prevView.slug !== view.slug
+      if (enteringDetail) {
+        router.push(url, { scroll: false })
+      } else {
+        router.replace(url, { scroll: false })
+      }
     } else {
       router.replace('/learn', { scroll: false })
     }
