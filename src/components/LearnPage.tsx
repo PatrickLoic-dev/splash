@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
@@ -140,24 +140,43 @@ type ViewState =
   | { kind: 'filtered'; platform: PlatformId }
   | { kind: 'detail'; slug: string; context: Context; platform: PlatformId }
 
-/* ── Bookmark helpers ── */
-const BOOKMARK_KEY = 'splash-bookmarks'
-function loadBookmarks(): string[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem(BOOKMARK_KEY) ?? '[]') } catch { return [] }
-}
-function saveBookmarks(slugs: string[]) {
-  localStorage.setItem(BOOKMARK_KEY, JSON.stringify(slugs))
+/* ── localStorage-backed stores ──
+   Exposed via useSyncExternalStore so components read/write the same
+   external system (localStorage) without a setState-in-effect hydration step. */
+function createLocalStorageStore<T>(key: string, fallback: T) {
+  let cache = fallback
+  let hydrated = false
+  const listeners = new Set<() => void>()
+
+  function getSnapshot(): T {
+    if (!hydrated) {
+      try {
+        const raw = localStorage.getItem(key)
+        cache = raw ? JSON.parse(raw) : fallback
+      } catch { cache = fallback }
+      hydrated = true
+    }
+    return cache
+  }
+
+  return {
+    getSnapshot,
+    getServerSnapshot: () => fallback,
+    subscribe(onStoreChange: () => void) {
+      listeners.add(onStoreChange)
+      return () => listeners.delete(onStoreChange)
+    },
+    set(value: T) {
+      cache = value
+      hydrated = true
+      localStorage.setItem(key, JSON.stringify(value))
+      listeners.forEach(l => l())
+    },
+  }
 }
 
-/* ── Progress tracking ── */
-const PROGRESS_KEY = 'splash-progress'
-function loadProgress(): Record<string, number> {
-  try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? '{}') } catch { return {} }
-}
-function saveProgress(p: Record<string, number>) {
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(p))
-}
+const bookmarksStore = createLocalStorageStore<string[]>('splash-bookmarks', [])
+const progressStore  = createLocalStorageStore<Record<string, number>>('splash-progress', {})
 
 export function LearnPage() {
   const searchParams = useSearchParams()
@@ -166,8 +185,8 @@ export function LearnPage() {
   const [replayKey,  setReplayKey]  = useState(0)
   const [stepIndex,  setStepIndex]  = useState(0)
   const [clickedPlatform, setClickedPlatform] = useState<PlatformId | null>(null)
-  const [bookmarks,  setBookmarks]  = useState<string[]>([])
-  const [progress,   setProgress]   = useState<Record<string, number>>({})
+  const bookmarks = useSyncExternalStore(bookmarksStore.subscribe, bookmarksStore.getSnapshot, bookmarksStore.getServerSnapshot)
+  const progress  = useSyncExternalStore(progressStore.subscribe, progressStore.getSnapshot, progressStore.getServerSnapshot)
   const [cmdOpen,    setCmdOpen]    = useState(false)
   const skipUrlSync = useRef(false)
 
@@ -175,20 +194,15 @@ export function LearnPage() {
   useEffect(() => { setProgress(loadProgress()) }, [])
 
   function toggleBookmark(slug: string) {
-    setBookmarks(prev => {
-      const next = prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
-      saveBookmarks(next)
-      return next
-    })
+    const prev = bookmarksStore.getSnapshot()
+    const next = prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+    bookmarksStore.set(next)
   }
 
   function markProgress(slug: string, stepIdx: number) {
-    setProgress(prev => {
-      const best = Math.max(prev[slug] ?? 0, stepIdx)
-      const next = { ...prev, [slug]: best }
-      saveProgress(next)
-      return next
-    })
+    const prev = progressStore.getSnapshot()
+    const best = Math.max(prev[slug] ?? 0, stepIdx)
+    progressStore.set({ ...prev, [slug]: best })
   }
 
   // Sync URL → state on mount / param change
