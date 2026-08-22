@@ -55,6 +55,14 @@ function openInPlayground(code: string, platform: PlatformId, deps: string[], ti
     window.open(url, '_blank')
     return
   }
+  if (platform === 'swiftui') {
+    window.open('https://swiftfiddle.com/', '_blank')
+    return
+  }
+  if (platform === 'angular') {
+    window.open('https://stackblitz.com/fork/angular', '_blank')
+    return
+  }
   const form = document.createElement('form')
   form.method = 'POST'
   form.action = 'https://stackblitz.com/run'
@@ -127,8 +135,10 @@ const PLATFORM_CONTEXT: Record<string, Context> = {
   react:          'web',
   nextjs:         'web',
   vue:            'web',
+  angular:        'web',
   'react-native': 'mobile',
   flutter:        'mobile',
+  swiftui:        'mobile',
 }
 
 import { PLATFORM_LOGOS } from './PlatformLogos'

@@ -1,8 +1,8 @@
-export type PlatformId = 'react' | 'nextjs' | 'vue' | 'react-native' | 'flutter'
+export type PlatformId = 'react' | 'nextjs' | 'vue' | 'angular' | 'react-native' | 'flutter' | 'swiftui'
 export type Context = 'web' | 'mobile'
 
-export const WEB_PLATFORMS:    PlatformId[] = ['react', 'nextjs', 'vue']
-export const MOBILE_PLATFORMS: PlatformId[] = ['react-native', 'flutter']
+export const WEB_PLATFORMS:    PlatformId[] = ['react', 'nextjs', 'vue', 'angular']
+export const MOBILE_PLATFORMS: PlatformId[] = ['react-native', 'flutter', 'swiftui']
 
 export interface Platform {
   id: PlatformId
@@ -16,8 +16,10 @@ export const PLATFORMS: Platform[] = [
   { id: 'react',        label: 'React',        badge: 'Framer Motion',  color: '#61DAFB', hasLiveDemo: true  },
   { id: 'nextjs',       label: 'Next.js',      badge: 'App Router',     color: '#FFFFFF', hasLiveDemo: true  },
   { id: 'vue',          label: 'Vue 3',         badge: 'Motion One',     color: '#42B883', hasLiveDemo: false },
+  { id: 'angular',      label: 'Angular',      badge: 'Animations API', color: '#DD0031', hasLiveDemo: false },
   { id: 'react-native', label: 'React Native', badge: 'Reanimated 3',   color: '#61DAFB', hasLiveDemo: false },
   { id: 'flutter',      label: 'Flutter',      badge: 'AnimationCtrl',  color: '#54C5F8', hasLiveDemo: false },
+  { id: 'swiftui',      label: 'SwiftUI',      badge: 'withAnimation',  color: '#F9633B', hasLiveDemo: false },
 ]
 
 export interface UseCase {
@@ -215,6 +217,41 @@ const style = computed(() => ({
 -->`,
       },
       {
+        platform: 'angular',
+        deps: [],
+        notes: 'The Angular Animations API (`@angular/animations`) declares states and transitions upfront in the component decorator, then an `IntersectionObserver` toggles a bound state variable to trigger them — no imperative animation calls needed.',
+        code: `import { Component, ElementRef, AfterViewInit, Input } from '@angular/core'
+import { trigger, state, style, transition, animate } from '@angular/animations'
+
+@Component({
+  selector: 'app-reveal-on-scroll',
+  template: \`<div [@reveal]="visible ? 'in' : 'out'"><ng-content /></div>\`,
+  animations: [
+    trigger('reveal', [
+      state('out', style({ opacity: 0, transform: 'translateY(32px)' })),
+      state('in',  style({ opacity: 1, transform: 'translateY(0)' })),
+      transition('out => in', animate('600ms cubic-bezier(0.22,1,0.36,1)')),
+    ]),
+  ],
+})
+export class RevealOnScrollComponent implements AfterViewInit {
+  @Input() delay = 0
+  visible = false
+
+  constructor(private el: ElementRef<HTMLElement>) {}
+
+  ngAfterViewInit() {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => (this.visible = true), this.delay * 1000)
+        observer.disconnect()
+      }
+    }, { rootMargin: '-80px' })
+    observer.observe(this.el.nativeElement)
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-reanimated'],
         notes: 'React Native has no scroll-based IntersectionObserver. Use `onLayout` to trigger on mount/layout, or a scroll-position approach for true scroll-triggered reveals.',
@@ -319,6 +356,45 @@ class _RevealOnMountState extends State<RevealOnMount>
     _ctrl.dispose();
     super.dispose();
   }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'SwiftUI has no built-in scroll-viewport callback like `IntersectionObserver`. `.onAppear` fires when the view is laid out inside a `ScrollView`, which is the closest native equivalent for a first-appearance reveal.',
+        code: `import SwiftUI
+
+struct RevealOnScroll<Content: View>: View {
+    let delay: Double
+    @ViewBuilder let content: Content
+
+    @State private var visible = false
+
+    init(delay: Double = 0, @ViewBuilder content: () -> Content) {
+        self.delay = delay
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .opacity(visible ? 1 : 0)
+            .offset(y: visible ? 0 : 32)
+            .onAppear {
+                withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.6).delay(delay)) {
+                    visible = true
+                }
+            }
+    }
+}
+
+// Usage
+struct SectionView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            RevealOnScroll { Text("Section heading").font(.title2.bold()) }
+            RevealOnScroll(delay: 0.1) { Text("Supporting copy") }
+        }
+    }
 }`,
       },
     ],
@@ -479,6 +555,41 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 </style>`,
       },
       {
+        platform: 'angular',
+        deps: ['@angular/animations'],
+        notes: 'Angular Router exposes route data on the `<router-outlet>`\'s activated component, which `RouteReuseStrategy`-aware transition triggers use as the animation key — analogous to keying on `route.path` in Vue Router.',
+        code: `import { trigger, transition, style, query, group, animate } from '@angular/animations'
+
+export const routeFadeSlide = trigger('routeAnimations', [
+  transition('* <=> *', [
+    query(':enter, :leave', style({ position: 'absolute', width: '100%' }), { optional: true }),
+    query(':enter', style({ opacity: 0, transform: 'translateY(16px)' }), { optional: true }),
+    group([
+      query(':leave', [
+        animate('300ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 0, transform: 'translateY(-16px)' })),
+      ], { optional: true }),
+      query(':enter', [
+        animate('300ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0)' })),
+      ], { optional: true }),
+    ]),
+  ]),
+])
+
+// app.component.ts
+@Component({
+  selector: 'app-root',
+  template: \`<div [@routeAnimations]="getRouteKey(outlet)">
+    <router-outlet #outlet="outlet"></router-outlet>
+  </div>\`,
+  animations: [routeFadeSlide],
+})
+export class AppComponent {
+  getRouteKey(outlet: RouterOutlet) {
+    return outlet?.activatedRouteData?.['animation']
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: ['@react-navigation/stack'],
         notes: 'React Navigation\'s Stack navigator ships with platform-appropriate transitions. Override with `cardStyleInterpolator` for fully custom animations.',
@@ -569,6 +680,47 @@ Navigator.push(context, FadeSlideRoute(page: const DetailScreen()));
 //     ),
 //   ),
 // )`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'SwiftUI has no built-in exit/enter sequencing like `AnimatePresence` — `.transition()` combined with `withAnimation` around the state change that swaps the view is the idiomatic equivalent, and `.id()` forces a fresh transition per key change.',
+        code: `import SwiftUI
+
+enum Page { case home, about, work }
+
+struct RootView: View {
+    @State private var page: Page = .home
+
+    var body: some View {
+        VStack {
+            HStack {
+                Button("Home")  { navigate(to: .home) }
+                Button("About") { navigate(to: .about) }
+                Button("Work")  { navigate(to: .work) }
+            }
+
+            ZStack {
+                switch page {
+                case .home:  HomeView()
+                case .about: AboutView()
+                case .work:  WorkView()
+                }
+            }
+            .id(page)
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .bottom)),
+                removal: .opacity.combined(with: .move(edge: .top))
+            ))
+        }
+    }
+
+    func navigate(to newPage: Page) {
+        withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.3)) {
+            page = newPage
+        }
+    }
+}`,
       },
     ],
     useCases: [
@@ -736,6 +888,66 @@ function release() {
 </script>`,
       },
       {
+        platform: 'angular',
+        deps: ['@angular/animations'],
+        notes: 'Angular has no gesture library equivalent to Framer Motion\'s `whileTap`/`drag`, so press feedback uses `HostListener` bindings driving a state-based animation trigger, and swipe uses raw pointer events with manual velocity tracking.',
+        code: `import { Component, HostListener } from '@angular/core'
+import { trigger, state, style, transition, animate } from '@angular/animations'
+
+@Component({
+  selector: 'app-spring-button',
+  template: \`<button [@press]="pressed ? 'down' : 'up'"><ng-content /></button>\`,
+  animations: [
+    trigger('press', [
+      state('up',   style({ transform: 'scale(1)' })),
+      state('down', style({ transform: 'scale(0.94)' })),
+      transition('up => down', animate('80ms ease-in')),
+      transition('down => up', animate('400ms cubic-bezier(0.34,1.56,0.64,1)')),
+    ]),
+  ],
+})
+export class SpringButtonComponent {
+  pressed = false
+
+  @HostListener('pointerdown') onDown() { this.pressed = true }
+  @HostListener('pointerup')   onUp()   { this.pressed = false }
+  @HostListener('pointerleave') onLeave() { this.pressed = false }
+}
+
+// ── Swipe to dismiss
+@Component({
+  selector: 'app-swipe-card',
+  template: \`<div (pointerdown)="onDown($event)" (pointermove)="onMove($event)" (pointerup)="onUp($event)"
+    [style.transform]="'translateX(' + offsetX + 'px)'"
+    [style.transition]="dragging ? 'none' : 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)'">
+    <ng-content />
+  </div>\`,
+})
+export class SwipeCardComponent {
+  offsetX = 0
+  dragging = false
+  private startX = 0
+  private lastTime = 0
+  private velocity = 0
+
+  onDown(e: PointerEvent) { this.dragging = true; this.startX = e.clientX; this.lastTime = e.timeStamp }
+  onMove(e: PointerEvent) {
+    if (!this.dragging) return
+    const dx = e.clientX - this.startX
+    this.velocity = dx / (e.timeStamp - this.lastTime)
+    this.offsetX = dx
+  }
+  onUp() {
+    this.dragging = false
+    if (Math.abs(this.velocity) > 0.5 || Math.abs(this.offsetX) > 120) {
+      this.offsetX = this.velocity > 0 ? 400 : -400
+    } else {
+      this.offsetX = 0
+    }
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-reanimated', 'react-native-gesture-handler'],
         notes: 'Reanimated 3 runs animations on the UI thread — zero JS-thread lag even under heavy load. Always prefer `withSpring` over `withTiming` for interactive feedback.',
@@ -854,6 +1066,49 @@ Dismissible(
   onDismissed: (_) => onDismiss(item),
   child: ItemCard(item: item),
 )`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'SwiftUI reads press state directly off a custom `ButtonStyle`\'s `configuration.isPressed` — no gesture wiring needed for press feedback. Swipe-to-dismiss uses `DragGesture` with a velocity-aware `.onEnded`.',
+        code: `import SwiftUI
+
+// ── Press feedback button
+struct SpringButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.5), value: configuration.isPressed)
+    }
+}
+
+// Usage: Button("Buy now") { }.buttonStyle(SpringButtonStyle())
+
+// ── Swipe to dismiss
+struct SwipeCard<Content: View>: View {
+    let onDismiss: () -> Void
+    @ViewBuilder let content: Content
+
+    @State private var offsetX: CGFloat = 0
+
+    var body: some View {
+        content
+            .offset(x: offsetX)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in offsetX = value.translation.width }
+                    .onEnded { value in
+                        let velocity = value.predictedEndLocation.x - value.location.x
+                        if abs(velocity) > 200 || abs(offsetX) > 120 {
+                            withAnimation(.spring()) { offsetX = velocity > 0 ? 400 : -400 }
+                            onDismiss()
+                        } else {
+                            withAnimation(.spring()) { offsetX = 0 }
+                        }
+                    }
+            )
+    }
+}`,
       },
     ],
     useCases: [
@@ -1045,6 +1300,44 @@ const textOffset = textY
 </script>`,
       },
       {
+        platform: 'angular',
+        deps: [],
+        notes: 'Angular has no reactive scroll-position primitive built in, so a `@HostListener(\'window:scroll\')` binding recomputes the progress on every scroll event and drives the parallax offsets through plain component properties bound in the template.',
+        code: `import { Component, ElementRef, HostListener, Input } from '@angular/core'
+
+@Component({
+  selector: 'app-parallax-section',
+  template: \`
+    <section style="position: relative; overflow: hidden; min-height: 480px">
+      <div [style.transform]="'translateY(' + bgY + 'px)'"
+           [style.background-image]="'url(' + image + ')'"
+           style="position: absolute; inset: -10%; background-size: cover; background-position: center; will-change: transform">
+      </div>
+      <div [style.transform]="'translateY(' + textY + 'px)'"
+           style="position: relative; z-index: 1; padding: 80px 40px; will-change: transform">
+        <ng-content />
+      </div>
+    </section>
+  \`,
+})
+export class ParallaxSectionComponent {
+  @Input() image = ''
+  bgY = 0
+  textY = 0
+
+  constructor(private el: ElementRef<HTMLElement>) {}
+
+  @HostListener('window:scroll')
+  onScroll() {
+    const rect = this.el.nativeElement.getBoundingClientRect()
+    const vh = window.innerHeight
+    const progress = 1 - rect.bottom / (rect.height + vh)
+    this.bgY   = (progress * 2 - 1) * 40
+    this.textY = (progress * 2 - 1) * -40
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-reanimated'],
         notes: 'Parallax in RN is driven by `ScrollView`\'s scroll offset, mapped via `interpolate`. Use `useNativeDriver: true` for 60fps on the UI thread.',
@@ -1160,6 +1453,47 @@ class _ManualParallaxState extends State<ManualParallax> {
 
   @override
   void dispose() { _controller.dispose(); super.dispose(); }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'SwiftUI has no direct scroll-offset API pre-iOS 17, so this uses a `GeometryReader` inside a `ScrollView` to read each layer\'s frame relative to the global coordinate space and derive an offset from it.',
+        code: `import SwiftUI
+
+struct ParallaxSection<Content: View>: View {
+    let image: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        GeometryReader { geo in
+            let minY = geo.frame(in: .global).minY
+            let bgY = minY * 0.4      // background moves slower
+            let textY = minY * -0.2   // foreground moves opposite, faster
+
+            ZStack {
+                Image(image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height + 100)
+                    .offset(y: bgY)
+                    .clipped()
+
+                content
+                    .offset(y: textY)
+            }
+        }
+        .frame(height: 480)
+        .clipped()
+    }
+}
+
+// Usage inside a ScrollView
+ScrollView {
+    ParallaxSection(image: "hero") {
+        Text("Section heading").font(.title.bold()).foregroundStyle(.white)
+    }
+    // ...rest of scrollable content
 }`,
       },
     ],
@@ -1353,6 +1687,56 @@ withDefaults(defineProps<{
 -->`,
       },
       {
+        platform: 'angular',
+        deps: [],
+        notes: 'Same technique as Vue — a plain CSS `@keyframes` shimmer is performant and needs no animation library. Angular components use `:host` styling instead of Vue\'s `scoped` attribute.',
+        code: `import { Component, Input } from '@angular/core'
+
+@Component({
+  selector: 'app-skeleton',
+  template: \`<div class="skeleton" [style.width]="width" [style.height.px]="height" [style.border-radius.px]="borderRadius"></div>\`,
+  styles: [\`
+    .skeleton {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-tertiary);
+    }
+    .skeleton::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.07) 50%, transparent 100%);
+      animation: shimmer 1.5s infinite linear;
+    }
+    @keyframes shimmer {
+      from { transform: translateX(-100%); }
+      to   { transform: translateX(100%); }
+    }
+  \`],
+})
+export class SkeletonComponent {
+  @Input() width = '100%'
+  @Input() height = 16
+  @Input() borderRadius = 6
+}
+
+// ── Composed card skeleton
+@Component({
+  selector: 'app-card-skeleton',
+  template: \`
+    <div style="padding: 20px; border-radius: 12px; border: 1px solid var(--border)">
+      <app-skeleton [width]="'48px'" [height]="48" [borderRadius]="24"></app-skeleton>
+      <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px">
+        <app-skeleton width="60%" [height]="14"></app-skeleton>
+        <app-skeleton width="90%" [height]="12"></app-skeleton>
+        <app-skeleton width="75%" [height]="12"></app-skeleton>
+      </div>
+    </div>
+  \`,
+})
+export class CardSkeletonComponent {}`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-reanimated', 'expo-linear-gradient'],
         notes: 'Linear gradients in RN require `expo-linear-gradient` or `react-native-linear-gradient`. The animation must be on the UI thread — never use `Animated.Value` with `useNativeDriver: false` for this.',
@@ -1494,6 +1878,53 @@ class CardSkeleton extends StatelessWidget {
       Skeleton(width: MediaQuery.of(context).size.width * 0.6, height: 12),
     ]),
   );
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'Pure SwiftUI — no packages required. A `LinearGradient` inside a `TimelineView` (or an animated offset) sweeps across a shape mask, the same mental model as the CSS gradient sweep.',
+        code: `import SwiftUI
+
+struct Skeleton: View {
+    var width: CGFloat? = nil
+    var height: CGFloat = 16
+    var cornerRadius: CGFloat = 6
+
+    @State private var phase: CGFloat = -1
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(Color(.systemGray5))
+            .frame(width: width, height: height)
+            .overlay(
+                LinearGradient(
+                    colors: [.clear, .white.opacity(0.3), .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .offset(x: phase * 200)
+                .mask(RoundedRectangle(cornerRadius: cornerRadius))
+            )
+            .onAppear {
+                withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                    phase = 1
+                }
+            }
+    }
+}
+
+// ── Card skeleton
+struct CardSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Skeleton(width: 48, height: 48, cornerRadius: 24)
+            Skeleton(width: 160, height: 14)
+            Skeleton(height: 12)
+            Skeleton(width: 220, height: 12)
+        }
+        .padding(20)
+    }
 }`,
       },
     ],
@@ -1692,6 +2123,36 @@ defineProps<{
 </style>`,
       },
       {
+        platform: 'angular',
+        deps: ['@angular/animations'],
+        notes: 'The `query()` + `stagger()` combinator inside a list-level trigger is Angular\'s built-in answer to `staggerChildren` — it selects every entering child and applies increasing delays automatically, no manual index math required.',
+        code: `import { trigger, transition, query, stagger, animate, style } from '@angular/animations'
+
+export const staggerList = trigger('staggerList', [
+  transition('* => *', [
+    query(':enter', [
+      style({ opacity: 0, transform: 'translateY(20px)' }),
+      stagger(70, [
+        animate('500ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+    ], { optional: true }),
+  ]),
+])
+
+@Component({
+  selector: 'app-stagger-list',
+  template: \`
+    <ul [@staggerList]="items.length" style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px">
+      <li *ngFor="let item of items">{{ item.label }}</li>
+    </ul>
+  \`,
+  animations: [staggerList],
+})
+export class StaggerListComponent {
+  @Input() items: { id: string; label: string }[] = []
+}`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-reanimated'],
         notes: 'RN has no built-in stagger. Use `withDelay` per item. For long lists, use `FlatList` with `getItemLayout` — animating hundreds of items simultaneously tanks performance.',
@@ -1815,6 +2276,33 @@ class _StaggerListState extends State<StaggerList>
 
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'SwiftUI has no built-in stagger container, so each row\'s `.animation(...).delay(index * interval)` provides the cascade — conceptually identical to the React Native `withDelay` per-item approach.',
+        code: `import SwiftUI
+
+struct StaggerList: View {
+    let items: [String]
+    @State private var appeared = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(items.enumerated()), id: \\.offset) { index, label in
+                Text(label)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 20)
+                    .animation(
+                        .timingCurve(0.22, 1, 0.36, 1, duration: 0.5)
+                            .delay(Double(index) * 0.07),
+                        value: appeared
+                    )
+            }
+        }
+        .onAppear { appeared = true }
+    }
 }`,
       },
     ],
@@ -2112,6 +2600,70 @@ function onSwipe(e: TouchEvent) {
 </style>`,
       },
       {
+        platform: 'angular',
+        deps: ['@angular/animations'],
+        notes: 'Angular lacks a `custom` prop like Framer Motion\'s AnimatePresence, so direction is tracked as a plain component property and read inside the `params` of a parameterized `transition()` to pick the enter/exit edge.',
+        code: `import { Component } from '@angular/core'
+import { trigger, transition, style, animate, query, group } from '@angular/animations'
+
+@Component({
+  selector: 'app-image-carousel',
+  template: \`
+    <div class="carousel">
+      <div [@slide]="{ value: page, params: { dir: dir } }" class="slide" [style.background]="slides[page].color"
+           (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+        <div class="overlay"></div>
+        <span class="label">{{ slides[page].label }}</span>
+      </div>
+      <div class="dots">
+        <div *ngFor="let s of slides; let i = index" class="dot" [class.active]="i === page" (click)="go(i - page)"></div>
+      </div>
+    </div>
+  \`,
+  animations: [
+    trigger('slide', [
+      transition('* => *', [
+        style({ position: 'relative' }),
+        query(':enter', [
+          style({ transform: 'translateX({{ dir }}%) scale(0.92)', opacity: 0.4 }),
+        ], { optional: true }),
+        group([
+          query(':leave', [
+            animate('350ms cubic-bezier(0.22,1,0.36,1)',
+              style({ transform: 'translateX(calc(-1 * {{ dir }}%)) scale(0.92)', opacity: 0.4 })),
+          ], { optional: true }),
+          query(':enter', [
+            animate('350ms cubic-bezier(0.22,1,0.36,1)', style({ transform: 'translateX(0) scale(1)', opacity: 1 })),
+          ], { optional: true }),
+        ]),
+      ], { params: { dir: 100 } }),
+    ]),
+  ],
+})
+export class ImageCarouselComponent {
+  slides = [
+    { color: '#534AB7', label: 'Mountain Vista' },
+    { color: '#1D9E75', label: 'Forest Trail' },
+    { color: '#D85A30', label: 'Ocean Sunset' },
+  ]
+  page = 0
+  dir = 100
+  private startX = 0
+
+  go(d: number) {
+    if (d === 0) return
+    this.dir = d > 0 ? 100 : -100
+    this.page = (this.page + d + this.slides.length) % this.slides.length
+  }
+
+  onTouchStart(e: TouchEvent) { this.startX = e.touches[0].clientX }
+  onTouchEnd(e: TouchEvent) {
+    const dx = this.startX - e.changedTouches[0].clientX
+    if (Math.abs(dx) > 50) this.go(dx > 0 ? 1 : -1)
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: [],
         notes: 'Animated.FlatList with pagingEnabled gives native-feel snapping for free. scrollX drives all per-item interpolations so no extra state is needed.',
@@ -2252,6 +2804,56 @@ class _State extends State<ImageCarousel> {
   @override void dispose() { _ctrl.dispose(); super.dispose(); }
 }`,
       },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'A `TabView` with `.tabViewStyle(.page)` gives paging and dot indicators for free, but this custom version keeps manual control over the scale-depth and overlay effects using `GeometryReader`-derived progress per slide.',
+        code: `import SwiftUI
+
+struct Slide { let color: Color; let label: String }
+
+struct ImageCarousel: View {
+    let slides: [Slide] = [
+        Slide(color: Color(hex: "534AB7"), label: "Mountain Vista"),
+        Slide(color: Color(hex: "1D9E75"), label: "Forest Trail"),
+        Slide(color: Color(hex: "D85A30"), label: "Ocean Sunset"),
+    ]
+    @State private var page = 0
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            TabView(selection: $page) {
+                ForEach(Array(slides.enumerated()), id: \\.offset) { index, slide in
+                    ZStack(alignment: .bottomLeading) {
+                        slide.color
+                        Color.black.opacity(page == index ? 0 : 0.4)
+                            .animation(.easeOut(duration: 0.3), value: page)
+                        Text(slide.label)
+                            .font(.headline).foregroundStyle(.white)
+                            .padding(20)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .tag(index)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .animation(.spring(response: 0.4, dampingFraction: 0.85), value: page)
+
+            HStack(spacing: 5) {
+                ForEach(slides.indices, id: \\.self) { i in
+                    Capsule()
+                        .fill(.white.opacity(i == page ? 1 : 0.4))
+                        .frame(width: i == page ? 20 : 6, height: 6)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: page)
+                        .onTapGesture { page = i }
+                }
+            }
+            .padding(.bottom, 12)
+        }
+        .frame(height: 280)
+    }
+}`,
+      },
     ],
     useCases: [
       { label: 'Hero image gallery', example: 'A product page where the main photo carousel uses scale-depth so the active image feels "lifted" above the deck.' },
@@ -2272,6 +2874,7 @@ class _State extends State<ImageCarousel> {
         'Les variantes `enter`/`exit` utilisent la direction pour choisir le bord d\'entrée/sortie. `enter: (d) => ({ x: d > 0 ? "100%" : "-100%", scale: 0.92 })`.',
         'L\'overlay sombre passe de `opacity: 0.4` (entrée) à `opacity: 0` (centre) pour chaque slide entrant — crée l\'effet de "surface s\'illuminant".',
         'Activer `drag="x"` avec `dragConstraints={{ left: 0, right: 0 }}` et un threshold `onDragEnd` pour le swipe mobile.',
+        'Pastilles animées : chaque indicateur utilise `animate={{ width }}` piloté par un spring — la pastille active s\'étend à 20px, les inactives se contractent à 6px.',
       ],
       useCases: [
         { label: 'Galerie de produits', example: 'Photos du produit navigables gauche/droite. L\'animation directionnelle ancre l\'utilisateur dans l\'espace de la galerie.' },
@@ -2556,6 +3159,63 @@ p           { margin: 0; font-size: 13px; color: var(--text-secondary); text-ali
 </style>`,
       },
       {
+        platform: 'angular',
+        deps: ['@angular/animations'],
+        notes: 'The same query/group slide trigger from Page Transitions is reused here, keyed by step index instead of route — a good example of how one Angular Animations trigger can serve any "swap this view for that one" scenario.',
+        code: `import { Component } from '@angular/core'
+import { trigger, transition, query, style, group, animate } from '@angular/animations'
+
+@Component({
+  selector: 'app-onboarding-flow',
+  template: \`
+    <div class="onboarding">
+      <div class="content" [@slide]="step">
+        <div class="icon" [style.background]="current.color"></div>
+        <h2>{{ current.title }}</h2>
+        <p>{{ current.body }}</p>
+      </div>
+
+      <div class="dots">
+        <div *ngFor="let s of screens; let i = index" class="dot" [class.active]="i === step"
+             [style.background]="i === step ? current.color : ''" (click)="step = i"></div>
+      </div>
+
+      <div class="nav">
+        <button *ngIf="step > 0" class="back" (click)="step = step - 1">Back</button>
+        <button class="next" [style.background]="current.color" (click)="advance()">
+          {{ step === screens.length - 1 ? 'Get started →' : 'Next →' }}
+        </button>
+      </div>
+    </div>
+  \`,
+  animations: [
+    trigger('slide', [
+      transition('* => *', [
+        query(':enter, :leave', style({ position: 'absolute' }), { optional: true }),
+        query(':enter', style({ opacity: 0, transform: 'translateX(32px)' }), { optional: true }),
+        group([
+          query(':leave', [animate('280ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 0, transform: 'translateX(-32px)' }))], { optional: true }),
+          query(':enter', [animate('280ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateX(0)' }))], { optional: true }),
+        ]),
+      ]),
+    ]),
+  ],
+})
+export class OnboardingFlowComponent {
+  screens = [
+    { color: '#534AB7', title: 'Welcome', body: 'The animation platform for every stack.' },
+    { color: '#1D9E75', title: 'Pick a pattern', body: 'Six production animations, five platforms.' },
+    { color: '#D85A30', title: 'Ship it', body: 'Copy step-by-step code straight into your project.' },
+  ]
+  step = 0
+  get current() { return this.screens[this.step] }
+
+  advance() {
+    if (this.step < this.screens.length - 1) this.step++
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-reanimated'],
         notes: 'FadeIn / FadeOut from react-native-reanimated provides the mode="wait" equivalent — exiting screen disappears before the next one appears.',
@@ -2728,6 +3388,66 @@ class _State extends State<OnboardingFlow> {
   }
 }`,
       },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'SwiftUI\'s asymmetric `.transition()` from Page Transitions is reused here keyed on `step` via `.id()`, and the dots reuse the same spring-width pattern as the parallax and carousel implementations.',
+        code: `import SwiftUI
+
+struct OnboardingScreen { let color: Color; let title: String; let body: String }
+
+struct OnboardingFlow: View {
+    let screens = [
+        OnboardingScreen(color: Color(hex: "534AB7"), title: "Welcome", body: "The animation platform for every stack."),
+        OnboardingScreen(color: Color(hex: "1D9E75"), title: "Pick a pattern", body: "Six production animations, five platforms."),
+        OnboardingScreen(color: Color(hex: "D85A30"), title: "Ship it", body: "Copy step-by-step code straight into your project."),
+    ]
+    @State private var step = 0
+    var current: OnboardingScreen { screens[step] }
+
+    var body: some View {
+        VStack(spacing: 18) {
+            VStack(spacing: 14) {
+                RoundedRectangle(cornerRadius: 20).fill(current.color).frame(width: 64, height: 64)
+                Text(current.title).font(.title3)
+                Text(current.body).font(.footnote).multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary).frame(maxWidth: 220)
+            }
+            .id(step)
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .trailing)),
+                removal: .opacity.combined(with: .move(edge: .leading))
+            ))
+            .frame(maxHeight: .infinity)
+
+            HStack(spacing: 6) {
+                ForEach(screens.indices, id: \\.self) { i in
+                    Capsule()
+                        .fill(i == step ? current.color : Color.black.opacity(0.2))
+                        .frame(width: i == step ? 24 : 8, height: 8)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: step)
+                        .onTapGesture { step = i }
+                }
+            }
+
+            HStack(spacing: 8) {
+                if step > 0 {
+                    Button("Back") { withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.28)) { step -= 1 } }
+                        .buttonStyle(.bordered)
+                }
+                Button(step == screens.count - 1 ? "Get started →" : "Next →") {
+                    if step < screens.count - 1 {
+                        withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.28)) { step += 1 }
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(current.color)
+            }
+        }
+        .padding(24)
+    }
+}`,
+      },
     ],
     useCases: [
       { label: 'App first launch', example: 'A 3-step welcome flow that explains the value proposition before the user reaches the home screen.' },
@@ -2744,10 +3464,11 @@ class _State extends State<OnboardingFlow> {
       tagline: 'Écrans step-through avec indicateurs de pastilles animées',
       concept: 'Un flux d\'onboarding fait défiler 2–5 écrans avec `AnimatePresence`. La signature est la rangée de pastilles : la pastille active élargit sa largeur via un spring de 8px à 24px pendant que les inactives se contractent — donnant aux utilisateurs un sens spatial de leur position sans numéros. La dernière étape remplace "Suivant" par un CTA.',
       howItWorks: [
-        'Stocker l\'index d\'étape actuel dans un `useState`. `AnimatePresence` + variantes de slide gèrent les transitions entre les écrans.',
-        'La rangée de pastilles mappe chaque index à un `motion.div`. La pastille active a `width: 24` (spring), les inactives `width: 8`.',
-        'Utiliser `layoutId` sur les pastilles pour que Framer Motion anime la largeur en douceur lors de la navigation.',
-        'Le bouton "Suivant" devient conditionnellement "Commencer" ou votre CTA final sur la dernière étape.',
+        '`AnimatePresence mode="wait"` garantit que l\'écran sortant termine complètement sa sortie avant que l\'écran entrant ne commence — pas de double visibilité qui créerait un flash.',
+        'Indexé par l\'étape : changer la `key` démonte l\'ancien écran et monte le nouveau, déclenchant automatiquement l\'animation d\'entrée.',
+        'Spring de largeur des pastilles : un spring à forte rigidité (500) et faible amortissement (30) rend l\'expansion de la pastille vive et physique.',
+        'Entrée de l\'icône : l\'icône de chaque étape se monte avec son propre initial/animate, retardée de 100ms pour apparaître après que le conteneur de texte s\'est stabilisé.',
+        '`isLast` pilote le libellé et le comportement du bouton — "Suivant →" avance tandis que "Commencer" peut naviguer vers l\'application principale.',
       ],
       useCases: [
         { label: 'Onboarding app', example: '3 écrans expliquant les fonctionnalités clés. Les pastilles indiquent la progression sans compter à voix haute.' },
@@ -3040,6 +3761,72 @@ p       { margin: 0; font-size: 13px; color: var(--text-secondary); }
 </style>`,
       },
       {
+        platform: 'angular',
+        deps: [],
+        notes: 'Angular Animations has no layoutId/FLIP primitive either, so this uses the same manual FLIP technique as the Vue implementation — record the thumbnail\'s rect on click, then animate the detail hero from that rect back to its natural layout with a plain CSS transition.',
+        code: `import { Component, ElementRef, ViewChild, AfterViewChecked } from '@angular/core'
+
+@Component({
+  selector: 'app-shared-element-demo',
+  template: \`
+    <div class="root">
+      <div class="list">
+        <div *ngFor="let it of items" class="row" (click)="open(it, $event)">
+          <div class="thumb" [style.background]="it.color"></div>
+          <div class="meta"><strong>{{ it.title }}</strong><span>{{ it.sub }}</span></div>
+        </div>
+      </div>
+
+      <div class="overlay" *ngIf="selected" (click)="close()">
+        <div class="sheet" (click)="$event.stopPropagation()">
+          <div #hero class="hero" [style.background]="selected.color"></div>
+          <h2>{{ selected.title }}</h2>
+          <p>{{ selected.sub }} · Click outside to close</p>
+        </div>
+      </div>
+    </div>
+  \`,
+})
+export class SharedElementDemoComponent {
+  @ViewChild('hero') heroRef?: ElementRef<HTMLElement>
+  items = [
+    { id: 'a', color: '#534AB7', title: 'Northern Lights', sub: 'Nature' },
+    { id: 'b', color: '#1D9E75', title: 'Forest Path', sub: 'Outdoors' },
+    { id: 'c', color: '#D85A30', title: 'Desert Dunes', sub: 'Travel' },
+  ]
+  selected: typeof this.items[0] | null = null
+  private originRect: DOMRect | null = null
+
+  open(item: typeof this.items[0], e: MouseEvent) {
+    this.originRect = (e.currentTarget as HTMLElement).querySelector('.thumb')!.getBoundingClientRect()
+    this.selected = item
+    requestAnimationFrame(() => this.playFlip())
+  }
+
+  private playFlip() {
+    const hero = this.heroRef?.nativeElement
+    if (!hero || !this.originRect) return
+    const heroRect = hero.getBoundingClientRect()
+    const dx = this.originRect.left - heroRect.left
+    const dy = this.originRect.top - heroRect.top
+    const sx = this.originRect.width / heroRect.width
+    const sy = this.originRect.height / heroRect.height
+
+    hero.style.transition = 'none'
+    hero.style.transform = \`translate(\${dx}px, \${dy}px) scale(\${sx}, \${sy})\`
+    hero.style.borderRadius = '10px'
+
+    requestAnimationFrame(() => {
+      hero.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1), border-radius 0.4s'
+      hero.style.transform = ''
+      hero.style.borderRadius = '16px'
+    })
+  }
+
+  close() { this.selected = null }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-reanimated', '@react-navigation/native'],
         notes: 'React Navigation v7 has native shared element support via sharedElements on screen options. For standalone use, react-native-reanimated\'s layout animations achieve a similar effect.',
@@ -3207,6 +3994,59 @@ class ItemDetail extends StatelessWidget {
   );
 }`,
       },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'A `matchedGeometryEffect` with the same `id`/`namespace` on both the list thumbnail and the detail hero is SwiftUI\'s first-class equivalent of `layoutId` — it interpolates frame, and combined with `.transition()` on the modal, gives the full hero-morph effect.',
+        code: `import SwiftUI
+
+struct GalleryItem: Identifiable { let id: String; let color: Color; let title: String; let sub: String }
+
+struct SharedElementDemo: View {
+    let items = [
+        GalleryItem(id: "a", color: Color(hex: "534AB7"), title: "Northern Lights", sub: "Nature"),
+        GalleryItem(id: "b", color: Color(hex: "1D9E75"), title: "Forest Path", sub: "Outdoors"),
+        GalleryItem(id: "c", color: Color(hex: "D85A30"), title: "Desert Dunes", sub: "Travel"),
+    ]
+    @Namespace private var heroSpace
+    @State private var selected: GalleryItem?
+
+    var body: some View {
+        ZStack {
+            List(items) { item in
+                HStack(spacing: 12) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(item.color)
+                        .frame(width: 48, height: 48)
+                        .matchedGeometryEffect(id: item.id, in: heroSpace, isSource: selected == nil)
+                    VStack(alignment: .leading) {
+                        Text(item.title).font(.subheadline.bold())
+                        Text(item.sub).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .onTapGesture { withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { selected = item } }
+            }
+
+            if let item = selected {
+                Color.black.opacity(0.5).ignoresSafeArea()
+                    .onTapGesture { withAnimation { selected = nil } }
+                VStack(alignment: .leading, spacing: 18) {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(item.color)
+                        .frame(height: 160)
+                        .matchedGeometryEffect(id: item.id, in: heroSpace, isSource: true)
+                    Text(item.title).font(.title2)
+                    Text("\\(item.sub) · Tap outside to close").font(.footnote).foregroundStyle(.secondary)
+                }
+                .padding(24)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .background(.background, in: RoundedRectangle(cornerRadius: 20))
+                .transition(.move(edge: .bottom))
+            }
+        }
+    }
+}`,
+      },
     ],
     useCases: [
       { label: 'Product list → detail', example: 'An e-commerce grid where the product image physically flies from the card to the full-bleed hero on the detail page.' },
@@ -3223,10 +4063,11 @@ class ItemDetail extends StatelessWidget {
       tagline: 'Éléments héros qui se morphent entre liste et détail',
       concept: 'Une transition d\'élément partagé donne l\'impression que le même élément visuel voyage physiquement de sa position dans une liste à sa position dans une vue détail. Dans Framer Motion, c\'est fait avec `layoutId` — la même chaîne sur deux `motion` éléments différents indique au moteur d\'animer entre eux plutôt que démonter/remonter.',
       howItWorks: [
-        '`layoutId="hero-{id}"` sur l\'image dans la grille ET sur l\'image dans la vue détail. Framer Motion calcule automatiquement les deltas de position et taille.',
-        'Envelopper la liste ET la vue détail dans un `<LayoutGroup>` pour que les animations de layout se coordonnent correctement.',
-        'Utiliser `AnimatePresence mode="popLayout"` autour de la vue détail pour que les cartes de liste se recalculent quand le détail entre/sort.',
-        'Les éléments frères avec `layout` se repositionnent en douceur quand le héros s\'expand — sans ça, ils snappent brutalement.',
+        'Correspondance par `layoutId` : quand un élément avec `layoutId="card-img-1"` démonte et qu\'un autre élément avec le même `layoutId` monte, Framer Motion détecte la paire et anime la transition en FLIP — aucun calcul de coordonnées requis.',
+        '`AnimatePresence` permet l\'animation de sortie — sans elle, l\'élément sortant disparaît instantanément et l\'animation de layout n\'a rien depuis quoi voyager.',
+        'La superposition de détail apparaît avec une animation d\'opacité séparée ; seul l\'élément partagé utilise `layoutId`. Cela garde les deux préoccupations indépendantes.',
+        'Morphing du rayon de bordure : `background`, `borderRadius`, `width` et `height` s\'interpolent tous automatiquement via l\'animation de layout — aucune transition explicite n\'est nécessaire.',
+        'Décalage de scroll : pour les éléments de liste qui peuvent être scrollés hors de vue, Framer Motion lit le `getBoundingClientRect` de l\'élément source au moment du montage, donc l\'origine de l\'animation est toujours exacte.',
       ],
       useCases: [
         { label: 'Grille vers détail', example: 'Vignette de photo qui se morphe en image plein écran. La continuité visuelle maintient le contexte de l\'utilisateur.' },
@@ -3479,6 +4320,59 @@ const searchStyle = computed(() => ({
 </style>`,
       },
       {
+        platform: 'angular',
+        deps: [],
+        notes: 'Angular has no reactive scroll-position primitive, so a `@HostListener(\'scroll\')` bound to the scrollable container recomputes every derived value via the same clamp/lerp helper on each event — matching the pattern used in the Vue implementation, which faces the same lack-of-primitive constraint.',
+        code: `import { Component, ElementRef, ViewChild } from '@angular/core'
+
+function lerp(val: number, inMin: number, inMax: number, outMin: number, outMax: number) {
+  const t = Math.max(0, Math.min(1, (val - inMin) / (inMax - inMin)))
+  return outMin + t * (outMax - outMin)
+}
+
+@Component({
+  selector: 'app-collapsing-header',
+  template: \`
+    <div #container class="root" (scroll)="onScroll()">
+      <header class="header" [style.padding-top.px]="headerPadY" [style.padding-bottom.px]="headerPadY">
+        <div class="top-row">
+          <div class="avatar-wrap" [style.transform]="'scale(' + avatarScale + ')'">
+            <div class="avatar"></div>
+          </div>
+          <div class="names">
+            <div class="username" [style.font-size.px]="titleSize">Profile</div>
+            <div class="handle">&#64;username · 128 posts</div>
+          </div>
+        </div>
+        <div class="search" [style.opacity]="searchOp">Search posts...</div>
+      </header>
+      <div class="feed">
+        <div *ngFor="let i of [].constructor(14); let idx = index" class="card">
+          <div class="line a"></div>
+          <div class="line b"></div>
+          <div class="line c"></div>
+        </div>
+      </div>
+    </div>
+  \`,
+})
+export class CollapsingHeaderComponent {
+  @ViewChild('container') containerRef!: ElementRef<HTMLElement>
+  headerPadY = 20
+  avatarScale = 1
+  titleSize = 22
+  searchOp = 1
+
+  onScroll() {
+    const y = this.containerRef.nativeElement.scrollTop
+    this.headerPadY   = lerp(y, 0, 120, 20, 10)
+    this.avatarScale  = lerp(y, 0, 120, 1, 0.55)
+    this.titleSize    = lerp(y, 0, 120, 22, 14)
+    this.searchOp     = lerp(y, 0, 80, 1, 0)
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-reanimated'],
         notes: 'useAnimatedScrollHandler feeds scrollY into useAnimatedStyle for a native-thread interpolation — no JS bridge jank on scroll.',
@@ -3660,6 +4554,69 @@ class CollapsingHeaderPage extends StatelessWidget {
   );
 }`,
       },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'SwiftUI has no direct pre-iOS-17 scroll-offset publisher, so a `GeometryReader` inside the `ScrollView` reads the content offset via a `PreferenceKey`, and derived values feed the same header, avatar, and search bar.',
+        code: `import SwiftUI
+
+struct ScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
+struct CollapsingHeader: View {
+    @State private var offset: CGFloat = 0
+
+    var headerPadY: CGFloat  { lerp(offset, 0, 120, 20, 10) }
+    var avatarScale: CGFloat { lerp(offset, 0, 120, 1, 0.55) }
+    var titleSize: CGFloat   { lerp(offset, 0, 120, 22, 14) }
+    var searchOp: CGFloat    { lerp(offset, 0, 80, 1, 0) }
+
+    var body: some View {
+        ScrollView {
+            GeometryReader { geo in
+                Color.clear.preference(key: ScrollOffsetKey.self, value: -geo.frame(in: .named("scroll")).minY)
+            }
+            .frame(height: 0)
+
+            LazyVStack(spacing: 10) {
+                ForEach(0..<14) { _ in
+                    RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)).frame(height: 60)
+                }
+            }
+            .padding(16)
+        }
+        .coordinateSpace(name: "scroll")
+        .onPreferenceChange(ScrollOffsetKey.self) { offset = max(0, $0) }
+        .safeAreaInset(edge: .top) {
+            VStack(spacing: 10) {
+                HStack(spacing: 12) {
+                    Circle().fill(Color(hex: "534AB7")).frame(width: 44 * avatarScale, height: 44 * avatarScale)
+                    VStack(alignment: .leading) {
+                        Text("Profile").font(.system(size: titleSize))
+                        Text("@username · 128 posts").font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+                Text("Search posts...")
+                    .font(.caption)
+                    .opacity(searchOp)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, headerPadY)
+            .background(.background)
+        }
+    }
+}
+
+func lerp(_ val: CGFloat, _ inMin: CGFloat, _ inMax: CGFloat, _ outMin: CGFloat, _ outMax: CGFloat) -> CGFloat {
+    let t = max(0, min(1, (val - inMin) / (inMax - inMin)))
+    return outMin + t * (outMax - outMin)
+}`,
+      },
     ],
     useCases: [
       { label: 'Social profile', example: 'A Twitter/Instagram-style profile header that collapses as the user scrolls through posts, keeping the username visible.' },
@@ -3676,10 +4633,11 @@ class CollapsingHeaderPage extends StatelessWidget {
       tagline: 'Le défilement réduit l\'en-tête, scale l\'avatar et masque la barre de recherche en parfaite synchronisation',
       concept: 'Un en-tête réductible lie la position de défilement à plusieurs valeurs de transform simultanément. `useScroll` suit le `scrollY` du conteneur, et `useTransform` mappe ce progrès à des propriétés CSS indépendantes — padding de l\'en-tête, scale de l\'avatar, taille du titre, opacité de la barre de recherche — s\'animant en parallèle depuis une seule valeur de défilement.',
       howItWorks: [
-        '`useScroll({ container: scrollRef })` produit un `scrollY` MotionValue qui change à chaque frame de défilement sans re-render React.',
-        '`useTransform(scrollY, [0, 80], [80, 50])` mappe 0–80px de scroll à une hauteur de 80px–50px. Chaque propriété a sa propre plage cible.',
-        'Lier toutes les MotionValues transformées directement au `style` des éléments — Framer Motion met à jour le DOM en dehors de React pour les performances.',
-        'L\'avatar scale de 1 à 0.6 pendant que le padding réduit — les deux se terminent au même point de défilement pour une chorégraphie serrée.',
+        '`useScroll` avec une `container` ref : au lieu de suivre le scroll de la page, on passe le ref du div scrollable pour que l\'animation soit limitée au composant.',
+        'Plusieurs appels `useTransform` : chaque propriété CSS a son propre mapping `useTransform` depuis le même `scrollY`. Cette source unique de vérité garde toutes les animations parfaitement synchronisées.',
+        'Pas de spring sur les transforms : les animations pilotées par le scroll doivent utiliser une interpolation linéaire ou ease. Les springs ajoutent un délai qui donne l\'impression que l\'en-tête "flotte" derrière le doigt.',
+        '`position: sticky` sur l\'en-tête : l\'en-tête reste épinglé à `top: 0` dans le conteneur de scroll sans recalcul de position en JS.',
+        'Clamp : `useTransform` limite les valeurs de sortie — scroller au-delà de 120px n\'accentue plus la réduction ; l\'en-tête se fige à sa taille minimale.',
       ],
       useCases: [
         { label: 'App mobile', example: 'En-tête de profil qui se réduit pendant que l\'utilisateur défile dans le contenu — pattern signature d\'Instagram et Twitter.' },
@@ -3818,6 +4776,42 @@ class _State extends State<DismissableCard> with SingleTickerProviderStateMixin 
 }`,
       },
       {
+        platform: 'swiftui',
+        deps: [],
+        notes: '`DragGesture` combined with `withAnimation` on release gives the same threshold-check-then-spring-or-dismiss flow — no third-party gesture library needed.',
+        code: `import SwiftUI
+
+struct DismissableCard: View {
+    let onDismiss: () -> Void
+    @State private var dy: CGFloat = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Notification").font(.headline)
+            Text("Drag down to dismiss").font(.subheadline).foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .background(.background, in: RoundedRectangle(cornerRadius: 16))
+        .shadow(radius: 4)
+        .offset(y: dy)
+        .opacity(Double(1 - min(dy, 180) / 180))
+        .scaleEffect(1 - min(dy, 180) / 180 * 0.12)
+        .gesture(
+            DragGesture()
+                .onChanged { value in if value.translation.height > 0 { dy = value.translation.height } }
+                .onEnded { value in
+                    if dy > 80 || value.predictedEndTranslation.height > 500 {
+                        withAnimation(.easeIn(duration: 0.22)) { dy = 400 }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { onDismiss() }
+                    } else {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { dy = 0 }
+                    }
+                }
+        )
+    }
+}`,
+      },
+      {
         platform: 'react',
         deps: ['framer-motion'],
         code: `import { useMotionValue, useTransform, animate, motion } from 'framer-motion'
@@ -3922,6 +4916,62 @@ function onDrag({ delta, velocityY, last }) {
 }
 </script>`,
       },
+      {
+        platform: 'angular',
+        deps: [],
+        notes: 'Raw `pointerdown`/`pointermove`/`pointerup` bindings drive the same delta/velocity threshold check as every other platform here — Angular has no built-in drag directive, so this stays close to the DOM.',
+        code: `import { Component } from '@angular/core'
+
+@Component({
+  selector: 'app-dismissable-card',
+  template: \`
+    <div class="card"
+         [style.transform]="'translateY(' + dy + 'px) scale(' + cardScale + ')'"
+         [style.opacity]="cardOpacity"
+         style="touch-action: none"
+         (pointerdown)="onDown($event)" (pointermove)="onMove($event)" (pointerup)="onUp()">
+      <h3>Notification</h3>
+      <p>Drag down to dismiss</p>
+    </div>
+  \`,
+})
+export class DismissableCardComponent {
+  dy = 0
+  private startY = 0
+  private lastY = 0
+  private lastTime = 0
+  private velocity = 0
+  private dragging = false
+
+  get cardOpacity() { return Math.max(0, 1 - this.dy / 180) }
+  get cardScale()   { return Math.max(0.88, 1 - (this.dy / 180) * 0.12) }
+
+  onDown(e: PointerEvent) {
+    this.dragging = true
+    this.startY = e.clientY - this.dy
+    this.lastY = e.clientY
+    this.lastTime = e.timeStamp
+  }
+
+  onMove(e: PointerEvent) {
+    if (!this.dragging) return
+    const next = e.clientY - this.startY
+    this.velocity = (e.clientY - this.lastY) / (e.timeStamp - this.lastTime)
+    this.lastY = e.clientY
+    this.lastTime = e.timeStamp
+    if (next > 0) this.dy = next
+  }
+
+  onUp() {
+    this.dragging = false
+    if (this.dy > 80 || this.velocity > 0.5) {
+      this.dy = 400 // trigger CSS transition to off-screen, then emit dismiss
+    } else {
+      this.dy = 0
+    }
+  }
+}`,
+      },
     ],
     useCases: [
       { label: 'Notification tray',  example: 'Pull down a notification card to dismiss it — the native iOS/Android interaction replicated in-app.' },
@@ -4024,6 +5074,53 @@ class PhotoDetail extends StatelessWidget {
       ]),
     );
   }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: '`matchedGeometryEffect` is the closest SwiftUI equivalent to Flutter\'s `Hero` — tagging the thumbnail and the detail image with the same `id` and `Namespace` lets SwiftUI interpolate frame automatically.',
+        code: `import SwiftUI
+
+struct Photo: Identifiable { let id: String; let color: Color; let title: String }
+
+struct PhotoGallery: View {
+    let photos = [
+        Photo(id: "a", color: Color(hex: "534AB7"), title: "Aurora"),
+        Photo(id: "b", color: Color(hex: "1D9E75"), title: "Forest"),
+        Photo(id: "c", color: Color(hex: "D85A30"), title: "Ember"),
+    ]
+    @Namespace private var heroSpace
+    @State private var selected: Photo?
+
+    var body: some View {
+        ZStack {
+            LazyVGrid(columns: [GridItem(), GridItem(), GridItem()]) {
+                ForEach(photos) { photo in
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(photo.color)
+                        .matchedGeometryEffect(id: photo.id, in: heroSpace, isSource: selected == nil)
+                        .frame(height: 90)
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { selected = photo }
+                        }
+                }
+            }
+
+            if let photo = selected {
+                VStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(photo.color)
+                        .matchedGeometryEffect(id: photo.id, in: heroSpace, isSource: true)
+                        .frame(height: 320)
+                    Text(photo.title).font(.title).padding()
+                    Spacer()
+                }
+                .background(.background)
+                .onTapGesture { withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { selected = nil } }
+            }
+        }
+    }
 }`,
       },
       {
@@ -4228,6 +5325,57 @@ function onBeforeEnter(el) {
 }
 </script>`,
       },
+      {
+        platform: 'angular',
+        deps: [],
+        notes: 'Same manual FLIP approach as Vue and Shared Element Transitions — Angular has no Hero-equivalent primitive, so this reads the thumbnail\'s rect on click and animates the detail image from it.',
+        code: `import { Component, ElementRef, ViewChild } from '@angular/core'
+
+@Component({
+  selector: 'app-photo-gallery',
+  template: \`
+    <div class="grid" *ngIf="!selected">
+      <div *ngFor="let p of photos" class="thumb" [style.background]="p.color" (click)="open(p, $event)"></div>
+    </div>
+    <div class="detail" *ngIf="selected" (click)="selected = null">
+      <div #hero class="hero" [style.background]="selected.color"></div>
+      <h2>{{ selected.title }}</h2>
+    </div>
+  \`,
+})
+export class PhotoGalleryComponent {
+  @ViewChild('hero') heroRef?: ElementRef<HTMLElement>
+  photos = [
+    { id: 'a', color: '#534AB7', title: 'Aurora' },
+    { id: 'b', color: '#1D9E75', title: 'Forest' },
+    { id: 'c', color: '#D85A30', title: 'Ember' },
+  ]
+  selected: typeof this.photos[0] | null = null
+  private originRect: DOMRect | null = null
+
+  open(photo: typeof this.photos[0], e: MouseEvent) {
+    this.originRect = (e.target as HTMLElement).getBoundingClientRect()
+    this.selected = photo
+    requestAnimationFrame(() => this.playFlip())
+  }
+
+  private playFlip() {
+    const hero = this.heroRef?.nativeElement
+    if (!hero || !this.originRect) return
+    const heroRect = hero.getBoundingClientRect()
+    const dx = this.originRect.left - heroRect.left
+    const dy = this.originRect.top - heroRect.top
+    const scale = this.originRect.width / heroRect.width
+
+    hero.style.transition = 'none'
+    hero.style.transform = \`translate(\${dx}px, \${dy}px) scale(\${scale})\`
+    requestAnimationFrame(() => {
+      hero.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)'
+      hero.style.transform = ''
+    })
+  }
+}`,
+      },
     ],
     useCases: [
       { label: 'Photo gallery',    example: 'A thumbnail expands into a full-screen detail view — the image itself flies across while metadata fades in below it.' },
@@ -4403,6 +5551,35 @@ export default router
 </template>`,
       },
       {
+        platform: 'angular',
+        deps: [],
+        notes: 'Angular Router has no built-in View Transitions flag (unlike Vue Router 4.4+), so wrap the navigation call in `document.startViewTransition` inside the click handler — the API itself is entirely framework-agnostic.',
+        code: `import { Component } from '@angular/core'
+import { Router } from '@angular/router'
+
+@Component({
+  selector: 'app-article-card',
+  template: \`
+    <div (click)="navigate()" style="cursor: pointer">
+      <img [src]="article.cover" [style.view-transition-name]="'article-cover-' + article.id" />
+      <h2>{{ article.title }}</h2>
+    </div>
+  \`,
+})
+export class ArticleCardComponent {
+  @Input() article!: { id: string; cover: string; title: string }
+  constructor(private router: Router) {}
+
+  navigate() {
+    const go = () => this.router.navigate(['/article', this.article.id])
+    if (!(document as any).startViewTransition) { go(); return }
+    ;(document as any).startViewTransition(go)
+  }
+}
+
+// On the detail component — same view-transition-name via [style.view-transition-name]`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-reanimated', '@react-navigation/native', '@react-navigation/stack'],
         notes: 'React Native doesn\'t support the browser View Transitions API. The equivalent is a custom `cardStyleInterpolator` in React Navigation — a function that receives the animation progress and maps it to card styles.',
@@ -4470,6 +5647,39 @@ class FadeScaleRoute extends PageRouteBuilder {
 
 // Usage
 Navigator.of(context).push(FadeScaleRoute(page: const DetailPage()))`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'iOS has no browser-style View Transitions API. The closest built-in construct is a `matchedGeometryEffect` inside a `NavigationStack`, combined with a custom push transition — conceptually the same "closest equivalent" role that `cardStyleInterpolator` plays on React Native and `PageRouteBuilder` plays on Flutter.',
+        code: `import SwiftUI
+
+struct ArticleCard: View {
+    let article: Article
+    @Namespace var transition
+
+    var body: some View {
+        NavigationLink(value: article) {
+            VStack {
+                AsyncImage(url: article.coverURL)
+                    .matchedGeometryEffect(id: "cover-\\(article.id)", in: transition)
+                Text(article.title)
+            }
+        }
+    }
+}
+
+// In the NavigationStack root:
+NavigationStack {
+    ArticleList()
+        .navigationDestination(for: Article.self) { article in
+            ArticleDetail(article: article, transition: transition)
+        }
+}
+
+// ArticleDetail reuses the same matchedGeometryEffect id and namespace
+// so the cover image morphs during the push, the nearest SwiftUI analog
+// to a browser view-transition-name match.`,
       },
     ],
     useCases: [
@@ -4682,6 +5892,51 @@ export function FlipList() {
 }`,
       },
       {
+        platform: 'angular',
+        deps: ['@angular/animations'],
+        notes: 'Angular Animations\' `query()` + `animateChild()` combined with the `:increment`/`:decrement` aliases on `*ngFor` gives a FLIP-style move animation — conceptually the same automation Vue\'s `<TransitionGroup>` provides.',
+        code: `import { trigger, transition, query, style, animate, stagger } from '@angular/animations'
+
+export const flipList = trigger('flipList', [
+  transition('* => *', [
+    query(':leave', [
+      style({ position: 'absolute' }),
+      animate('300ms ease', style({ opacity: 0, transform: 'translateY(-8px)' })),
+    ], { optional: true }),
+    query(':enter', [
+      style({ opacity: 0, transform: 'translateY(8px)' }),
+      stagger(20, animate('300ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0)' }))),
+    ], { optional: true }),
+  ]),
+])
+
+@Component({
+  selector: 'app-flip-list',
+  template: \`
+    <div class="filters">
+      <button (click)="filter = 'all'">All</button>
+      <button (click)="filter = 'web'">Web</button>
+      <button (click)="items = [...items].reverse()">Flip ↕</button>
+    </div>
+    <ul [@flipList]="visible.length" class="list">
+      <li *ngFor="let item of visible; trackBy: trackById">{{ item.label }}</li>
+    </ul>
+  \`,
+  animations: [flipList],
+})
+export class FlipListComponent {
+  items = [
+    { id: 'a', label: 'React', type: 'web' },
+    { id: 'b', label: 'Vue', type: 'web' },
+    { id: 'c', label: 'Flutter', type: 'mobile' },
+    { id: 'd', label: 'Kotlin', type: 'mobile' },
+  ]
+  filter = 'all'
+  get visible() { return this.filter === 'all' ? this.items : this.items.filter(i => i.type === this.filter) }
+  trackById(_: number, item: { id: string }) { return item.id }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: [],
         notes: 'React Native\'s `LayoutAnimation` performs the FLIP calculation natively — call `LayoutAnimation.configureNext()` before the state change.',
@@ -4769,6 +6024,46 @@ class _FlipListState extends State<FlipList> {
       ),
     ]);
   }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'A `List` (or `LazyVStack`) automatically animates row moves, insertions, and removals when its data changes inside `withAnimation` — SwiftUI performs the FLIP-equivalent measurement internally, no manual rect math required.',
+        code: `import SwiftUI
+
+struct Item: Identifiable, Equatable { let id: String; let label: String; let type: String }
+
+struct FlipList: View {
+    @State private var items = [
+        Item(id: "a", label: "React", type: "web"),
+        Item(id: "b", label: "Vue", type: "web"),
+        Item(id: "c", label: "Flutter", type: "mobile"),
+        Item(id: "d", label: "Kotlin", type: "mobile"),
+    ]
+    @State private var filter = "all"
+
+    var visible: [Item] {
+        filter == "all" ? items : items.filter { $0.type == filter }
+    }
+
+    var body: some View {
+        VStack {
+            HStack {
+                Button("All") { withAnimation { filter = "all" } }
+                Button("Web") { withAnimation { filter = "web" } }
+                Button("Flip ↕") { withAnimation { items.reverse() } }
+            }
+            ForEach(visible) { item in
+                Text(item.label)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.background, in: RoundedRectangle(cornerRadius: 10))
+                    .transition(.asymmetric(insertion: .opacity, removal: .opacity))
+            }
+            .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.3), value: visible)
+        }
+    }
 }`,
       },
     ],
@@ -5038,6 +6333,52 @@ async function handleClick() {
 </style>`,
       },
       {
+        platform: 'angular',
+        deps: [],
+        notes: 'A CSS `transition` on `width` handles the morph, while `*ngIf` swaps the inner label/spinner/check with a simple fade — no Animations API needed since only one property (opacity) needs orchestrating per swap.',
+        code: `import { Component } from '@angular/core'
+
+type BtnState = 'idle' | 'loading' | 'success'
+
+@Component({
+  selector: 'app-morphing-button',
+  template: \`
+    <div style="display:flex; justify-content:center; padding:40px">
+      <button (click)="handleClick()" class="morph-btn"
+              [style.width.px]="state === 'idle' ? 160 : 48"
+              [style.background]="state === 'success' ? '#22c55e' : '#A3E635'">
+        <span *ngIf="state === 'idle'">Submit</span>
+        <svg *ngIf="state === 'loading'" class="spinner" width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="rgba(0,0,0,0.2)" stroke-width="2.5"/>
+          <path d="M10 2a8 8 0 018 8" stroke="#0a0a0a" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <svg *ngIf="state === 'success'" width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10l4.5 4.5 7.5-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  \`,
+  styles: [\`
+    .morph-btn { height: 48px; border-radius: 999px; border: none; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.3s; }
+    .spinner { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  \`],
+})
+export class MorphingButtonComponent {
+  state: BtnState = 'idle'
+
+  async handleClick() {
+    if (this.state !== 'idle') return
+    this.state = 'loading'
+    await new Promise(r => setTimeout(r, 1800))
+    this.state = 'success'
+    setTimeout(() => (this.state = 'idle'), 2200)
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: [],
         notes: 'Uses `Animated.Value` + `Animated.spring` for the width morph and `ActivityIndicator` for the loading spinner. No external dependencies.',
@@ -5144,6 +6485,44 @@ class _MorphingButtonState extends State<MorphingButton> {
       ),
     );
   }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: '`.frame(width:)` animated implicitly, combined with a `switch` over an enum state, reproduces the same morph — `ProgressView` provides the spinner for free, no custom SVG needed.',
+        code: `import SwiftUI
+
+enum ButtonState { case idle, loading, success }
+
+struct MorphingButton: View {
+    @State private var state: ButtonState = .idle
+
+    var body: some View {
+        Button(action: handleTap) {
+            Group {
+                switch state {
+                case .idle: Text("Submit").fontWeight(.semibold)
+                case .loading: ProgressView().tint(.black)
+                case .success: Image(systemName: "checkmark").foregroundStyle(.white)
+                }
+            }
+            .frame(width: state == .idle ? 160 : 48, height: 48)
+            .background(state == .success ? Color.green : Color(hex: "A3E635"))
+            .clipShape(Capsule())
+        }
+        .disabled(state != .idle)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: state)
+    }
+
+    func handleTap() {
+        guard state == .idle else { return }
+        state = .loading
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+            state = .success
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) { state = .idle }
+        }
+    }
 }`,
       },
     ],
@@ -5367,6 +6746,49 @@ const items = ref([
 </style>`,
       },
       {
+        platform: 'angular',
+        deps: ['@angular/cdk'],
+        notes: 'The Angular CDK\'s `DragDropModule` provides `cdkDropList` + `cdkDrag`, which handles hit detection and the sibling-shift animation out of the box — the closest official equivalent to Framer Motion\'s `Reorder`.',
+        code: `import { Component } from '@angular/core'
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop'
+
+@Component({
+  selector: 'app-drag-reorder',
+  template: \`
+    <ul cdkDropList (cdkDropListDropped)="drop($event)" class="list">
+      <li *ngFor="let item of items" cdkDrag class="row">
+        <span cdkDragHandle class="handle">⠿</span>
+        <span class="dot" [style.background]="item.color"></span>
+        <span class="label">{{ item.label }}</span>
+      </li>
+    </ul>
+  \`,
+  styles: [\`
+    .list { list-style: none; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .row { display: flex; align-items: center; gap: 12px; background: var(--bg-secondary);
+      border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .cdk-drag-preview { box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: scale(1.03); }
+    .cdk-drag-placeholder { opacity: 0.3; }
+    .cdk-drop-list-dragging .row:not(.cdk-drag-placeholder) {
+      transition: transform 250ms cubic-bezier(0,0,0.2,1);
+    }
+  \`],
+})
+export class DragReorderComponent {
+  items = [
+    { id: '1', label: 'Design system tokens', color: '#534AB7' },
+    { id: '2', label: 'Component architecture', color: '#1D9E75' },
+    { id: '3', label: 'Animation library', color: '#D85A30' },
+    { id: '4', label: 'Accessibility audit', color: '#A3E635' },
+    { id: '5', label: 'Performance review', color: '#E6C430' },
+  ]
+
+  drop(event: CdkDragDrop<typeof this.items>) {
+    moveItemInArray(this.items, event.previousIndex, event.currentIndex)
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: ['react-native-draggable-flatlist', 'react-native-reanimated', 'react-native-gesture-handler'],
         notes: 'Uses `react-native-draggable-flatlist` which wraps Reanimated for smooth native-thread animations. `ScaleDecorator` provides the lift effect on drag.',
@@ -5488,6 +6910,42 @@ class _DragReorderState extends State<DragReorder> {
       },
     );
   }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'A `List` with `.onMove` gives free drag-to-reorder with the system\'s native lift-and-shift animation — pair with `EditMode` or a persistent handle icon so users know rows are draggable outside of `List`\'s default edit mode.',
+        code: `import SwiftUI
+
+struct ReorderItem: Identifiable {
+    let id: String; let label: String; let color: Color
+}
+
+struct DragReorder: View {
+    @State private var items = [
+        ReorderItem(id: "1", label: "Design system tokens", color: Color(hex: "534AB7")),
+        ReorderItem(id: "2", label: "Component architecture", color: Color(hex: "1D9E75")),
+        ReorderItem(id: "3", label: "Animation library", color: Color(hex: "D85A30")),
+        ReorderItem(id: "4", label: "Accessibility audit", color: Color(hex: "A3E635")),
+        ReorderItem(id: "5", label: "Performance review", color: Color(hex: "E6C430")),
+    ]
+
+    var body: some View {
+        List {
+            ForEach(items) { item in
+                HStack(spacing: 12) {
+                    Image(systemName: "line.3.horizontal").foregroundStyle(.secondary)
+                    Circle().fill(item.color).frame(width: 10, height: 10)
+                    Text(item.label)
+                }
+            }
+            .onMove { indices, newOffset in
+                items.move(fromOffsets: indices, toOffset: newOffset)
+            }
+        }
+        .environment(\\.editMode, .constant(.active))
+    }
 }`,
       },
     ],
@@ -5719,6 +7177,61 @@ onMounted(() => {
 </template>`,
       },
       {
+        platform: 'angular',
+        deps: [],
+        notes: 'A `requestAnimationFrame` loop with a manual ease-out-cubic function drives the count — no animation library needed, since Angular has no motion-value primitive like Framer Motion\'s `useMotionValue`.',
+        code: `import { Component, ElementRef, Input, OnInit } from '@angular/core'
+
+@Component({
+  selector: 'app-counter',
+  template: \`
+    <div #el class="card">
+      <div class="number">{{ display }}</div>
+      <div class="label">{{ label }}</div>
+    </div>
+  \`,
+  styles: [\`
+    .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px;
+      padding: 20px 28px; text-align: center; min-width: 140px; }
+    .number { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; }
+    .label { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+  \`],
+})
+export class CounterComponent implements OnInit {
+  @Input() to = 0
+  @Input() duration = 1800
+  @Input() prefix = ''
+  @Input() suffix = ''
+  @Input() decimals = 0
+  @Input() label = ''
+  display = '0'
+
+  constructor(private el: ElementRef<HTMLElement>) {}
+
+  ngOnInit() {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      observer.disconnect()
+      this.animate()
+    }, { threshold: 0.1 })
+    observer.observe(this.el.nativeElement)
+  }
+
+  private animate() {
+    const start = performance.now()
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / this.duration)
+      const value = easeOutCubic(t) * this.to
+      this.display = this.prefix + value.toFixed(this.decimals)
+        .replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + this.suffix
+      if (t < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }
+}`,
+      },
+      {
         platform: 'react-native',
         deps: [],
         notes: 'Uses `Animated.Value` + `Animated.timing` with a cubic ease-out easing function. An `addListener` reads the raw value each frame to update the displayed text. No external packages needed.',
@@ -5866,6 +7379,54 @@ class Dashboard extends StatelessWidget {
   }
 }`,
       },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'SwiftUI has no built-in tweened-value builder, so this drives the count manually with a `Timer` publisher and an ease-out-cubic function — conceptually the same RAF-loop technique as the Angular and React Native implementations.',
+        code: `import SwiftUI
+
+struct Counter: View {
+    let to: Double
+    var duration: Double = 1.8
+    var prefix: String = ""
+    var suffix: String = ""
+    var decimals: Int = 0
+    var label: String = ""
+
+    @State private var value: Double = 0
+    @State private var hasAnimated = false
+
+    var body: some View {
+        VStack {
+            Text(formatted)
+                .font(.system(size: 32, weight: .heavy))
+            Text(label).font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .background(.background, in: RoundedRectangle(cornerRadius: 14))
+        .onAppear {
+            guard !hasAnimated else { return }
+            hasAnimated = true
+            animate()
+        }
+    }
+
+    var formatted: String {
+        prefix + String(format: "%.\\(decimals)f", value) + suffix
+    }
+
+    func animate() {
+        let start = Date()
+        Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { timer in
+            let elapsed = Date().timeIntervalSince(start)
+            let t = min(1, elapsed / duration)
+            let eased = 1 - pow(1 - t, 3)
+            value = eased * to
+            if t >= 1 { timer.invalidate() }
+        }
+    }
+}`,
+      },
     ],
     useCases: [
       { label: 'SaaS marketing page', example: 'A "10,000+ teams trust us" stat that counts up from 0 as the section scrolls into view.' },
@@ -5988,6 +7549,82 @@ export function CollapsingHeader() {
   )
 }`,
       },
+      {
+        platform: 'angular',
+        deps: [],
+        notes: 'Same `@HostListener(\'window:scroll\')` + `lerp` technique used in the Collapsing Header animation — this is the same underlying pattern, just with `backdrop-filter` blur added to the derived styles.',
+        code: `import { Component, HostListener } from '@angular/core'
+
+function lerp(val: number, inMin: number, inMax: number, outMin: number, outMax: number) {
+  const t = Math.max(0, Math.min(1, (val - inMin) / (inMax - inMin)))
+  return outMin + t * (outMax - outMin)
+}
+
+@Component({
+  selector: 'app-collapsing-header',
+  template: \`
+    <header class="header" [style.height.px]="height"
+            [style.backdrop-filter]="'blur(' + blur + 'px)'"
+            [style.background]="'rgba(255,255,255,' + bgOpacity + ')'">
+      <h1>Dashboard</h1>
+      <p [style.opacity]="subOpac">Last updated 2 minutes ago</p>
+    </header>
+  \`,
+  styles: [\`
+    .header { position: sticky; top: 0; z-index: 50; display: flex; flex-direction: column;
+      justify-content: center; padding: 0 24px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+  \`],
+})
+export class CollapsingHeaderComponent {
+  height = 88
+  blur = 0
+  bgOpacity = 0
+  subOpac = 1
+
+  @HostListener('window:scroll')
+  onScroll() {
+    const y = window.scrollY
+    this.height    = lerp(y, 0, 120, 88, 56)
+    this.blur      = lerp(y, 0, 120, 0, 12)
+    this.bgOpacity = lerp(y, 0, 120, 0, 0.75)
+    this.subOpac   = lerp(y, 0, 80, 1, 0)
+  }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'iOS has a first-class collapsing header mechanism that is genuinely different from the web version: `.navigationBarTitleDisplayMode(.large)` on a `NavigationStack` shrinks the title into the compact nav bar automatically as the user scrolls, using the system\'s large-title behavior rather than manual scroll math.',
+        code: `import SwiftUI
+
+struct ProfileScreen: View {
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(0..<14) { _ in
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(.systemGray6))
+                            .frame(height: 60)
+                    }
+                }
+            }
+            .navigationTitle("Dashboard")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    // Optional: custom subtitle shown only when scrolled to top
+                }
+            }
+        }
+    }
+}
+
+// For custom subtitle fade + blur behavior beyond what the system
+// large-title provides, combine with a GeometryReader-based scroll
+// offset (see the Collapsing Header animation) and apply it to a
+// custom header view instead of relying on navigationBarTitleDisplayMode.`,
+      },
     ],
     useCases: [
       { label: 'Analytics dashboard', example: 'The page title header shrinks and blurs as the user scrolls through a long report, keeping filters accessible without eating screen space.' },
@@ -5999,6 +7636,27 @@ export function CollapsingHeader() {
       'Keep the scroll range small (80–150px) — a collapse that takes 500px of scrolling feels sluggish rather than responsive.',
       'Pair the header height transform with a `layout` shift on the content below it, or use `padding-top` on the body so content doesn\'t jump under the sticky header.',
     ],
+    fr: {
+      title: 'Réduction d\'en-tête au scroll',
+      tagline: 'Un en-tête collant rétrécit, se floute et estompe son sous-titre au défilement de la page',
+      concept: 'Un en-tête réductible lie directement la hauteur d\'une barre de nav, le flou d\'arrière-plan et l\'opacité du sous-titre à la position de scroll plutôt qu\'à un point de rupture fixe. Au fur et à mesure que l\'utilisateur défile, l\'en-tête se comprime progressivement — cela libère de l\'espace vertical pour le contenu tout en gardant la navigation accessible. C\'est un pattern natif du web : il dépend d\'une position de scroll continue et de `backdrop-filter`, sans équivalent natif mobile direct (les apps natives utilisent plutôt la réduction de grand titre, un mécanisme différent).',
+      howItWorks: [
+        'Lire la progression du scroll avec une `MotionValue` (`useScroll` de Framer Motion) plutôt qu\'un écouteur d\'événement scroll — cela évite les re-renders à chaque pixel de défilement.',
+        'Injecter cette `MotionValue` dans un ou plusieurs appels `useTransform` pour dériver hauteur, flou et opacité comme fonctions pures du décalage de scroll.',
+        'Appliquer les valeurs dérivées directement comme props `style` sur un `motion.header` — Framer Motion les met à jour sur le thread du compositeur, sans passer par les re-renders React.',
+        'Limiter la plage d\'entrée (ex. 0–120px de scroll) pour que la réduction se termine tôt et que l\'en-tête reste dans son état compact pour le reste du défilement.',
+      ],
+      useCases: [
+        { label: 'Tableau de bord analytique', example: 'L\'en-tête du titre de page rétrécit et se floute pendant que l\'utilisateur défile un long rapport, gardant les filtres accessibles sans manger l\'espace écran.' },
+        { label: 'Site de documentation', example: 'Une barre de nav de docs se compresse au scroll, échangeant sa tagline contre plus d\'espace de lecture tout en gardant la barre de recherche épinglée.' },
+        { label: 'Article de blog', example: 'La barre de titre de l\'article se réduit en une fine barre de progression de lecture une fois que le lecteur dépasse la section hero.' },
+      ],
+      tips: [
+        'Dériver `backdropFilter` d\'une `MotionValue` via un `useTransform` imbriqué, pas une simple chaîne — Safari a besoin que la valeur de flou se mette à jour en continu, pas par sauts.',
+        'Garder la plage de scroll petite (80–150px) — une réduction qui prend 500px de scroll paraît lente plutôt que réactive.',
+        'Associer le transform de hauteur de l\'en-tête à un décalage `layout` du contenu en dessous, ou utiliser `padding-top` sur le body pour que le contenu ne saute pas sous l\'en-tête collant.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -6087,6 +7745,77 @@ export function MagneticButton({ children }: { children: React.ReactNode }) {
   )
 }`,
       },
+      {
+        platform: 'angular',
+        deps: [],
+        notes: 'Raw `mousemove`/`mouseleave` `@HostListener` bindings compute the same offset math as the React version — Angular has no motion-value spring primitive, so a CSS `transition` with an overshoot cubic-bezier approximates the spring pull-back.',
+        code: `import { Component, ElementRef, HostListener } from '@angular/core'
+
+@Component({
+  selector: 'app-magnetic-button',
+  template: \`<button #btn class="magnetic-btn" [style.transform]="'translate(' + x + 'px, ' + y + 'px)'">
+    <ng-content />
+  </button>\`,
+  styles: [\`
+    .magnetic-btn { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .magnetic-btn.tracking { transition: none; }
+  \`],
+})
+export class MagneticButtonComponent {
+  x = 0
+  y = 0
+
+  constructor(private el: ElementRef<HTMLElement>) {}
+
+  @HostListener('mousemove', ['$event'])
+  onMouseMove(e: MouseEvent) {
+    const rect = this.el.nativeElement.getBoundingClientRect()
+    this.x = (e.clientX - (rect.left + rect.width / 2)) * 0.35
+    this.y = (e.clientY - (rect.top + rect.height / 2)) * 0.35
+  }
+
+  @HostListener('mouseleave')
+  onMouseLeave() {
+    this.x = 0
+    this.y = 0
+  }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'True finger-touch has no hover or proximity signal, so this pattern only makes sense on iPadOS with a trackpad or Apple Pencil hover — `.onContinuousHover` reports pointer position before contact, the nearest iOS equivalent to a `mousemove` event. On iPhone, skip this pattern entirely.',
+        code: `import SwiftUI
+
+struct MagneticButton<Content: View>: View {
+    @ViewBuilder let content: Content
+    @State private var offset: CGSize = .zero
+
+    var body: some View {
+        Button(action: {}) { content }
+            .offset(offset)
+            .onContinuousHover { phase in
+                switch phase {
+                case .active(let location):
+                    // location is relative to the view's own bounds
+                    let dx = location.x - 22 // approx half button width
+                    let dy = location.y - 22
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        offset = CGSize(width: dx * 0.35, height: dy * 0.35)
+                    }
+                case .ended:
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        offset = .zero
+                    }
+                }
+            }
+    }
+}
+
+// Note: .onContinuousHover only fires on iPadOS with a trackpad/mouse,
+// or with Apple Pencil hover on supported iPads — it never fires from
+// direct finger touch, since touch has no "approaching" phase to report.`,
+      },
     ],
     useCases: [
       { label: 'Hero CTA', example: 'A "Get started" button on a landing page pulls gently toward the cursor as visitors approach it, drawing the click.' },
@@ -6098,6 +7827,27 @@ export function MagneticButton({ children }: { children: React.ReactNode }) {
       'Keep the multiplier under 0.4; anything higher makes the button feel like it\'s chasing the cursor rather than being pulled by it.',
       'Combine with a `scale` bump on hover for extra tactility, but keep it under 1.05 — magnetic buttons are about position, not size.',
     ],
+    fr: {
+      title: 'Bouton magnétique',
+      tagline: 'Un bouton se déforme vers le curseur quand il s\'approche, puis rebondit à son départ',
+      concept: 'Un bouton magnétique suit la position de la souris relative à sa propre boîte englobante et pousse son contenu vers le curseur dans un petit rayon, comme attiré par un aimant faible. C\'est une micro-interaction pilotée par le pointeur — entièrement dépendante des coordonnées `mousemove` continues et de l\'état de survol — donc sans réel équivalent mobile (le tactile n\'a ni survol ni signal de proximité). C\'est l\'un des moyens les moins chers de donner vie à un CTA.',
+      howItWorks: [
+        'Attacher un écouteur `mousemove` au bouton lui-même, et calculer le décalage du curseur par rapport au centre du bouton à chaque événement.',
+        'Réduire ce décalage (ex. multiplier par 0.3–0.4) pour que le bouton se déplace d\'une fraction du déplacement réel du curseur — une traction subtile, pas un drag 1:1.',
+        'Injecter le décalage réduit dans un `useSpring` (ou une transition CSS basée sur un spring) pour que le bouton glisse vers la position cible plutôt que de s\'y téléporter.',
+        'Sur `mouseleave`, remettre le décalage à `{ x: 0, y: 0 }` — le même spring l\'anime de retour au repos.',
+      ],
+      useCases: [
+        { label: 'CTA hero', example: 'Un bouton "Get started" sur une landing page tire doucement vers le curseur quand les visiteurs s\'en approchent, attirant le clic.' },
+        { label: 'Point de nav de portfolio', example: 'Des points de navigation circulaires dans un site portfolio se déforment vers le pointeur, renforçant une sensation ludique et soignée.' },
+        { label: 'Bouton d\'action icône seule', example: 'Un bouton d\'action flottant dans un outil web suit le curseur dans un petit rayon avant de déclencher son clic.' },
+      ],
+      tips: [
+        'Limiter le rayon de traction en n\'attachant l\'écouteur que dans un wrapper invisible légèrement plus grand — en dehors de cette zone, le bouton doit rester immobile, pas dériver depuis n\'importe où à l\'écran.',
+        'Garder le multiplicateur sous 0.4 ; au-delà, le bouton donne l\'impression de courir après le curseur plutôt que d\'être attiré par lui.',
+        'Combiner avec un `scale` léger au survol pour plus de tactilité, mais rester sous 1.05 — les boutons magnétiques concernent la position, pas la taille.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -6180,6 +7930,90 @@ const styles = StyleSheet.create({
   title: { fontSize: 15 },
 })`,
       },
+      {
+        platform: 'angular',
+        deps: [],
+        notes: 'No trackpad/mouse convention makes this feel natural on desktop, but touch web (mobile Safari/Chrome) does support it — raw `pointerdown`/`pointermove`/`pointerup` bindings replicate the same threshold-and-collapse logic as the React Native version.',
+        code: `import { Component, Input, Output, EventEmitter } from '@angular/core'
+
+@Component({
+  selector: 'app-swipeable-row',
+  template: \`
+    <div class="row-wrapper">
+      <div class="delete-bg"><span>Delete</span></div>
+      <div class="row" [style.transform]="'translateX(' + translateX + 'px)'"
+           [style.height.px]="rowHeight"
+           (pointerdown)="onDown($event)" (pointermove)="onMove($event)" (pointerup)="onUp()">
+        {{ item.title }}
+      </div>
+    </div>
+  \`,
+  styles: [\`
+    .row-wrapper { position: relative; overflow: hidden; }
+    .row { background: #fff; padding: 16px; transition: transform 0.2s, height 0.2s; touch-action: pan-y; }
+    .delete-bg { position: absolute; inset: 0; background: #E5484D; display: flex;
+      align-items: center; justify-content: flex-end; padding-right: 24px; color: #fff; }
+  \`],
+})
+export class SwipeableRowComponent {
+  @Input() item!: { id: string; title: string }
+  @Output() deleted = new EventEmitter<string>()
+
+  translateX = 0
+  rowHeight = 64
+  private startX = 0
+  private dragging = false
+
+  onDown(e: PointerEvent) { this.dragging = true; this.startX = e.clientX - this.translateX }
+  onMove(e: PointerEvent) {
+    if (!this.dragging) return
+    this.translateX = Math.min(0, e.clientX - this.startX)
+  }
+  onUp() {
+    this.dragging = false
+    if (this.translateX < -100) {
+      this.translateX = -400
+      this.rowHeight = 0
+      setTimeout(() => this.deleted.emit(this.item.id), 200)
+    } else {
+      this.translateX = 0
+    }
+  }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'iOS ships this exact pattern as a first-class list modifier — `.swipeActions()` on a `List` row handles the drag, threshold, and destructive-action reveal natively, with none of the manual gesture math every other platform needs.',
+        code: `import SwiftUI
+
+struct SwipeableList: View {
+    @State private var items = [
+        (id: "1", title: "Design review"),
+        (id: "2", title: "Update docs"),
+        (id: "3", title: "Fix bug #42"),
+    ]
+
+    var body: some View {
+        List {
+            ForEach(items, id: \\.id) { item in
+                Text(item.title)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            withAnimation { items.removeAll { $0.id == item.id } }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+            }
+        }
+    }
+}
+
+// .swipeActions handles the drag distance threshold, the spring
+// collapse, and the red destructive background automatically —
+// no GestureDetector, no manual translateX, no runOnJS equivalent.`,
+      },
     ],
     useCases: [
       { label: 'Mail inbox', example: 'Swiping an email left reveals Archive and Delete actions, a pattern users expect from every native mail client.' },
@@ -6191,6 +8025,27 @@ const styles = StyleSheet.create({
       'Never delete from state until the collapse animation\'s completion callback fires; deleting mid-swipe causes the row to unmount and snap instead of animating out.',
       'Show the delete background at full opacity as soon as any drag starts, not proportional to distance — a fading-in background reads as laggy rather than responsive.',
     ],
+    fr: {
+      title: 'Glisser pour supprimer',
+      tagline: 'Glisser une ligne de liste vers la gauche révèle une action de suppression, relâcher au-delà d\'un seuil confirme',
+      concept: 'Glisser-pour-supprimer est un geste de liste natif mobile : faire glisser une ligne horizontalement révèle une action destructrice en dessous, et relâcher au-delà d\'un seuil de distance valide la suppression de la ligne avec un effondrement en spring. Il repose sur un reconnaisseur de geste de pan continu lié au système tactile de l\'OS — il n\'existe pas de convention trackpad/souris équivalente sur le web, faisant de ce pattern une interaction définitivement propre au mobile.',
+      howItWorks: [
+        'Envelopper chaque ligne dans un gestionnaire de geste de pan qui ne répond qu\'aux glissements horizontaux, pour que le défilement vertical de la liste continue de fonctionner sans perturbation.',
+        'Translater la ligne selon le delta horizontal du geste en temps réel, et révéler un fond rouge de suppression découpé derrière elle pendant qu\'elle glisse.',
+        'Au relâchement, comparer le décalage final à un seuil (généralement 30–40% de la largeur de la ligne). Au-delà, animer la ligne complètement hors écran et effondrer sa hauteur à zéro ; en-deçà, revenir au repos avec un spring.',
+        'N\'exécuter la suppression réelle de l\'élément de liste (ex. le filtrer hors de l\'état) qu\'après la fin de l\'animation d\'effondrement, via un callback de complétion — ne jamais muter l\'état pendant le geste.',
+      ],
+      useCases: [
+        { label: 'Boîte mail', example: 'Glisser un email vers la gauche révèle les actions Archiver et Supprimer, un pattern que les utilisateurs attendent de tout client mail natif.' },
+        { label: 'Liste de tâches', example: 'Glisser une ligne de tâche vers la gauche au-delà du seuil la supprime immédiatement avec un effondrement satisfaisant, sans dialogue de confirmation nécessaire pour les éléments à faible enjeu.' },
+        { label: 'Centre de notifications', example: 'Rejeter une notification individuelle en la glissant, correspondant au comportement du tiroir de notifications au niveau OS.' },
+      ],
+      tips: [
+        'Définir `activeOffsetX` sur le geste de pan pour que les petits mouvements de scroll vertical ne soient pas détournés en glissements horizontaux — c\'est la source n°1 d\'une sensation de liste saccadée.',
+        'Ne jamais supprimer de l\'état avant que le callback de complétion de l\'animation d\'effondrement ne se déclenche ; supprimer en plein geste fait démonter et sauter la ligne au lieu de l\'animer en sortie.',
+        'Afficher le fond de suppression à pleine opacité dès qu\'un glissement commence, pas proportionnellement à la distance — un fond qui apparaît en fondu se lit comme lent plutôt que réactif.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -6270,6 +8125,97 @@ const styles = StyleSheet.create({
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#D0D0D5', alignSelf: 'center', marginVertical: 10 },
 })`,
       },
+      {
+        platform: 'angular',
+        deps: [],
+        notes: 'Mobile web (touch) can absolutely support this pattern — raw pointer events replicate the same clamp-drag-and-snap logic, with velocity computed manually between `pointermove` events since there is no gesture library to provide it.',
+        code: `import { Component, HostListener } from '@angular/core'
+
+const SNAP_POINTS = [0.9, 0.4, 0.08] // fraction of viewport height: peek, half, full
+
+@Component({
+  selector: 'app-bottom-sheet',
+  template: \`
+    <div class="sheet" [style.transform]="'translateY(' + translateY + 'px)'"
+         (pointerdown)="onDown($event)">
+      <div class="handle"></div>
+      <ng-content />
+    </div>
+  \`,
+  styles: [\`
+    .sheet { position: fixed; left: 0; right: 0; bottom: 0; height: 100vh;
+      background: #fff; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.15); }
+    .handle { width: 40px; height: 4px; border-radius: 2px; background: #D0D0D5; margin: 10px auto; }
+  \`],
+})
+export class BottomSheetComponent {
+  translateY = window.innerHeight * SNAP_POINTS[0]
+  private startY = 0
+  private lastY = 0
+  private lastTime = 0
+  private velocity = 0
+  private dragging = false
+
+  onDown(e: PointerEvent) {
+    this.dragging = true
+    this.startY = e.clientY - this.translateY
+    this.lastY = e.clientY
+    this.lastTime = e.timeStamp
+  }
+
+  @HostListener('document:pointermove', ['$event'])
+  onMove(e: PointerEvent) {
+    if (!this.dragging) return
+    this.velocity = (e.clientY - this.lastY) / (e.timeStamp - this.lastTime)
+    this.lastY = e.clientY
+    this.lastTime = e.timeStamp
+    const min = window.innerHeight * SNAP_POINTS[2]
+    const max = window.innerHeight * SNAP_POINTS[0]
+    this.translateY = Math.max(min, Math.min(max, e.clientY - this.startY))
+  }
+
+  @HostListener('document:pointerup')
+  onUp() {
+    this.dragging = false
+    const projected = this.translateY + this.velocity * 150
+    const points = SNAP_POINTS.map(f => window.innerHeight * f)
+    this.translateY = points.reduce((closest, p) =>
+      Math.abs(p - projected) < Math.abs(closest - projected) ? p : closest)
+  }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'Since iOS 16, `.presentationDetents()` on a `.sheet()` gives snap-point behavior as a one-line modifier — no gesture handling, no velocity math, no manual clamping required at all.',
+        code: `import SwiftUI
+
+struct MapScreen: View {
+    @State private var showSheet = true
+
+    var body: some View {
+        MapView()
+            .sheet(isPresented: $showSheet) {
+                SearchResultsSheet()
+                    .presentationDetents([.height(80), .medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .interactiveDismissDisabled()
+            }
+    }
+}
+
+struct SearchResultsSheet: View {
+    var body: some View {
+        List(0..<10) { i in
+            Text("Result \\(i)")
+        }
+    }
+}
+
+// .presentationDetents([.height(80), .medium, .large]) is the peek/half/full
+// equivalent — the system handles drag, velocity-aware snapping, and the
+// spring settle animation entirely internally.`,
+      },
     ],
     useCases: [
       { label: 'Maps app', example: 'A search-results sheet peeks over the map, and a swipe up expands it to half or full screen for browsing results.' },
@@ -6281,6 +8227,27 @@ const styles = StyleSheet.create({
       'Clamp `translateY` during the drag itself (not just on release) so the sheet never visibly overshoots past the topmost or bottommost snap point while dragging.',
       'Keep spring `damping` above 26 for sheets — a bouncy overshoot on a large surface like this reads as glitchy rather than delightful.',
     ],
+    fr: {
+      title: 'Points d\'ancrage de bottom sheet',
+      tagline: 'Une feuille glissable qui se stabilise sur des hauteurs d\'ancrage fixes avec de la physique de spring',
+      concept: 'Une bottom sheet à points d\'ancrage se glisse librement sur l\'axe vertical mais se stabilise toujours sur l\'une de quelques hauteurs prédéfinies (ex. aperçu, mi-hauteur, plein écran) au relâchement, plutôt que de s\'arrêter où le doigt s\'est levé. Le point d\'ancrage le plus proche est choisi selon la position et la vélocité au relâchement, puis animé avec un spring. C\'est le pattern d\'interaction mobile de référence pour les cartes, lecteurs média et superpositions de détail — sans équivalent web direct puisqu\'il dépend d\'un geste de glissement tactile superposé à d\'autres contenus scrollables.',
+      howItWorks: [
+        'Définir les points d\'ancrage comme un ensemble de décalages `translateY` (ex. `[height * 0.9, height * 0.4, 0]` pour aperçu, mi-hauteur et plein écran).',
+        'Pendant le geste de pan, translater la feuille 1:1 avec le doigt, en limitant pour qu\'elle ne puisse pas être tirée au-delà du point d\'ancrage le plus haut ou le plus bas.',
+        'Au relâchement, utiliser la vélocité du geste comme départage : un flick rapide vers le haut ancre au point suivant même si la position de relâchement est plus proche du point actuel.',
+        'Animer vers le point d\'ancrage choisi avec `withSpring`, et mettre à jour une shared value de type `initialSnap` pour que le prochain geste calcule depuis la position de repos réelle de la feuille.',
+      ],
+      useCases: [
+        { label: 'App de cartes', example: 'Une feuille de résultats de recherche apparaît en aperçu sur la carte, et un swipe vers le haut l\'étend en mi-hauteur ou plein écran pour parcourir les résultats.' },
+        { label: 'Lecteur média', example: 'Un mini lecteur ancré en bas s\'étend en écran "En cours de lecture" complet quand on le glisse vers le haut.' },
+        { label: 'Superposition de détail produit', example: 'Une app e-commerce affiche une feuille de résumé produit en aperçu qui s\'ancre au détail complet au swipe vers le haut.' },
+      ],
+      tips: [
+        'Toujours intégrer la vélocité du geste dans la décision d\'ancrage, pas seulement la position de relâchement — sans cela, les flicks rapides paraissent peu réactifs car ils s\'ancrent au point le plus proche plutôt qu\'au point voulu.',
+        'Limiter `translateY` pendant le glissement lui-même (pas seulement au relâchement) pour que la feuille ne dépasse jamais visiblement le point d\'ancrage le plus haut ou le plus bas pendant le drag.',
+        'Garder l\'amortissement (`damping`) du spring au-dessus de 26 pour les feuilles — un rebond excessif sur une aussi grande surface se lit comme un bug plutôt que comme un plaisir.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -6350,6 +8317,71 @@ class _ExpandingCardState extends State<ExpandingCard> {
   }
 }`,
       },
+      {
+        platform: 'angular',
+        deps: [],
+        notes: 'Angular has no implicit-animation widget system like Flutter — the closest equivalent is binding animatable CSS properties to component state and declaring a `transition` rule once. The interpolation still comes from the browser\'s CSS engine, not from Angular itself.',
+        code: `import { Component } from '@angular/core'
+
+@Component({
+  selector: 'app-expanding-card',
+  template: \`
+    <div class="card" [class.expanded]="expanded" (click)="expanded = !expanded">
+      <span>Tap to expand</span>
+    </div>
+  \`,
+  styles: [\`
+    .card {
+      width: 160px; height: 90px; padding: 12px;
+      background: #E9E4FB; border-radius: 12px;
+      display: flex; align-items: flex-end;
+      transition: width 350ms cubic-bezier(0.22,1,0.36,1),
+                  height 350ms cubic-bezier(0.22,1,0.36,1),
+                  background 350ms, border-radius 350ms, padding 350ms;
+    }
+    .card span { color: #3a2e6e; font-size: 14px; font-weight: 600; transition: color 350ms, font-size 350ms; }
+    .card.expanded { width: 320px; height: 200px; padding: 24px; background: #7C3AED; border-radius: 24px; }
+    .card.expanded span { color: #fff; font-size: 20px; }
+  \`],
+})
+export class ExpandingCardComponent {
+  expanded = false
+}
+
+// Unlike Flutter, there is no single widget that "owns" the interpolation —
+// toggling the .expanded class just changes computed style values, and the
+// CSS transition property (declared once) is what actually animates them.`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'SwiftUI\'s own implicit animation system — `.animation(_:value:)` — is architecturally the closest real parallel to Flutter\'s `AnimatedContainer` of any platform here: both interpolate automatically whenever a bound value changes, with no explicit `AnimationController`/timeline object required.',
+        code: `import SwiftUI
+
+struct ExpandingCard: View {
+    @State private var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Spacer()
+            Text("Tap to expand")
+                .font(.system(size: expanded ? 20 : 14, weight: .semibold))
+                .foregroundStyle(expanded ? .white : Color(hex: "3a2e6e"))
+        }
+        .padding(expanded ? 24 : 12)
+        .frame(width: expanded ? 320 : 160, height: expanded ? 200 : 90, alignment: .bottomLeading)
+        .background(expanded ? Color(hex: "7C3AED") : Color(hex: "E9E4FB"))
+        .clipShape(RoundedRectangle(cornerRadius: expanded ? 24 : 12))
+        .onTapGesture { expanded.toggle() }
+        .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.35), value: expanded)
+    }
+}
+
+// Just like AnimatedContainer, there is no AnimationController here —
+// .animation(_:value:) watches expanded and interpolates every
+// dependent modifier (frame, padding, background, clipShape) automatically
+// whenever it changes, exactly mirroring Flutter's implicit-widget model.`,
+      },
     ],
     useCases: [
       { label: 'Expandable card', example: 'A settings card grows in place to reveal more options when tapped, tweening size, color, and radius together.' },
@@ -6361,6 +8393,27 @@ class _ExpandingCardState extends State<ExpandingCard> {
       'Multiple implicit widgets nested together (like `AnimatedContainer` + `AnimatedDefaultTextStyle`) will animate independently on their own `duration`/`curve` — keep them equal unless you deliberately want a staggered feel.',
       'Avoid putting expensive widgets (large images, complex layouts) directly inside an `AnimatedContainer` that resizes — cache or const-ify children where possible since the container rebuilds every tick.',
     ],
+    fr: {
+      title: 'Animation implicite',
+      tagline: 'Changez une propriété, Flutter l\'interpole automatiquement — sans contrôleur, sans keyframes',
+      concept: 'Les widgets d\'animation implicite de Flutter (`AnimatedContainer`, `AnimatedOpacity`, `AnimatedPadding`, et consorts) s\'animent automatiquement dès que leurs propriétés d\'entrée changent entre deux rebuilds — pas d\'`AnimationController`, pas de `Tween` explicite, pas d\'`addListener`. On se contente de définir de nouvelles valeurs lors d\'un rebuild stateful, et le widget interpole des anciennes valeurs vers les nouvelles sur la durée et la courbe données. C\'est architecturalement différent de tout ce qui existe en React ou dans le DOM : il n\'y a aucune transition CSS à déclarer et aucune bibliothèque d\'animation à importer, car l\'interpolation est un comportement natif du widget.',
+      howItWorks: [
+        'Envelopper le contenu dans `AnimatedContainer` (ou un autre widget `Animated*`) et lui donner une `duration` et une `curve`.',
+        'Lire les propriétés animables (`color`, `width`, `height`, `borderRadius`, `padding`, ...) depuis l\'état local plutôt que de les coder en dur.',
+        'Appeler `setState` pour changer cet état — Flutter compare le nouveau widget à l\'ancien et détecte que les propriétés d\'un `AnimatedContainer` ont changé.',
+        'L\'`AnimatedContainerState` interne du widget construit un `Tween` implicite pour chaque propriété modifiée et le fait progresser sur la `duration`, appelant `setState` à chaque tick pour repeindre — tout cela est invisible dans votre code.',
+      ],
+      useCases: [
+        { label: 'Carte extensible', example: 'Une carte de paramètres grandit sur place pour révéler plus d\'options au tap, interpolant taille, couleur et rayon ensemble.' },
+        { label: 'État de sélection', example: 'Un chip ou une pastille de filtre anime sa couleur de fond et sa bordure en douceur au basculement sélectionné/désélectionné.' },
+        { label: 'Transition chargement vers contenu', example: 'Une boîte squelette anime sa couleur et son opacité vers le contenu réel une fois les données chargées, via `AnimatedOpacity` superposé sous `AnimatedContainer`.' },
+      ],
+      tips: [
+        'Pour une animation sans déclencheur de changement d\'état (ex. une boucle infinie, ou un scrub piloté par geste), passer plutôt à des widgets explicites basés sur `AnimationController` — les widgets implicites ne réagissent qu\'aux rebuilds.',
+        'Plusieurs widgets implicites imbriqués (comme `AnimatedContainer` + `AnimatedDefaultTextStyle`) s\'animeront indépendamment sur leur propre `duration`/`curve` — les garder identiques sauf si un effet décalé est voulu délibérément.',
+        'Éviter de placer des widgets coûteux (grandes images, layouts complexes) directement dans un `AnimatedContainer` qui se redimensionne — mettre en cache ou passer en `const` les enfants si possible, car le conteneur se reconstruit à chaque tick.',
+      ],
+    },
   },
 
   /* ─────────────────────────────────────────────── */
@@ -6446,6 +8499,68 @@ class _StaggeredListState extends State<StaggeredList>
   }
 }`,
       },
+      {
+        platform: 'angular',
+        deps: ['@angular/animations'],
+        notes: 'Angular Animations\' `stagger()` inside a `query(\':enter\')` block is the framework-level equivalent of Flutter\'s per-row `Interval` — one trigger declaration replaces the manual `AnimationController` + `Interval` math entirely.',
+        code: `import { trigger, transition, query, style, animate, stagger } from '@angular/animations'
+
+export const staggeredList = trigger('staggeredList', [
+  transition('* => *', [
+    query(':enter', [
+      style({ opacity: 0, transform: 'translateY(24px)' }),
+      stagger(50, animate('400ms cubic-bezier(0.22,1,0.36,1)',
+        style({ opacity: 1, transform: 'translateY(0)' }))),
+    ], { optional: true }),
+  ]),
+])
+
+@Component({
+  selector: 'app-staggered-list',
+  template: \`
+    <ul [@staggeredList]="items.length">
+      <li *ngFor="let item of items">{{ item }}</li>
+    </ul>
+  \`,
+  animations: [staggeredList],
+})
+export class StaggeredListComponent {
+  items: string[] = []
+  ngOnInit() { this.items = ['Notifications', 'Dark mode', 'Language', 'Privacy']; }
+}`,
+      },
+      {
+        platform: 'swiftui',
+        deps: [],
+        notes: 'Without a shared-controller concept, SwiftUI staggers by giving each row its own `.animation(value:)` with a per-index `.delay()` — architecturally closer to independent per-element delays (the web approach the Flutter concept explicitly contrasts itself against) than to Flutter\'s single-clock `Interval` system.',
+        code: `import SwiftUI
+
+struct StaggeredList: View {
+    let items: [String]
+    @State private var appeared = false
+
+    var body: some View {
+        List {
+            ForEach(Array(items.enumerated()), id: \\.offset) { index, item in
+                Text(item)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 24)
+                    .animation(
+                        .timingCurve(0.22, 1, 0.36, 1, duration: 0.4)
+                            .delay(Double(index) * 0.05),
+                        value: appeared
+                    )
+            }
+        }
+        .onAppear { appeared = true }
+    }
+}
+
+// Each row's .delay(index * 0.05) plays the same cascading role as
+// Flutter's Interval(index * stagger, ...) — but here every row owns
+// its own independent animation timeline instead of reading a slice
+// of one shared AnimationController.`,
+      },
     ],
     useCases: [
       { label: 'Onboarding checklist', example: 'A list of setup steps cascades in one by one as the onboarding screen first appears, drawing the eye down the list in order.' },
@@ -6457,5 +8572,26 @@ class _StaggeredListState extends State<StaggeredList>
       'Only stagger on first appearance (e.g. gate with a `hasAnimated` flag), never on every rebuild — re-triggering the cascade on scroll or state changes reads as a bug, not a feature.',
       'Because every row shares one controller, this doesn\'t work well combined with lazy-loading (`ListView.builder` recycling): rows built after `forward()` has already progressed will appear instantly at full opacity instead of animating in.',
     ],
+    fr: {
+      title: 'Liste échelonnée Flutter',
+      tagline: 'Les éléments de liste apparaissent en cascade avec un délai par élément, pilotés par un AnimationController partagé',
+      concept: 'Une révélation de liste échelonnée anime chaque ligne en séquence plutôt que toutes à la fois, en cascade vers le bas de l\'écran. En Flutter, cela se construit avec un unique `AnimationController` partagé entre toutes les lignes, où chaque ligne dérive sa propre `CurvedAnimation` basée sur un `Interval` depuis ce même contrôleur — une seule horloge d\'animation pilote le fade et le slide individuellement chronométrés de chaque élément. Cela diffère fondamentalement de la version web (`transition-delay` indépendant par élément ou helpers de stagger dans une bibliothèque JS) : l\'approche de Flutter garde la timeline de chaque ligne mathématiquement verrouillée sur une source unique de vérité.',
+      howItWorks: [
+        'Créer un `AnimationController` dans le `State` parent de la liste, avec une durée assez longue pour couvrir toute la cascade (ex. 800ms pour 8 lignes).',
+        'Pour chaque ligne à l\'index `i`, construire une `CurvedAnimation` en utilisant `Interval(i * stagger, i * stagger + itemDuration, curve: Curves.easeOut)` contre le contrôleur partagé.',
+        'Utiliser cette `CurvedAnimation` par ligne pour piloter un `Opacity` + `Transform.translate` (ou envelopper avec `FadeTransition`/`SlideTransition`) pour le widget de cette ligne.',
+        'Appeler `controller.forward()` une seule fois, dans `initState` ou quand la liste devient visible pour la première fois — chaque ligne s\'anime automatiquement sur sa propre tranche de la même timeline.',
+      ],
+      useCases: [
+        { label: 'Checklist d\'onboarding', example: 'Une liste d\'étapes de configuration apparaît en cascade une par une à la première apparition de l\'écran d\'onboarding, guidant l\'œil le long de la liste dans l\'ordre.' },
+        { label: 'Résultats de recherche', example: 'Les lignes de résultats apparaissent en fondu et glissent avec une légère cascade après une recherche, adoucissant l\'apparition brutale d\'un jeu de résultats complet.' },
+        { label: 'Écran de paramètres', example: 'Des sections de paramètres groupées apparaissent en cascade au premier chargement, donnant à l\'écran une sensation d\'assemblage plutôt que d\'apparition brutale.' },
+      ],
+      tips: [
+        'Garder la durée totale de cascade proportionnelle à la longueur de la liste, mais la plafonner — au-delà de ~10-12 lignes visibles, arrêter d\'augmenter la durée totale et réduire plutôt le décalage par élément pour qu\'une longue liste ne mette pas des secondes à finir de s\'animer.',
+        'Ne déclencher la cascade qu\'à la première apparition (ex. avec un flag `hasAnimated`), jamais à chaque rebuild — redéclencher la cascade au scroll ou aux changements d\'état se lit comme un bug, pas une fonctionnalité.',
+        'Comme chaque ligne partage un seul contrôleur, cela fonctionne mal combiné avec le lazy-loading (recyclage de `ListView.builder`) : les lignes construites après que `forward()` a déjà progressé apparaîtront instantanément à pleine opacité au lieu de s\'animer.',
+      ],
+    },
   },
 ]

@@ -290,6 +290,91 @@ const style = computed(() => ({
     },
   ],
 
+  angular: [
+    {
+      title: 'Static host element',
+      description: 'Start with a plain component template — no `@Component({ animations: [...] })` yet. Getting the layout and content right first means the reveal has a correct baseline to animate from.',
+      fr: {
+        title: 'Élément hôte statique',
+        description: 'Commencer par un template de composant simple — pas encore d\'`@Component({ animations: [...] })`. Établir d\'abord le layout et le contenu corrects donne à la révélation une base correcte depuis laquelle animer.',
+      },
+      code: `@Component({
+  selector: 'app-reveal-on-scroll',
+  template: \`<div><ng-content /></div>\`,
+})
+export class RevealOnScrollComponent {}`,
+    },
+    {
+      title: 'Declare the animation trigger',
+      description: 'The Angular Animations API declares `state()`s and a `transition()` between them upfront in the decorator — `out` (hidden) and `in` (visible), bridged by a cubic-bezier timing function. This is declarative, similar to Framer Motion\'s `variants`, but compiled ahead of time rather than evaluated at render.',
+      fr: {
+        title: 'Déclarer le trigger d\'animation',
+        description: 'L\'API Angular Animations déclare des `state()` et une `transition()` entre eux dans le décorateur — `out` (caché) et `in` (visible), reliés par une fonction de timing cubic-bezier. C\'est déclaratif, similaire aux `variants` de Framer Motion, mais compilé à l\'avance plutôt qu\'évalué au rendu.',
+      },
+      code: `import { trigger, state, style, transition, animate } from '@angular/animations'
+
+@Component({
+  selector: 'app-reveal-on-scroll',
+  template: \`<div [@reveal]="visible ? 'in' : 'out'"><ng-content /></div>\`,
+  animations: [
+    trigger('reveal', [
+      state('out', style({ opacity: 0, transform: 'translateY(32px)' })),
+      state('in',  style({ opacity: 1, transform: 'translateY(0)' })),
+      transition('out => in', animate('600ms cubic-bezier(0.22,1,0.36,1)')),
+    ]),
+  ],
+})
+export class RevealOnScrollComponent {
+  visible = false
+}`,
+    },
+    {
+      title: 'Trigger on viewport entry with IntersectionObserver',
+      description: 'Angular has no built-in scroll-viewport directive, so `ngAfterViewInit` sets up a native `IntersectionObserver` on the host element. Flipping `visible` to `true` changes the bound `[@reveal]` state, and Angular runs the declared transition automatically.',
+      fr: {
+        title: 'Déclencher à l\'entrée dans la fenêtre avec IntersectionObserver',
+        description: 'Angular n\'a pas de directive native de scroll-viewport, donc `ngAfterViewInit` configure un `IntersectionObserver` natif sur l\'élément hôte. Faire passer `visible` à `true` change l\'état lié `[@reveal]`, et Angular exécute automatiquement la transition déclarée.',
+      },
+      code: `export class RevealOnScrollComponent implements AfterViewInit {
+  visible = false
+  constructor(private el: ElementRef<HTMLElement>) {}
+
+  ngAfterViewInit() {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        this.visible = true
+        observer.disconnect()
+      }
+    }, { rootMargin: '-80px' })
+    observer.observe(this.el.nativeElement)
+  }
+}`,
+    },
+    {
+      title: 'Add a per-instance delay input',
+      description: 'An `@Input() delay` lets each usage of the component stagger independently — `setTimeout` defers flipping `visible`, and because the observer disconnects after firing once, the component never re-triggers on scroll-back.',
+      fr: {
+        title: 'Ajouter un délai par instance',
+        description: 'Un `@Input() delay` permet à chaque utilisation du composant de se décaler indépendamment — `setTimeout` diffère le passage de `visible`, et comme l\'observer se déconnecte après un déclenchement, le composant ne se redéclenche jamais au retour de scroll.',
+      },
+      code: `export class RevealOnScrollComponent implements AfterViewInit {
+  @Input() delay = 0
+  visible = false
+  constructor(private el: ElementRef<HTMLElement>) {}
+
+  ngAfterViewInit() {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => (this.visible = true), this.delay * 1000)
+        observer.disconnect()
+      }
+    }, { rootMargin: '-80px' })
+    observer.observe(this.el.nativeElement)
+  }
+}`,
+    },
+  ],
+
   'react-native': [
     {
       title: 'Plain View',
@@ -510,6 +595,81 @@ RevealOnMount(delay: Duration(milliseconds: 120), child: Paragraph())
 RevealOnMount(delay: Duration(milliseconds: 240), child: Card())`,
     },
   ],
+
+  swiftui: [
+    {
+      title: 'Plain content view',
+      description: 'Start with the content rendered as-is, no modifiers yet — this is the visual and layout baseline the reveal will animate from.',
+      fr: {
+        title: 'Vue de contenu simple',
+        description: 'Commencer avec le contenu rendu tel quel, sans modificateur — c\'est la base visuelle et de layout depuis laquelle la révélation va animer.',
+      },
+      code: `struct RevealOnScroll<Content: View>: View {
+    @ViewBuilder let content: Content
+    var body: some View { content }
+}`,
+    },
+    {
+      title: 'Add opacity and offset state',
+      description: 'A `@State private var visible` boolean drives both `.opacity()` and `.offset()` modifiers. Both read the same boolean, so they always change together — there is no way for opacity and position to fall out of sync.',
+      fr: {
+        title: 'Ajouter l\'état d\'opacité et de décalage',
+        description: 'Un booléen `@State private var visible` pilote à la fois les modificateurs `.opacity()` et `.offset()`. Les deux lisent le même booléen, donc ils changent toujours ensemble — impossible que l\'opacité et la position se désynchronisent.',
+      },
+      code: `struct RevealOnScroll<Content: View>: View {
+    @ViewBuilder let content: Content
+    @State private var visible = false
+
+    var body: some View {
+        content
+            .opacity(visible ? 1 : 0)
+            .offset(y: visible ? 0 : 32)
+    }
+}`,
+    },
+    {
+      title: 'Animate the transition with onAppear',
+      description: 'Wrapping the state flip in `withAnimation(.timingCurve(...))` inside `.onAppear` is what actually animates the change — without it, `visible` would flip instantly with no interpolation. `.onAppear` fires once the view is laid out, the closest SwiftUI equivalent to an intersection callback for a first-appearance reveal.',
+      fr: {
+        title: 'Animer la transition avec onAppear',
+        description: 'Envelopper le changement d\'état dans `withAnimation(.timingCurve(...))` à l\'intérieur d\'`.onAppear` est ce qui anime réellement le changement — sans cela, `visible` basculerait instantanément sans interpolation. `.onAppear` se déclenche une fois la vue disposée, l\'équivalent SwiftUI le plus proche d\'un callback d\'intersection pour une révélation de première apparition.',
+      },
+      code: `.onAppear {
+    withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.6)) {
+        visible = true
+    }
+}`,
+    },
+    {
+      title: 'Add a delay parameter for stagger',
+      description: 'Chaining `.delay(delay)` onto the animation lets sibling views stagger their reveal by passing increasing delays — `withAnimation(...).delay(0.12)` for the second element, `.delay(0.24)` for the third, exactly mirroring the cascade pattern from the other platforms.',
+      fr: {
+        title: 'Ajouter un paramètre de délai pour la cascade',
+        description: 'Chaîner `.delay(delay)` sur l\'animation permet aux vues sœurs de décaler leur révélation en passant des délais croissants — `withAnimation(...).delay(0.12)` pour le deuxième élément, `.delay(0.24)` pour le troisième, reflétant exactement le pattern de cascade des autres plateformes.',
+      },
+      code: `struct RevealOnScroll<Content: View>: View {
+    let delay: Double
+    @ViewBuilder let content: Content
+    @State private var visible = false
+
+    init(delay: Double = 0, @ViewBuilder content: () -> Content) {
+        self.delay = delay
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .opacity(visible ? 1 : 0)
+            .offset(y: visible ? 0 : 32)
+            .onAppear {
+                withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.6).delay(delay)) {
+                    visible = true
+                }
+            }
+    }
+}`,
+    },
+  ],
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -627,6 +787,10 @@ export function App() {
     {
       title: 'Detect the current route',
       description: 'In the App Router there is no single component that re-mounts on navigation, so you need a value that *changes* with the URL to drive transitions. `usePathname` from `next/navigation` returns the current path as a string (e.g. `/work/project-1`) and re-renders whenever it changes. That string becomes the **stable identity key** React and `AnimatePresence` use to tell one page from the next.',
+      fr: {
+        title: 'Détecter la route actuelle',
+        description: 'Dans l\'App Router, aucun composant unique ne se remonte à la navigation — il faut donc une valeur qui *change* avec l\'URL pour piloter les transitions. `usePathname` de `next/navigation` renvoie le chemin actuel sous forme de chaîne (ex. `/work/project-1`) et se re-rend à chaque changement. Cette chaîne devient la **clé d\'identité stable** que React et `AnimatePresence` utilisent pour distinguer une page de la suivante.',
+      },
       code: `'use client'
 import { usePathname } from 'next/navigation'
 
@@ -642,6 +806,10 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     {
       title: 'Add AnimatePresence in the layout',
       description: 'Animations require client-side state, so `AnimatePresence` must live in a **Client Component** (`\'use client\'`) — here a wrapper mounted inside `app/layout.tsx`. Passing `pathname` as the `key` is what makes route changes animatable: React sees a different key as an entirely new child, so the old one runs its `exit` → enter sequence. Doing this in the layout means **every route inherits the transition** without touching individual pages.',
+      fr: {
+        title: 'Ajouter AnimatePresence dans le layout',
+        description: 'Les animations nécessitent un état côté client, donc `AnimatePresence` doit vivre dans un **Client Component** (`\'use client\'`) — ici un wrapper monté dans `app/layout.tsx`. Passer `pathname` comme `key` est ce qui rend les changements de route animables : React voit une clé différente comme un enfant entièrement nouveau, donc l\'ancien exécute sa séquence `exit` → enter. Faire cela dans le layout signifie que **chaque route hérite de la transition** sans toucher aux pages individuelles.',
+      },
       code: `'use client'
 import { AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
@@ -660,6 +828,10 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     {
       title: 'Upgrade the wrapper to motion.div',
       description: 'Swapping the plain `div` for a `motion.div` activates the actual animation: `initial` sets the off-screen starting state, `animate` the resting state, and `exit` where it goes on the way out. Because this wrapper sits in the layout and is keyed by `pathname`, **every page in the app gets the transition for free** — a single declaration replaces per-page animation code. The custom `ease` cubic-bezier gives the slide a polished, decelerating feel.',
+      fr: {
+        title: 'Passer le wrapper en motion.div',
+        description: 'Remplacer le `div` simple par un `motion.div` active l\'animation réelle : `initial` définit l\'état de départ hors écran, `animate` l\'état de repos, et `exit` là où il va en sortant. Comme ce wrapper est dans le layout et indexé par `pathname`, **chaque page de l\'app obtient la transition gratuitement** — une seule déclaration remplace le code d\'animation par page. Le cubic-bezier `ease` personnalisé donne au slide une sensation polie et décélérée.',
+      },
       code: `'use client'
 import { AnimatePresence, motion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
@@ -685,6 +857,10 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     {
       title: 'Wire into the root layout',
       description: 'This is the payoff of Next.js\'s **server/client boundary**: `RootLayout` stays a Server Component (no `\'use client\'`) and simply renders the client `LayoutWrapper` as a child. The `{children}` it passes are server-rendered page components that **stream to the browser without waiting on the client bundle** — you get fast first paint *and* animated transitions. Mixing the two component types like this is the idiomatic App Router pattern.',
+      fr: {
+        title: 'Brancher dans le layout racine',
+        description: 'C\'est ici que la **frontière server/client** de Next.js paie : `RootLayout` reste un Server Component (pas de `\'use client\'`) et se contente de rendre le `LayoutWrapper` client comme enfant. Les `{children}` qu\'il passe sont des composants de page rendus côté serveur qui **streament vers le navigateur sans attendre le bundle client** — vous obtenez un premier affichage rapide *et* des transitions animées. Mélanger les deux types de composants ainsi est le pattern idiomatique de l\'App Router.',
+      },
       code: `// app/layout.tsx  — Server Component (no 'use client')
 import { LayoutWrapper } from '@/components/LayoutWrapper'
 
@@ -790,6 +966,81 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 .page-leave-to   { opacity: 0; transform: translateY(-16px); }
 .page-move       { transition: transform 0.4s ease; }
 </style>`,
+    },
+  ],
+
+  angular: [
+    {
+      title: 'Static router-outlet, no animation',
+      description: 'Start with a plain `<router-outlet>` — routes swap instantly. This is the navigation baseline before any transition is declared.',
+      fr: {
+        title: 'router-outlet statique, sans animation',
+        description: 'Commencer avec un `<router-outlet>` simple — les routes changent instantanément. C\'est la base de navigation avant toute déclaration de transition.',
+      },
+      code: `@Component({
+  selector: 'app-root',
+  template: \`<router-outlet></router-outlet>\`,
+})
+export class AppComponent {}`,
+    },
+    {
+      title: 'Declare a route animation trigger',
+      description: 'A `trigger(\'routeAnimations\', [transition(\'* <=> *\', [...])])` matches any route-to-route change. `query(\':enter\'/\':leave\')` selects the incoming and outgoing views inside that single transition — Angular\'s way of expressing what `AnimatePresence` does implicitly.',
+      fr: {
+        title: 'Déclarer un trigger d\'animation de route',
+        description: 'Un `trigger(\'routeAnimations\', [transition(\'* <=> *\', [...])])` correspond à tout changement de route à route. `query(\':enter\'/\':leave\')` sélectionne les vues entrante et sortante à l\'intérieur de cette transition unique — la façon d\'Angular d\'exprimer ce que `AnimatePresence` fait implicitement.',
+      },
+      code: `import { trigger, transition, query, style } from '@angular/animations'
+
+export const routeFadeSlide = trigger('routeAnimations', [
+  transition('* <=> *', [
+    query(':enter, :leave', style({ position: 'absolute', width: '100%' }), { optional: true }),
+  ]),
+])`,
+    },
+    {
+      title: 'Animate enter and leave in parallel with group()',
+      description: '`group()` runs the `:enter` and `:leave` animations concurrently rather than sequentially — the outgoing view fades up while the incoming one fades in, exactly like `mode="wait"` orchestrates in other frameworks but expressed as two parallel animation streams.',
+      fr: {
+        title: 'Animer entrée et sortie en parallèle avec group()',
+        description: '`group()` exécute les animations `:enter` et `:leave` en parallèle plutôt qu\'en séquence — la vue sortante s\'estompe vers le haut pendant que l\'entrante s\'estompe, exactement comme `mode="wait"` orchestre dans d\'autres frameworks mais exprimé comme deux flux d\'animation parallèles.',
+      },
+      code: `import { trigger, transition, style, query, group, animate } from '@angular/animations'
+
+export const routeFadeSlide = trigger('routeAnimations', [
+  transition('* <=> *', [
+    query(':enter, :leave', style({ position: 'absolute', width: '100%' }), { optional: true }),
+    query(':enter', style({ opacity: 0, transform: 'translateY(16px)' }), { optional: true }),
+    group([
+      query(':leave', [
+        animate('300ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 0, transform: 'translateY(-16px)' })),
+      ], { optional: true }),
+      query(':enter', [
+        animate('300ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0)' })),
+      ], { optional: true }),
+    ]),
+  ]),
+])`,
+    },
+    {
+      title: 'Bind the trigger to the route data key',
+      description: 'Binding `[@routeAnimations]` to a key derived from `outlet.activatedRouteData` is what makes Angular detect a "change" and replay the transition — analogous to keying on `route.path` in Vue Router or `pathname` in Next.js.',
+      fr: {
+        title: 'Lier le trigger à la clé de données de route',
+        description: 'Lier `[@routeAnimations]` à une clé dérivée de `outlet.activatedRouteData` est ce qui fait détecter à Angular un « changement » et rejouer la transition — analogue à l\'indexation sur `route.path` dans Vue Router ou `pathname` dans Next.js.',
+      },
+      code: `@Component({
+  selector: 'app-root',
+  template: \`<div [@routeAnimations]="getRouteKey(outlet)">
+    <router-outlet #outlet="outlet"></router-outlet>
+  </div>\`,
+  animations: [routeFadeSlide],
+})
+export class AppComponent {
+  getRouteKey(outlet: RouterOutlet) {
+    return outlet?.activatedRouteData?.['animation']
+  }
+}`,
     },
   ],
 
@@ -956,6 +1207,71 @@ class FadeSlideRoute<T> extends PageRouteBuilder<T> {
 Navigator.push(context, FadeSlideRoute(page: const DetailScreen()));`,
     },
   ],
+
+  swiftui: [
+    {
+      title: 'Plain view switch, no transition',
+      description: 'Start with a `switch` on the current page enum, swapping views instantly — the navigation baseline before any transition or animation is added.',
+      fr: {
+        title: 'Switch de vue simple, sans transition',
+        description: 'Commencer avec un `switch` sur l\'enum de page actuelle, changeant les vues instantanément — la base de navigation avant l\'ajout de toute transition ou animation.',
+      },
+      code: `enum Page { case home, about, work }
+
+struct RootView: View {
+    @State private var page: Page = .home
+
+    var body: some View {
+        switch page {
+        case .home:  HomeView()
+        case .about: AboutView()
+        case .work:  WorkView()
+        }
+    }
+}`,
+    },
+    {
+      title: 'Force identity change with .id()',
+      description: 'SwiftUI only replays a `.transition()` when the view\'s identity changes. `.id(page)` on the container forces SwiftUI to treat each page as a brand-new view instance rather than diffing the existing one in place.',
+      fr: {
+        title: 'Forcer le changement d\'identité avec .id()',
+        description: 'SwiftUI ne rejoue une `.transition()` que lorsque l\'identité de la vue change. `.id(page)` sur le conteneur force SwiftUI à traiter chaque page comme une toute nouvelle instance de vue plutôt que de comparer l\'existante sur place.',
+      },
+      code: `ZStack {
+    switch page {
+    case .home:  HomeView()
+    case .about: AboutView()
+    case .work:  WorkView()
+    }
+}
+.id(page)`,
+    },
+    {
+      title: 'Add an asymmetric transition',
+      description: '`.transition(.asymmetric(insertion:removal:))` gives the entering and exiting view different animations — insertion fades and slides up from the bottom, removal fades and slides out to the top, mirroring the `initial`/`exit` split from Framer Motion.',
+      fr: {
+        title: 'Ajouter une transition asymétrique',
+        description: '`.transition(.asymmetric(insertion:removal:))` donne à la vue entrante et sortante des animations différentes — l\'insertion s\'estompe et glisse depuis le bas, la suppression s\'estompe et glisse vers le haut, reflétant la séparation `initial`/`exit` de Framer Motion.',
+      },
+      code: `.transition(.asymmetric(
+    insertion: .opacity.combined(with: .move(edge: .bottom)),
+    removal: .opacity.combined(with: .move(edge: .top))
+))`,
+    },
+    {
+      title: 'Wrap the state change in withAnimation',
+      description: 'The transition modifier only describes *how* a view enters or leaves — it still needs `withAnimation` around the `page = newPage` assignment to actually animate rather than snap. The cubic-bezier timing curve matches the 300ms duration used across every other platform\'s implementation.',
+      fr: {
+        title: 'Envelopper le changement d\'état dans withAnimation',
+        description: 'Le modificateur de transition ne décrit que *comment* une vue entre ou sort — il faut encore `withAnimation` autour de l\'affectation `page = newPage` pour réellement animer plutôt que sauter. La courbe de timing cubic-bezier correspond à la durée de 300ms utilisée dans l\'implémentation de chaque autre plateforme.',
+      },
+      code: `func navigate(to newPage: Page) {
+    withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.3)) {
+        page = newPage
+    }
+}`,
+    },
+  ],
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -1070,6 +1386,73 @@ export function SwipeCard({ onDismiss, children }) {
       {children}
     </motion.div>
   )
+}`,
+    },
+  ],
+
+  angular: [
+    {
+      title: 'Plain button, no feedback',
+      description: 'Start with a plain `<button>` — no press animation, no state binding. This is the interaction baseline.',
+      fr: {
+        title: 'Bouton simple, sans feedback',
+        description: 'Commencer avec un `<button>` simple — pas d\'animation de pression, pas de liaison d\'état. C\'est la base d\'interaction.',
+      },
+      code: `@Component({
+  selector: 'app-spring-button',
+  template: \`<button><ng-content /></button>\`,
+})
+export class SpringButtonComponent {}`,
+    },
+    {
+      title: 'Declare a press animation trigger',
+      description: 'Two `state()`s (`up`/`down`) with different `transition()` timings — a fast ease-in going down, a slower elastic-feeling cubic-bezier coming back up — mirror the asymmetric feel of a spring without an actual physics simulation.',
+      fr: {
+        title: 'Déclarer un trigger d\'animation de pression',
+        description: 'Deux `state()` (`up`/`down`) avec des timings de `transition()` différents — un ease-in rapide pour descendre, un cubic-bezier plus lent à sensation élastique pour remonter — imitent la sensation asymétrique d\'un spring sans simulation physique réelle.',
+      },
+      code: `import { trigger, state, style, transition, animate } from '@angular/animations'
+
+export const pressAnimation = trigger('press', [
+  state('up',   style({ transform: 'scale(1)' })),
+  state('down', style({ transform: 'scale(0.94)' })),
+  transition('up => down', animate('80ms ease-in')),
+  transition('down => up', animate('400ms cubic-bezier(0.34,1.56,0.64,1)')),
+])`,
+    },
+    {
+      title: 'Bind pointer events to the trigger state',
+      description: '`@HostListener` bindings on `pointerdown`/`pointerup`/`pointerleave` flip a `pressed` boolean, which the `[@press]` binding reads. `pointerleave` matters — without it, a press that drags off the button never resets to the `up` state.',
+      fr: {
+        title: 'Lier les événements pointeur à l\'état du trigger',
+        description: 'Des liaisons `@HostListener` sur `pointerdown`/`pointerup`/`pointerleave` basculent un booléen `pressed`, que lit la liaison `[@press]`. `pointerleave` est important — sans lui, une pression qui glisse hors du bouton ne revient jamais à l\'état `up`.',
+      },
+      code: `@Component({
+  selector: 'app-spring-button',
+  template: \`<button [@press]="pressed ? 'down' : 'up'"><ng-content /></button>\`,
+  animations: [pressAnimation],
+})
+export class SpringButtonComponent {
+  pressed = false
+  @HostListener('pointerdown')  onDown()  { this.pressed = true }
+  @HostListener('pointerup')    onUp()    { this.pressed = false }
+  @HostListener('pointerleave') onLeave() { this.pressed = false }
+}`,
+    },
+    {
+      title: 'Add swipe-to-dismiss with pointer tracking',
+      description: 'Without a gesture library, swipe support is built from raw `pointermove` deltas and a manually computed velocity (`Δx / Δt`). Crossing either the velocity or distance threshold on `pointerup` commits to the dismiss animation; otherwise the transform resets.',
+      fr: {
+        title: 'Ajouter le swipe-to-dismiss avec suivi du pointeur',
+        description: 'Sans bibliothèque de gestes, le support du swipe se construit à partir de deltas `pointermove` bruts et d\'une vélocité calculée manuellement (`Δx / Δt`). Franchir le seuil de vélocité ou de distance sur `pointerup` valide l\'animation de rejet ; sinon le transform revient à zéro.',
+      },
+      code: `onUp() {
+  this.dragging = false
+  if (Math.abs(this.velocity) > 0.5 || Math.abs(this.offsetX) > 120) {
+    this.offsetX = this.velocity > 0 ? 400 : -400
+  } else {
+    this.offsetX = 0
+  }
 }`,
     },
   ],
@@ -1271,6 +1654,80 @@ Dismissible(
 )`,
     },
   ],
+
+  swiftui: [
+    {
+      title: 'Plain button, no ButtonStyle',
+      description: 'Start with a default `Button` — no custom style, no scale feedback. This is the baseline before wiring up press physics.',
+      fr: {
+        title: 'Bouton simple, sans ButtonStyle',
+        description: 'Commencer avec un `Button` par défaut — pas de style personnalisé, pas de retour d\'échelle. C\'est la base avant de brancher la physique de pression.',
+      },
+      code: `Button("Buy now") { }`,
+    },
+    {
+      title: 'Create a custom ButtonStyle',
+      description: 'A `ButtonStyle` is SwiftUI\'s idiomatic hook for press feedback — `configuration.isPressed` is already tracked by the system, so there is no gesture wiring at all, unlike every other platform here.',
+      fr: {
+        title: 'Créer un ButtonStyle personnalisé',
+        description: 'Un `ButtonStyle` est le point d\'accroche idiomatique de SwiftUI pour le retour de pression — `configuration.isPressed` est déjà suivi par le système, donc aucun câblage de geste n\'est nécessaire, contrairement à toutes les autres plateformes ici.',
+      },
+      code: `struct SpringButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+    }
+}`,
+    },
+    {
+      title: 'Animate the scale change',
+      description: 'Attaching `.animation(_:value:)` to the scale change is what turns the instant snap into a spring — `response`/`dampingFraction` map directly onto the stiffness/damping vocabulary used on every other platform.',
+      fr: {
+        title: 'Animer le changement d\'échelle',
+        description: 'Attacher `.animation(_:value:)` au changement d\'échelle est ce qui transforme le saut instantané en spring — `response`/`dampingFraction` correspondent directement au vocabulaire stiffness/damping utilisé sur chaque autre plateforme.',
+      },
+      code: `struct SpringButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.5), value: configuration.isPressed)
+    }
+}
+
+// Usage: Button("Buy now") { }.buttonStyle(SpringButtonStyle())`,
+    },
+    {
+      title: 'Add swipe-to-dismiss with DragGesture',
+      description: '`DragGesture`\'s `predictedEndLocation` gives a velocity-aware endpoint for free — subtracting the current location from it approximates flick velocity without manual timestamp math, unlike the Angular or React Native raw-pointer approach.',
+      fr: {
+        title: 'Ajouter le swipe-to-dismiss avec DragGesture',
+        description: 'Le `predictedEndLocation` de `DragGesture` fournit gratuitement un point final tenant compte de la vélocité — le soustraire de la position actuelle approxime la vélocité du flick sans calcul manuel d\'horodatage, contrairement à l\'approche pointeur brut d\'Angular ou React Native.',
+      },
+      code: `struct SwipeCard<Content: View>: View {
+    let onDismiss: () -> Void
+    @ViewBuilder let content: Content
+    @State private var offsetX: CGFloat = 0
+
+    var body: some View {
+        content
+            .offset(x: offsetX)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in offsetX = value.translation.width }
+                    .onEnded { value in
+                        let velocity = value.predictedEndLocation.x - value.location.x
+                        if abs(velocity) > 200 || abs(offsetX) > 120 {
+                            withAnimation(.spring()) { offsetX = velocity > 0 ? 400 : -400 }
+                            onDismiss()
+                        } else {
+                            withAnimation(.spring()) { offsetX = 0 }
+                        }
+                    }
+            )
+    }
+}`,
+    },
+  ],
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -1386,6 +1843,69 @@ export function ParallaxSection({ image, children }) {
     </section>
   )
 }`,
+    },
+  ],
+
+  angular: [
+    {
+      title: 'Static section, no scroll tracking',
+      description: 'Start with a plain section containing a background div and content — no scroll listener yet. This establishes the layered layout the parallax will offset.',
+      fr: {
+        title: 'Section statique, sans suivi du scroll',
+        description: 'Commencer avec une section simple contenant un div d\'arrière-plan et du contenu — pas encore d\'écouteur de scroll. Cela établit le layout en couches que le parallaxe va décaler.',
+      },
+      code: `@Component({
+  selector: 'app-parallax-section',
+  template: \`
+    <section style="position: relative; overflow: hidden; min-height: 480px">
+      <div [style.background-image]="'url(' + image + ')'"
+           style="position: absolute; inset: -10%; background-size: cover"></div>
+      <div style="position: relative; z-index: 1; padding: 80px 40px"><ng-content /></div>
+    </section>
+  \`,
+})
+export class ParallaxSectionComponent {
+  @Input() image = ''
+}`,
+    },
+    {
+      title: 'Track scroll progress with HostListener',
+      description: 'A `@HostListener(\'window:scroll\')` recomputes a 0–1 progress value from the section\'s bounding rect on every scroll event — the same math as the Vue implementation\'s manual scroll listener, since Angular has no built-in reactive scroll primitive either.',
+      fr: {
+        title: 'Suivre la progression du scroll avec HostListener',
+        description: 'Un `@HostListener(\'window:scroll\')` recalcule une valeur de progression 0–1 depuis le rect de la section à chaque événement de scroll — le même calcul que l\'écouteur de scroll manuel de l\'implémentation Vue, car Angular n\'a pas non plus de primitive de scroll réactive native.',
+      },
+      code: `@HostListener('window:scroll')
+onScroll() {
+  const rect = this.el.nativeElement.getBoundingClientRect()
+  const vh = window.innerHeight
+  this.progress = 1 - rect.bottom / (rect.height + vh)
+}`,
+    },
+    {
+      title: 'Derive background and foreground offsets',
+      description: 'The progress value maps linearly to two offset ranges — a small one for the background (±40px) and an inverted, equal one for the foreground text (∓40px) — the opposite signs are what create the depth illusion.',
+      fr: {
+        title: 'Dériver les décalages d\'arrière-plan et de premier plan',
+        description: 'La valeur de progression se mappe linéairement sur deux plages de décalage — une petite pour l\'arrière-plan (±40px) et une inversée de même ampleur pour le texte au premier plan (∓40px) — ce sont les signes opposés qui créent l\'illusion de profondeur.',
+      },
+      code: `get bgY(): number   { return (this.progress * 2 - 1) * 40 }
+get textY(): number { return (this.progress * 2 - 1) * -40 }`,
+    },
+    {
+      title: 'Bind the offsets to inline transforms',
+      description: 'Binding `[style.transform]` to a `translateY()` string derived from each getter applies the parallax — `will-change: transform` on both layers promotes them to their own compositor layer so scroll stays smooth.',
+      fr: {
+        title: 'Lier les décalages aux transforms inline',
+        description: 'Lier `[style.transform]` à une chaîne `translateY()` dérivée de chaque getter applique le parallaxe — `will-change: transform` sur les deux couches les promeut sur leur propre couche de composition pour que le scroll reste fluide.',
+      },
+      code: `<div [style.transform]="'translateY(' + bgY + 'px)'"
+     [style.background-image]="'url(' + image + ')'"
+     style="position: absolute; inset: -10%; background-size: cover; will-change: transform"></div>
+<div [style.transform]="'translateY(' + textY + 'px)'"
+     style="position: relative; z-index: 1; padding: 80px 40px; will-change: transform">
+  <ng-content />
+</div>`,
     },
   ],
 
@@ -1610,6 +2130,71 @@ class _ParallaxImageState extends State<ParallaxImage> {
 }`,
     },
   ],
+
+  swiftui: [
+    {
+      title: 'Static ZStack layout',
+      description: 'Start with a plain `ZStack` layering the background image and content, no offset math yet — this is the layered baseline the parallax will read positions from.',
+      fr: {
+        title: 'Layout ZStack statique',
+        description: 'Commencer avec un simple `ZStack` superposant l\'image d\'arrière-plan et le contenu, sans encore de calcul de décalage — c\'est la base en couches depuis laquelle le parallaxe va lire les positions.',
+      },
+      code: `struct ParallaxSection<Content: View>: View {
+    let image: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        ZStack {
+            Image(image).resizable().scaledToFill()
+            content
+        }
+        .frame(height: 480)
+        .clipped()
+    }
+}`,
+    },
+    {
+      title: 'Read scroll position with GeometryReader',
+      description: 'SwiftUI has no direct scroll-offset publisher pre-iOS 17, so `GeometryReader` reads the section\'s frame in the `.global` coordinate space — `minY` becomes negative as the section scrolls up past the top of the screen, giving a continuous scroll signal.',
+      fr: {
+        title: 'Lire la position de scroll avec GeometryReader',
+        description: 'SwiftUI n\'a pas de publisher de décalage de scroll direct avant iOS 17, donc `GeometryReader` lit le frame de la section dans l\'espace de coordonnées `.global` — `minY` devient négatif à mesure que la section défile au-dessus du haut de l\'écran, fournissant un signal de scroll continu.',
+      },
+      code: `GeometryReader { geo in
+    let minY = geo.frame(in: .global).minY
+    // minY < 0 as the section scrolls up and off the top
+}`,
+    },
+    {
+      title: 'Derive background and foreground offsets',
+      description: 'Multiplying `minY` by a small factor (0.4) for the background and a larger, opposite-signed factor (-0.2) for the foreground text produces the depth illusion — background barely moves relative to scroll, text moves the other way.',
+      fr: {
+        title: 'Dériver les décalages d\'arrière-plan et de premier plan',
+        description: 'Multiplier `minY` par un petit facteur (0.4) pour l\'arrière-plan et par un facteur plus grand et de signe opposé (-0.2) pour le texte de premier plan produit l\'illusion de profondeur — l\'arrière-plan bouge à peine par rapport au scroll, le texte va dans l\'autre sens.',
+      },
+      code: `let bgY = minY * 0.4      // background moves slower
+let textY = minY * -0.2   // foreground moves opposite, faster`,
+    },
+    {
+      title: 'Apply offsets and oversize the background',
+      description: 'The background image is rendered taller than its container (`+100pt`) so that its offset range never reveals a transparent edge, and `.clipped()` on the outer frame keeps both layers contained within the section bounds.',
+      fr: {
+        title: 'Appliquer les décalages et surdimensionner l\'arrière-plan',
+        description: 'L\'image d\'arrière-plan est rendue plus haute que son conteneur (`+100pt`) pour que sa plage de décalage ne révèle jamais un bord transparent, et `.clipped()` sur le frame externe garde les deux couches contenues dans les limites de la section.',
+      },
+      code: `ZStack {
+    Image(image)
+        .resizable()
+        .scaledToFill()
+        .frame(width: geo.size.width, height: geo.size.height + 100)
+        .offset(y: bgY)
+        .clipped()
+
+    content
+        .offset(y: textY)
+}`,
+    },
+  ],
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -1728,6 +2313,70 @@ export function UserCard({ userId }) {
     </AnimatePresence>
   )
 }`,
+    },
+  ],
+
+  angular: [
+    {
+      title: 'Gray div placeholder',
+      description: 'Start with a plain `div` sized and colored to match the real content — no shimmer yet. Establishing the correct dimensions first is what prevents layout shift once real data replaces the skeleton.',
+      fr: {
+        title: 'Div gris de remplacement',
+        description: 'Commencer avec un `div` simple dimensionné et coloré pour correspondre au contenu réel — pas encore de shimmer. Établir d\'abord les bonnes dimensions est ce qui évite un décalage de layout une fois que les vraies données remplacent le squelette.',
+      },
+      code: `@Component({
+  selector: 'app-skeleton',
+  template: \`<div [style.width]="width" [style.height.px]="height" [style.border-radius.px]="borderRadius" style="background: var(--bg-tertiary)"></div>\`,
+})
+export class SkeletonComponent {
+  @Input() width = '100%'
+  @Input() height = 16
+  @Input() borderRadius = 6
+}`,
+    },
+    {
+      title: 'Add the shimmer with a CSS keyframe',
+      description: 'A `::after` pseudo-element carries the gradient sweep, driven entirely by a `@keyframes` animation in the component\'s `styles` array — no Angular Animations API needed, since this loops infinitely and never depends on component state.',
+      fr: {
+        title: 'Ajouter le shimmer avec un keyframe CSS',
+        description: 'Un pseudo-élément `::after` porte le balayage du gradient, entièrement piloté par une animation `@keyframes` dans le tableau `styles` du composant — pas besoin de l\'API Angular Animations, puisque cela boucle indéfiniment et ne dépend jamais de l\'état du composant.',
+      },
+      code: `styles: [\`
+  :host div { position: relative; overflow: hidden; }
+  :host div::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.07) 50%, transparent 100%);
+    animation: shimmer 1.5s infinite linear;
+  }
+  @keyframes shimmer {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+  }
+\`]`,
+    },
+    {
+      title: 'Compose a card skeleton',
+      description: 'A second component composes several `<app-skeleton>` instances with different widths and radii to mirror an avatar-plus-two-lines card layout — the same composition pattern used on every other platform.',
+      fr: {
+        title: 'Composer un squelette de carte',
+        description: 'Un second composant compose plusieurs instances `<app-skeleton>` avec des largeurs et rayons différents pour refléter un layout de carte avatar-plus-deux-lignes — le même pattern de composition utilisé sur chaque autre plateforme.',
+      },
+      code: `@Component({
+  selector: 'app-card-skeleton',
+  template: \`
+    <div style="padding: 20px; border-radius: 12px; border: 1px solid var(--border)">
+      <app-skeleton [width]="'48px'" [height]="48" [borderRadius]="24"></app-skeleton>
+      <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px">
+        <app-skeleton width="60%" [height]="14"></app-skeleton>
+        <app-skeleton width="90%" [height]="12"></app-skeleton>
+        <app-skeleton width="75%" [height]="12"></app-skeleton>
+      </div>
+    </div>
+  \`,
+})
+export class CardSkeletonComponent {}`,
     },
   ],
 
@@ -1951,6 +2600,79 @@ AnimatedSwitcher(
 )`,
     },
   ],
+
+  swiftui: [
+    {
+      title: 'Gray RoundedRectangle placeholder',
+      description: 'Start with a `RoundedRectangle` filled with a neutral gray — no shimmer yet. Matching the real content\'s width, height, and corner radius up front is what keeps the eventual swap free of layout shift.',
+      fr: {
+        title: 'RoundedRectangle grise de remplacement',
+        description: 'Commencer avec un `RoundedRectangle` rempli d\'un gris neutre — pas encore de shimmer. Faire correspondre d\'abord la largeur, la hauteur et le rayon de coin du vrai contenu est ce qui garde l\'échange final exempt de décalage de layout.',
+      },
+      code: `struct Skeleton: View {
+    var width: CGFloat? = nil
+    var height: CGFloat = 16
+    var cornerRadius: CGFloat = 6
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(Color(.systemGray5))
+            .frame(width: width, height: height)
+    }
+}`,
+    },
+    {
+      title: 'Overlay a gradient sweep',
+      description: 'A `LinearGradient` overlay masked to the same rounded shape provides the light sweep — `.mask()` clips the gradient to exactly the skeleton\'s shape, the SwiftUI equivalent of `overflow: hidden` on the CSS version.',
+      fr: {
+        title: 'Superposer un balayage de gradient',
+        description: 'Une superposition `LinearGradient` masquée à la même forme arrondie fournit le balayage lumineux — `.mask()` découpe le gradient exactement à la forme du squelette, l\'équivalent SwiftUI de `overflow: hidden` sur la version CSS.',
+      },
+      code: `.overlay(
+    LinearGradient(
+        colors: [.clear, .white.opacity(0.3), .clear],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+    .mask(RoundedRectangle(cornerRadius: cornerRadius))
+)`,
+    },
+    {
+      title: 'Animate the sweep with a repeating phase',
+      description: 'A `@State private var phase` offsets the gradient horizontally, and `withAnimation(.linear(...).repeatForever(autoreverses: false))` in `.onAppear` drives it continuously — `autoreverses: false` is what keeps the sweep always moving left-to-right instead of bouncing back.',
+      fr: {
+        title: 'Animer le balayage avec une phase répétée',
+        description: 'Un `@State private var phase` décale le gradient horizontalement, et `withAnimation(.linear(...).repeatForever(autoreverses: false))` dans `.onAppear` le pilote en continu — `autoreverses: false` est ce qui garde le balayage toujours en mouvement de gauche à droite plutôt que de rebondir.',
+      },
+      code: `@State private var phase: CGFloat = -1
+
+.offset(x: phase * 200)
+.onAppear {
+    withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+        phase = 1
+    }
+}`,
+    },
+    {
+      title: 'Compose a card skeleton',
+      description: 'A `VStack` of differently-sized `Skeleton` views mirrors an avatar-plus-two-lines card layout, the same composition approach used across every other platform\'s implementation.',
+      fr: {
+        title: 'Composer un squelette de carte',
+        description: 'Un `VStack` de vues `Skeleton` de tailles différentes reflète un layout de carte avatar-plus-deux-lignes, la même approche de composition utilisée dans l\'implémentation de chaque autre plateforme.',
+      },
+      code: `struct CardSkeleton: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Skeleton(width: 48, height: 48, cornerRadius: 24)
+            Skeleton(width: 160, height: 14)
+            Skeleton(height: 12)
+            Skeleton(width: 220, height: 12)
+        }
+        .padding(20)
+    }
+}`,
+    },
+  ],
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -2076,6 +2798,68 @@ export function NavList({ items }: { items: string[] }) {
       ))}
     </motion.ul>
   )
+}`,
+    },
+  ],
+
+  angular: [
+    {
+      title: 'Plain *ngFor list, no animation',
+      description: 'Start with a plain `*ngFor` rendering all items instantly — no `[@staggerList]` binding yet. This is the baseline the cascade will build on.',
+      fr: {
+        title: 'Liste *ngFor simple, sans animation',
+        description: 'Commencer avec un `*ngFor` simple affichant tous les éléments instantanément — pas encore de liaison `[@staggerList]`. C\'est la base sur laquelle la cascade va se construire.',
+      },
+      code: `@Component({
+  selector: 'app-stagger-list',
+  template: \`
+    <ul style="list-style: none; padding: 0">
+      <li *ngFor="let item of items">{{ item.label }}</li>
+    </ul>
+  \`,
+})
+export class StaggerListComponent {
+  @Input() items: { id: string; label: string }[] = []
+}`,
+    },
+    {
+      title: 'Declare a query + stagger trigger',
+      description: '`query(\':enter\', [...])` selects every child entering the DOM in this transition, and `stagger(70, [...])` wraps the per-item animation so each match gets an additional 70ms delay — Angular\'s direct equivalent of `staggerChildren` in Framer Motion.',
+      fr: {
+        title: 'Déclarer un trigger query + stagger',
+        description: '`query(\':enter\', [...])` sélectionne chaque enfant entrant dans le DOM lors de cette transition, et `stagger(70, [...])` enveloppe l\'animation par élément pour que chaque correspondance reçoive un délai supplémentaire de 70ms — l\'équivalent direct de `staggerChildren` de Framer Motion en Angular.',
+      },
+      code: `import { trigger, transition, query, stagger, animate, style } from '@angular/animations'
+
+export const staggerList = trigger('staggerList', [
+  transition('* => *', [
+    query(':enter', [
+      style({ opacity: 0, transform: 'translateY(20px)' }),
+      stagger(70, [
+        animate('500ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+    ], { optional: true }),
+  ]),
+])`,
+    },
+    {
+      title: 'Bind the trigger to the item count',
+      description: 'Binding `[@staggerList]="items.length"` gives Angular a value to diff — when the count changes (or the array reference changes), Angular treats it as a state transition and replays the `query`/`stagger` sequence on the newly entered rows.',
+      fr: {
+        title: 'Lier le trigger au nombre d\'éléments',
+        description: 'Lier `[@staggerList]="items.length"` donne à Angular une valeur à comparer — quand le compte change (ou que la référence du tableau change), Angular le traite comme une transition d\'état et rejoue la séquence `query`/`stagger` sur les lignes nouvellement entrées.',
+      },
+      code: `@Component({
+  selector: 'app-stagger-list',
+  template: \`
+    <ul [@staggerList]="items.length" style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px">
+      <li *ngFor="let item of items">{{ item.label }}</li>
+    </ul>
+  \`,
+  animations: [staggerList],
+})
+export class StaggerListComponent {
+  @Input() items: { id: string; label: string }[] = []
 }`,
     },
   ],
@@ -2328,6 +3112,66 @@ class _StaggerListState extends State<StaggerList>
   );
 
   @override void dispose() { _ctrl.dispose(); super.dispose(); }
+}`,
+    },
+  ],
+
+  swiftui: [
+    {
+      title: 'Plain ForEach list, no animation',
+      description: 'Start with a `ForEach` over the items rendering instantly — no `@State` flag or animation modifiers yet. This is the layout baseline.',
+      fr: {
+        title: 'Liste ForEach simple, sans animation',
+        description: 'Commencer avec un `ForEach` sur les éléments s\'affichant instantanément — pas encore de flag `@State` ni de modificateurs d\'animation. C\'est la base de layout.',
+      },
+      code: `struct StaggerList: View {
+    let items: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(items, id: \\.self) { label in
+                Text(label)
+            }
+        }
+    }
+}`,
+    },
+    {
+      title: 'Add an appeared flag',
+      description: 'A single `@State private var appeared` boolean, flipped once in `.onAppear`, becomes the animated value every row reads — one trigger driving many independently-timed animations, the same pattern as Flutter\'s shared `AnimationController`.',
+      fr: {
+        title: 'Ajouter un flag appeared',
+        description: 'Un unique booléen `@State private var appeared`, basculé une fois dans `.onAppear`, devient la valeur animée que chaque ligne lit — un seul déclencheur pilotant plusieurs animations chronométrées indépendamment, le même pattern que l\'`AnimationController` partagé de Flutter.',
+      },
+      code: `@State private var appeared = false
+
+var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+        ForEach(items, id: \\.self) { label in
+            Text(label)
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 20)
+        }
+    }
+    .onAppear { appeared = true }
+}`,
+    },
+    {
+      title: 'Stagger with a per-index delay',
+      description: '`.animation(_:value:).delay(Double(index) * 0.07)` on each row gives every item its own offset into the same `appeared` transition — `ForEach(Array(items.enumerated()), id: \\.offset)` is what exposes the index needed to compute that delay.',
+      fr: {
+        title: 'Échelonner avec un délai par index',
+        description: '`.animation(_:value:).delay(Double(index) * 0.07)` sur chaque ligne donne à chaque élément son propre décalage dans la même transition `appeared` — `ForEach(Array(items.enumerated()), id: \\.offset)` est ce qui expose l\'index nécessaire pour calculer ce délai.',
+      },
+      code: `ForEach(Array(items.enumerated()), id: \\.offset) { index, label in
+    Text(label)
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 20)
+        .animation(
+            .timingCurve(0.22, 1, 0.36, 1, duration: 0.5)
+                .delay(Double(index) * 0.07),
+            value: appeared
+        )
 }`,
     },
   ],
@@ -3475,12 +4319,157 @@ class _State extends State<ImageCarousel> {
   },
 ]
 
+const imageCarouselAngular: Step[] = [
+  {
+    title: 'Static slide + dots',
+    description: 'Render the active slide from a `page` property and a row of dots bound to `[class.active]`. Clicking a dot just reassigns `page` — Angular\'s change detection re-renders the template. This is the structural baseline before any transition trigger exists.',
+    fr: { title: 'Slide statique + points', description: 'Afficher la slide active depuis une propriété `page` et une rangée de points liés à `[class.active]`. Cliquer sur un point réassigne simplement `page` — la détection de changement d\'Angular rerend le template. C\'est la base structurelle avant qu\'aucun trigger de transition n\'existe.' },
+    code: `@Component({
+  selector: 'app-image-carousel',
+  template: \`
+    <div class="carousel">
+      <div class="slide" [style.background]="slides[page].color">
+        <span class="label">{{ slides[page].label }}</span>
+      </div>
+      <div class="dots">
+        <div *ngFor="let s of slides; let i = index" class="dot" [class.active]="i === page" (click)="page = i"></div>
+      </div>
+    </div>
+  \`,
+})
+export class ImageCarouselComponent {
+  slides = [
+    { color: '#534AB7', label: 'Mountain Vista' },
+    { color: '#1D9E75', label: 'Forest Trail' },
+    { color: '#D85A30', label: 'Ocean Sunset' },
+  ]
+  page = 0
+}`,
+  },
+  {
+    title: 'Direction-aware slide trigger',
+    description: 'Angular Animations has no `custom` prop like `AnimatePresence`, so direction is passed through `params` on a parameterized `transition()`. `query(\':enter\'/\':leave\')` picks the two elements involved, and `{{ dir }}` interpolates the runtime param into the `style()` value.',
+    fr: { title: 'Trigger de slide sensible à la direction', description: 'Angular Animations n\'a pas de prop `custom` comme `AnimatePresence`, donc la direction passe par des `params` sur un `transition()` paramétré. `query(\':enter\'/\':leave\')` sélectionne les deux éléments concernés, et `{{ dir }}` interpole le paramètre d\'exécution dans la valeur `style()`.' },
+    code: `export const slideAnim = trigger('slide', [
+  transition('* => *', [
+    query(':enter', [
+      style({ transform: 'translateX({{ dir }}%) scale(0.92)', opacity: 0.4 }),
+    ], { optional: true }),
+    group([
+      query(':leave', [
+        animate('350ms cubic-bezier(0.22,1,0.36,1)',
+          style({ transform: 'translateX(calc(-1 * {{ dir }}%)) scale(0.92)', opacity: 0.4 })),
+      ], { optional: true }),
+      query(':enter', [
+        animate('350ms cubic-bezier(0.22,1,0.36,1)', style({ transform: 'translateX(0) scale(1)', opacity: 1 })),
+      ], { optional: true }),
+    ]),
+  ], { params: { dir: 100 } }),
+])`,
+  },
+  {
+    title: 'Bind the trigger with runtime params',
+    description: 'The `[@slide]="{ value: page, params: { dir } }"` binding shape is how Angular Animations accepts runtime values into a parameterized trigger — `value` drives when the transition fires (on `page` change), `params.dir` fills in the `{{ dir }}` placeholders declared in the previous step.',
+    fr: { title: 'Lier le trigger avec des params d\'exécution', description: 'La forme de liaison `[@slide]="{ value: page, params: { dir } }"` est la façon dont Angular Animations accepte des valeurs d\'exécution dans un trigger paramétré — `value` pilote le déclenchement de la transition (au changement de `page`), `params.dir` remplit les emplacements `{{ dir }}` déclarés à l\'étape précédente.' },
+    code: `<div [@slide]="{ value: page, params: { dir: dir } }" class="slide" [style.background]="slides[page].color">
+  <span class="label">{{ slides[page].label }}</span>
+</div>`,
+  },
+  {
+    title: 'Add touch swipe and the dark overlay',
+    description: '`touchstart`/`touchend` bindings measure a swipe delta the same way as the Vue implementation, calling `go()` past a 50px threshold. The overlay is a plain sibling `div` whose opacity is bound to whether its slide is currently active, animated with a CSS transition rather than the Animations API since it only depends on one boolean.',
+    fr: { title: 'Ajouter le swipe tactile et l\'overlay sombre', description: 'Les liaisons `touchstart`/`touchend` mesurent un delta de swipe de la même façon que l\'implémentation Vue, appelant `go()` au-delà d\'un seuil de 50px. L\'overlay est un simple `div` frère dont l\'opacité est liée à l\'activité de sa slide, animé avec une transition CSS plutôt que l\'API Animations puisqu\'il ne dépend que d\'un booléen.' },
+    code: `go(d: number) {
+  if (d === 0) return
+  this.dir = d > 0 ? 100 : -100
+  this.page = (this.page + d + this.slides.length) % this.slides.length
+}
+
+onTouchStart(e: TouchEvent) { this.startX = e.touches[0].clientX }
+onTouchEnd(e: TouchEvent) {
+  const dx = this.startX - e.changedTouches[0].clientX
+  if (Math.abs(dx) > 50) this.go(dx > 0 ? 1 : -1)
+}`,
+  },
+]
+
+const imageCarouselSwiftui: Step[] = [
+  {
+    title: 'Static TabView paging',
+    description: 'A `TabView` with `.tabViewStyle(.page)` gives horizontal paging and swipe gestures natively — no gesture code at all, unlike every other platform here. This step establishes the slide content and paging before any custom depth or overlay effects.',
+    fr: { title: 'Pagination TabView statique', description: 'Un `TabView` avec `.tabViewStyle(.page)` donne la pagination horizontale et les gestes de swipe nativement — aucun code de geste du tout, contrairement à chaque autre plateforme ici. Cette étape établit le contenu des slides et la pagination avant tout effet de profondeur ou d\'overlay personnalisé.' },
+    code: `struct Slide { let color: Color; let label: String }
+
+struct ImageCarousel: View {
+    let slides: [Slide] = [
+        Slide(color: Color(hex: "534AB7"), label: "Mountain Vista"),
+        Slide(color: Color(hex: "1D9E75"), label: "Forest Trail"),
+        Slide(color: Color(hex: "D85A30"), label: "Ocean Sunset"),
+    ]
+    @State private var page = 0
+
+    var body: some View {
+        TabView(selection: $page) {
+            ForEach(Array(slides.enumerated()), id: \\.offset) { index, slide in
+                ZStack(alignment: .bottomLeading) {
+                    slide.color
+                    Text(slide.label).font(.headline).foregroundStyle(.white).padding(20)
+                }
+                .tag(index)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(height: 280)
+    }
+}`,
+  },
+  {
+    title: 'Add the dark overlay per slide',
+    description: 'Each slide gets a `Color.black` overlay whose opacity is 0 when its index matches `page` and 0.4 otherwise — animated with `.animation(_:value:)` on `page` so it fades rather than snaps as the user swipes between slides.',
+    fr: { title: 'Ajouter l\'overlay sombre par slide', description: 'Chaque slide reçoit une surimpression `Color.black` dont l\'opacité est 0 quand son index correspond à `page` et 0.4 sinon — animée avec `.animation(_:value:)` sur `page` pour qu\'elle s\'estompe plutôt que de sauter pendant que l\'utilisateur swipe entre les slides.' },
+    code: `ZStack(alignment: .bottomLeading) {
+    slide.color
+    Color.black.opacity(page == index ? 0 : 0.4)
+        .animation(.easeOut(duration: 0.3), value: page)
+    Text(slide.label).font(.headline).foregroundStyle(.white).padding(20)
+}
+.clipShape(RoundedRectangle(cornerRadius: 16))`,
+  },
+  {
+    title: 'Add a spring to the page transition',
+    description: 'Attaching `.animation(.spring(...), value: page)` to the `TabView` gives the built-in swipe gesture a springy settle instead of `TabView`\'s default linear paging feel — the closest SwiftUI equivalent to Framer Motion\'s `transition={{ type: "spring" }}` on the carousel container.',
+    fr: { title: 'Ajouter un spring à la transition de page', description: 'Attacher `.animation(.spring(...), value: page)` au `TabView` donne au geste de swipe intégré une stabilisation en spring plutôt que la sensation de pagination linéaire par défaut de `TabView` — l\'équivalent SwiftUI le plus proche du `transition={{ type: "spring" }}` de Framer Motion sur le conteneur du carrousel.' },
+    code: `TabView(selection: $page) {
+    // ...slides
+}
+.tabViewStyle(.page(indexDisplayMode: .never))
+.animation(.spring(response: 0.4, dampingFraction: 0.85), value: page)`,
+  },
+  {
+    title: 'Add animated pill dots',
+    description: 'A custom `HStack` of `Capsule` shapes replaces the built-in page indicator — width and opacity both animate off the same `page` value, and `.onTapGesture` lets a dot jump directly to its slide, matching the click-to-navigate behavior on every other platform.',
+    fr: { title: 'Ajouter des pastilles animées', description: 'Un `HStack` personnalisé de formes `Capsule` remplace l\'indicateur de page intégré — largeur et opacité s\'animent toutes deux depuis la même valeur `page`, et `.onTapGesture` permet à une pastille de sauter directement à sa slide, correspondant au comportement de navigation au clic de chaque autre plateforme.' },
+    code: `HStack(spacing: 5) {
+    ForEach(slides.indices, id: \\.self) { i in
+        Capsule()
+            .fill(.white.opacity(i == page ? 1 : 0.4))
+            .frame(width: i == page ? 20 : 6, height: 6)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: page)
+            .onTapGesture { page = i }
+    }
+}
+.padding(.bottom, 12)`,
+  },
+]
+
 const imageCarousel: StepMap = {
   react:          imageCarouselReact,
   nextjs:         imageCarouselNextjs,
   vue:            imageCarouselVue,
+  angular:        imageCarouselAngular,
   'react-native': imageCarouselRN,
   flutter:        imageCarouselFlutter,
+  swiftui:        imageCarouselSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -4769,12 +5758,155 @@ class _State extends State<OnboardingFlow> {
   },
 ]
 
+const onboardingFlowAngular: Step[] = [
+  {
+    title: 'Static screen, dots, and button',
+    description: 'Wire up `step`/`current` and the template for icon, title, body, dots, and the Next button — no `[@slide]` binding yet. Getting this reactive shape right first is what lets the next step add only a trigger, not a rewrite.',
+    fr: { title: 'Écran, points et bouton statiques', description: 'Câbler `step`/`current` et le template pour l\'icône, le titre, le corps, les points et le bouton Suivant — pas encore de liaison `[@slide]`. Bien définir cette forme réactive en premier permet à l\'étape suivante de n\'ajouter qu\'un trigger, pas une réécriture.' },
+    code: `@Component({
+  selector: 'app-onboarding-flow',
+  template: \`
+    <div class="onboarding">
+      <div class="content">
+        <div class="icon" [style.background]="current.color"></div>
+        <h2>{{ current.title }}</h2>
+        <p>{{ current.body }}</p>
+      </div>
+      <div class="dots">
+        <div *ngFor="let s of screens; let i = index" class="dot" [class.active]="i === step"></div>
+      </div>
+      <button class="next" [style.background]="current.color" (click)="advance()">
+        {{ step === screens.length - 1 ? 'Get started →' : 'Next →' }}
+      </button>
+    </div>
+  \`,
+})
+export class OnboardingFlowComponent {
+  screens = [
+    { color: '#534AB7', title: 'Welcome', body: 'The animation platform for every stack.' },
+    { color: '#1D9E75', title: 'Pick a pattern', body: 'Six production animations, five platforms.' },
+    { color: '#D85A30', title: 'Ship it', body: 'Copy step-by-step code straight into your project.' },
+  ]
+  step = 0
+  get current() { return this.screens[this.step] }
+  advance() { if (this.step < this.screens.length - 1) this.step++ }
+}`,
+  },
+  {
+    title: 'Declare the slide trigger',
+    description: 'Reusing the `query`/`group` slide pattern from Page Transitions, this trigger fires on any `step` change — `:enter`/`:leave` query both the outgoing and incoming content blocks and animate them in parallel with opposite offsets.',
+    fr: { title: 'Déclarer le trigger de slide', description: 'En réutilisant le pattern de slide `query`/`group` des Transitions de page, ce trigger se déclenche à chaque changement de `step` — `:enter`/`:leave` sélectionnent les blocs de contenu sortant et entrant et les animent en parallèle avec des décalages opposés.' },
+    code: `export const slideAnim = trigger('slide', [
+  transition('* => *', [
+    query(':enter, :leave', style({ position: 'absolute' }), { optional: true }),
+    query(':enter', style({ opacity: 0, transform: 'translateX(32px)' }), { optional: true }),
+    group([
+      query(':leave', [animate('280ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 0, transform: 'translateX(-32px)' }))], { optional: true }),
+      query(':enter', [animate('280ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateX(0)' }))], { optional: true }),
+    ]),
+  ]),
+])`,
+  },
+  {
+    title: 'Bind the trigger to step',
+    description: 'Binding `[@slide]="step"` on the content wrapper is what makes Angular treat each step change as a distinct state to transition between — the numeric value itself is the state identity Angular diffs against.',
+    fr: { title: 'Lier le trigger à step', description: 'Lier `[@slide]="step"` sur le wrapper de contenu est ce qui fait qu\'Angular traite chaque changement de step comme un état distinct entre lesquels transiter — la valeur numérique elle-même est l\'identité d\'état qu\'Angular compare.' },
+    code: `<div class="content" [@slide]="step">
+  <div class="icon" [style.background]="current.color"></div>
+  <h2>{{ current.title }}</h2>
+  <p>{{ current.body }}</p>
+</div>`,
+  },
+  {
+    title: 'Animate dot width with bound styles',
+    description: 'The dots don\'t need the Animations API at all — `[class.active]` toggles a CSS class with a `transition: all 0.3s cubic-bezier(...)` rule, and `[style.background]` swaps in the active screen\'s color. Simple bound styles plus CSS transitions are often enough; reserve the Animations API for orchestrated enter/leave sequences.',
+    fr: { title: 'Animer la largeur des points avec des styles liés', description: 'Les points n\'ont pas du tout besoin de l\'API Animations — `[class.active]` bascule une classe CSS avec une règle `transition: all 0.3s cubic-bezier(...)`, et `[style.background]` change la couleur pour celle de l\'écran actif. De simples styles liés plus des transitions CSS suffisent souvent ; réserver l\'API Animations aux séquences d\'entrée/sortie orchestrées.' },
+    code: `<div *ngFor="let s of screens; let i = index" class="dot" [class.active]="i === step"
+     [style.background]="i === step ? current.color : ''" (click)="step = i"></div>
+
+<style>
+.dot { width: 8px; height: 8px; border-radius: 4px; background: rgba(0,0,0,0.2);
+       transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+.dot.active { width: 24px; opacity: 1; }
+</style>`,
+  },
+]
+
+const onboardingFlowSwiftui: Step[] = [
+  {
+    title: 'Static screen, dots, and button',
+    description: 'Lay out the icon, title, body, dot row, and Next button reading from a `step` state and a `current` computed property — no transition modifier yet. This mirrors the same "derive, don\'t duplicate" principle as the Vue implementation.',
+    fr: { title: 'Écran, points et bouton statiques', description: 'Disposer l\'icône, le titre, le corps, la rangée de points et le bouton Suivant en lisant depuis un état `step` et une propriété calculée `current` — pas encore de modificateur de transition. Cela reflète le même principe « dériver, ne pas dupliquer » que l\'implémentation Vue.' },
+    code: `struct OnboardingScreen { let color: Color; let title: String; let body: String }
+
+struct OnboardingFlow: View {
+    let screens = [
+        OnboardingScreen(color: Color(hex: "534AB7"), title: "Welcome", body: "The animation platform for every stack."),
+        OnboardingScreen(color: Color(hex: "1D9E75"), title: "Pick a pattern", body: "Six production animations, five platforms."),
+        OnboardingScreen(color: Color(hex: "D85A30"), title: "Ship it", body: "Copy step-by-step code straight into your project."),
+    ]
+    @State private var step = 0
+    var current: OnboardingScreen { screens[step] }
+
+    var body: some View {
+        VStack(spacing: 18) {
+            VStack(spacing: 14) {
+                RoundedRectangle(cornerRadius: 20).fill(current.color).frame(width: 64, height: 64)
+                Text(current.title).font(.title3)
+                Text(current.body).font(.footnote).multilineTextAlignment(.center)
+            }
+            HStack(spacing: 6) {
+                ForEach(screens.indices, id: \\.self) { i in
+                    Capsule().fill(i == step ? current.color : Color.black.opacity(0.2)).frame(width: 8, height: 8)
+                }
+            }
+            Button(step == screens.count - 1 ? "Get started →" : "Next →") { advance() }
+        }
+        .padding(24)
+    }
+
+    func advance() { if step < screens.count - 1 { step += 1 } }
+}`,
+  },
+  {
+    title: 'Force fresh identity with .id(step)',
+    description: 'As with Page Transitions, `.id(step)` on the content `VStack` forces SwiftUI to treat each step as a new view instance, which is the precondition for `.transition()` to replay rather than silently diffing the existing view in place.',
+    fr: { title: 'Forcer une identité fraîche avec .id(step)', description: 'Comme pour les Transitions de page, `.id(step)` sur le `VStack` de contenu force SwiftUI à traiter chaque étape comme une nouvelle instance de vue, ce qui est la condition préalable pour que `.transition()` se rejoue plutôt que de comparer silencieusement la vue existante sur place.' },
+    code: `VStack(spacing: 14) {
+    // icon, title, body
+}
+.id(step)`,
+  },
+  {
+    title: 'Add the asymmetric slide transition',
+    description: 'The same `.asymmetric(insertion:removal:)` transition from Page Transitions applies here — insertion enters from the trailing edge, removal exits toward the leading edge, giving a left-to-right forward motion that reverses naturally when going back.',
+    fr: { title: 'Ajouter la transition de slide asymétrique', description: 'La même transition `.asymmetric(insertion:removal:)` des Transitions de page s\'applique ici — l\'insertion entre par le bord de fin, la suppression sort vers le bord de début, donnant un mouvement de gauche à droite qui s\'inverse naturellement en revenant en arrière.' },
+    code: `.transition(.asymmetric(
+    insertion: .opacity.combined(with: .move(edge: .trailing)),
+    removal: .opacity.combined(with: .move(edge: .leading))
+))`,
+  },
+  {
+    title: 'Wrap navigation in withAnimation and animate the dots',
+    description: 'Both `Back` and `Next` wrap their `step` mutation in `withAnimation(.timingCurve(...))` so the transition actually plays, and each dot\'s `Capsule` animates its own width/color off the same `step` value with a spring — completing the full flow across every other platform\'s implementation.',
+    fr: { title: 'Envelopper la navigation dans withAnimation et animer les points', description: '« Back » et « Next » enveloppent tous deux leur mutation de `step` dans `withAnimation(.timingCurve(...))` pour que la transition se joue réellement, et chaque `Capsule` de point anime sa propre largeur/couleur depuis la même valeur `step` avec un spring — complétant le flux entier à travers l\'implémentation de chaque autre plateforme.' },
+    code: `Button("Back") { withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.28)) { step -= 1 } }
+
+Capsule()
+    .fill(i == step ? current.color : Color.black.opacity(0.2))
+    .frame(width: i == step ? 24 : 8, height: 8)
+    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: step)`,
+  },
+]
+
 const onboardingFlow: StepMap = {
   react:          onboardingFlowReact,
   nextjs:         onboardingFlowNextjs,
   vue:            onboardingFlowVue,
+  angular:        onboardingFlowAngular,
   'react-native': onboardingFlowRN,
   flutter:        onboardingFlowFlutter,
+  swiftui:        onboardingFlowSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -6246,12 +7378,148 @@ class ItemDetail extends StatelessWidget {
   },
 ]
 
+const sharedElementAngular: Step[] = [
+  {
+    title: 'Static list and detail overlay',
+    description: 'Render the list rows and a conditional detail overlay with `*ngIf` — the hero div starts at its natural size in the overlay, with no FLIP animation wired up yet. This establishes both DOM shapes the FLIP technique will read rects from.',
+    fr: { title: 'Liste et overlay de détail statiques', description: 'Afficher les lignes de liste et une superposition de détail conditionnelle avec `*ngIf` — le div héros démarre à sa taille naturelle dans la superposition, sans encore de FLIP câblé. Cela établit les deux formes de DOM depuis lesquelles la technique FLIP va lire les rects.' },
+    code: `@Component({
+  selector: 'app-shared-element-demo',
+  template: \`
+    <div class="list">
+      <div *ngFor="let it of items" class="row" (click)="open(it, $event)">
+        <div class="thumb" [style.background]="it.color"></div>
+        <div class="meta"><strong>{{ it.title }}</strong><span>{{ it.sub }}</span></div>
+      </div>
+    </div>
+    <div class="overlay" *ngIf="selected" (click)="close()">
+      <div class="sheet" (click)="$event.stopPropagation()">
+        <div #hero class="hero" [style.background]="selected.color"></div>
+        <h2>{{ selected.title }}</h2>
+      </div>
+    </div>
+  \`,
+})
+export class SharedElementDemoComponent {
+  items = [/* ... */]
+  selected: any = null
+  open(item: any) { this.selected = item }
+  close() { this.selected = null }
+}`,
+  },
+  {
+    title: 'Capture the thumbnail rect on click',
+    description: 'Reading `getBoundingClientRect()` on the clicked thumbnail *before* the overlay opens gives the FLIP animation its "First" position — this must happen synchronously in the click handler, before Angular re-renders the DOM with the overlay present.',
+    fr: { title: 'Capturer le rect de la vignette au clic', description: 'Lire `getBoundingClientRect()` sur la vignette cliquée *avant* l\'ouverture de la superposition donne à l\'animation FLIP sa position « First » — cela doit se produire de façon synchrone dans le gestionnaire de clic, avant qu\'Angular ne rerend le DOM avec la superposition présente.' },
+    code: `@ViewChild('hero') heroRef?: ElementRef<HTMLElement>
+private originRect: DOMRect | null = null
+
+open(item: any, e: MouseEvent) {
+  this.originRect = (e.currentTarget as HTMLElement).querySelector('.thumb')!.getBoundingClientRect()
+  this.selected = item
+  requestAnimationFrame(() => this.playFlip())
+}`,
+  },
+  {
+    title: 'Compute the delta and pre-position the hero',
+    description: 'Once the overlay has rendered, reading the hero\'s rect gives the "Last" position. Subtracting first from last and computing a scale ratio produces the exact `translate`/`scale` transform that visually places the hero back at the thumbnail\'s position and size — the "Invert" step of FLIP.',
+    fr: { title: 'Calculer le delta et pré-positionner le héros', description: 'Une fois la superposition rendue, lire le rect du héros donne la position « Last ». Soustraire first de last et calculer un ratio d\'échelle produit le transform `translate`/`scale` exact qui replace visuellement le héros à la position et taille de la vignette — l\'étape « Invert » de FLIP.' },
+    code: `private playFlip() {
+  const hero = this.heroRef?.nativeElement
+  if (!hero || !this.originRect) return
+  const heroRect = hero.getBoundingClientRect()
+  const dx = this.originRect.left - heroRect.left
+  const dy = this.originRect.top - heroRect.top
+  const sx = this.originRect.width / heroRect.width
+  const sy = this.originRect.height / heroRect.height
+
+  hero.style.transition = 'none'
+  hero.style.transform = \`translate(\${dx}px, \${dy}px) scale(\${sx}, \${sy})\`
+  hero.style.borderRadius = '10px'
+}`,
+  },
+  {
+    title: 'Play the transition back to natural layout',
+    description: 'On the next animation frame, clearing the inline transform and re-enabling `transition` lets the browser animate from the inverted position back to the hero\'s natural full-size layout — the "Play" step, and the only part that actually looks like motion to the user.',
+    fr: { title: 'Jouer la transition vers le layout naturel', description: 'À la frame d\'animation suivante, effacer le transform inline et réactiver `transition` laisse le navigateur animer depuis la position inversée jusqu\'au layout naturel en pleine taille du héros — l\'étape « Play », et la seule partie qui ressemble réellement à du mouvement pour l\'utilisateur.' },
+    code: `requestAnimationFrame(() => {
+  hero.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1), border-radius 0.4s'
+  hero.style.transform = ''
+  hero.style.borderRadius = '16px'
+})`,
+  },
+]
+
+const sharedElementSwiftui: Step[] = [
+  {
+    title: 'Static list and detail, no shared geometry',
+    description: 'Start with a `List` and a conditionally-shown detail overlay — no `matchedGeometryEffect` yet. Tapping a row opens the overlay instantly, with the hero rectangle at its own independent size.',
+    fr: { title: 'Liste et détail statiques, sans géométrie partagée', description: 'Commencer avec une `List` et une superposition de détail affichée conditionnellement — pas encore de `matchedGeometryEffect`. Taper sur une ligne ouvre la superposition instantanément, avec le rectangle héros à sa propre taille indépendante.' },
+    code: `struct SharedElementDemo: View {
+    let items = [/* ... */]
+    @State private var selected: GalleryItem?
+
+    var body: some View {
+        ZStack {
+            List(items) { item in
+                HStack {
+                    RoundedRectangle(cornerRadius: 10).fill(item.color).frame(width: 48, height: 48)
+                    Text(item.title)
+                }
+                .onTapGesture { selected = item }
+            }
+            if let item = selected {
+                VStack {
+                    RoundedRectangle(cornerRadius: 16).fill(item.color).frame(height: 160)
+                    Text(item.title)
+                }
+                .padding(24)
+            }
+        }
+    }
+}`,
+  },
+  {
+    title: 'Declare a shared @Namespace',
+    description: 'A `@Namespace` value scopes a group of `matchedGeometryEffect` calls together — only views sharing both the same `id` *and* the same namespace instance participate in the same geometry match, which is why the namespace lives once at the top of the view.',
+    fr: { title: 'Déclarer un @Namespace partagé', description: 'Une valeur `@Namespace` regroupe un ensemble d\'appels `matchedGeometryEffect` — seules les vues partageant à la fois le même `id` *et* la même instance de namespace participent au même appariement géométrique, ce qui explique pourquoi le namespace vit une seule fois en haut de la vue.' },
+    code: `@Namespace private var heroSpace`,
+  },
+  {
+    title: 'Tag both thumbnail and hero with matchedGeometryEffect',
+    description: 'Applying `.matchedGeometryEffect(id: item.id, in: heroSpace)` to both the list thumbnail and the detail hero is what tells SwiftUI they are "the same element" — `isSource` marks which one currently owns the true frame, flipping from the thumbnail to the hero once the detail is shown.',
+    fr: { title: 'Marquer vignette et héros avec matchedGeometryEffect', description: 'Appliquer `.matchedGeometryEffect(id: item.id, in: heroSpace)` à la fois à la vignette de liste et au héros de détail est ce qui indique à SwiftUI qu\'ils sont « le même élément » — `isSource` marque lequel possède actuellement le vrai frame, basculant de la vignette au héros une fois le détail affiché.' },
+    code: `RoundedRectangle(cornerRadius: 10)
+    .fill(item.color)
+    .frame(width: 48, height: 48)
+    .matchedGeometryEffect(id: item.id, in: heroSpace, isSource: selected == nil)
+
+// In the detail overlay:
+RoundedRectangle(cornerRadius: 16)
+    .fill(item.color)
+    .frame(height: 160)
+    .matchedGeometryEffect(id: item.id, in: heroSpace, isSource: true)`,
+  },
+  {
+    title: 'Wrap the state change in withAnimation',
+    description: 'Wrapping `selected = item` in `withAnimation(.spring(...))` is what makes SwiftUI interpolate the matched geometry frame smoothly rather than jumping — the same requirement as every other animated state change in SwiftUI, but especially visible here since two very differently-sized views are involved.',
+    fr: { title: 'Envelopper le changement d\'état dans withAnimation', description: 'Envelopper `selected = item` dans `withAnimation(.spring(...))` est ce qui fait que SwiftUI interpole en douceur le frame géométrique apparié plutôt que de sauter — la même exigence que pour tout autre changement d\'état animé dans SwiftUI, mais particulièrement visible ici puisque deux vues de tailles très différentes sont impliquées.' },
+    code: `.onTapGesture {
+    withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+        selected = item
+    }
+}`,
+  },
+]
+
 const sharedElement: StepMap = {
   react:          sharedElementReact,
   nextjs:         sharedElementNextjs,
   vue:            sharedElementVue,
+  angular:        sharedElementAngular,
   'react-native': sharedElementRN,
   flutter:        sharedElementFlutter,
+  swiftui:        sharedElementSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -7587,12 +8855,133 @@ class CollapsingHeaderDemo extends StatelessWidget {
   },
 ]
 
+const collapsingHeaderAngular: Step[] = [
+  {
+    title: 'Static header and scrollable list',
+    description: 'Lay out a fixed-size header and a scrollable feed with no scroll listener yet — a `lerp` helper is declared up front since every subsequent derived value will use the same clamp-and-interpolate math.',
+    fr: { title: 'En-tête statique et liste scrollable', description: 'Disposer un en-tête de taille fixe et un feed scrollable sans encore d\'écouteur de scroll — un helper `lerp` est déclaré en amont puisque chaque valeur dérivée suivante utilisera le même calcul de clamp-et-interpolation.' },
+    code: `function lerp(val: number, inMin: number, inMax: number, outMin: number, outMax: number) {
+  const t = Math.max(0, Math.min(1, (val - inMin) / (inMax - inMin)))
+  return outMin + t * (outMax - outMin)
+}
+
+@Component({
+  selector: 'app-collapsing-header',
+  template: \`
+    <div #container class="root">
+      <header class="header">
+        <div class="avatar"></div>
+        <div class="username">Profile</div>
+      </header>
+      <div class="feed">...</div>
+    </div>
+  \`,
+})
+export class CollapsingHeaderComponent {}`,
+  },
+  {
+    title: 'Bind a scroll listener to the container',
+    description: 'A `(scroll)` event binding on the scrollable div calls `onScroll()` on every scroll tick, reading `scrollTop` directly off the `@ViewChild` reference — this is the single source of truth every derived style reads from.',
+    fr: { title: 'Lier un écouteur de scroll au conteneur', description: 'Une liaison d\'événement `(scroll)` sur le div scrollable appelle `onScroll()` à chaque tick de scroll, lisant `scrollTop` directement sur la référence `@ViewChild` — c\'est la source unique de vérité que chaque style dérivé va lire.' },
+    code: `@ViewChild('container') containerRef!: ElementRef<HTMLElement>
+headerPadY = 20
+
+onScroll() {
+  const y = this.containerRef.nativeElement.scrollTop
+  this.headerPadY = lerp(y, 0, 120, 20, 10)
+}`,
+  },
+  {
+    title: 'Derive avatar scale and title size',
+    description: 'Two more properties, `avatarScale` and `titleSize`, are computed the same way inside `onScroll()` — all reading the same `y` value, which is what keeps the shrink, the scale, and the font-size change perfectly synchronized frame to frame.',
+    fr: { title: 'Dériver l\'échelle de l\'avatar et la taille du titre', description: 'Deux propriétés supplémentaires, `avatarScale` et `titleSize`, sont calculées de la même façon dans `onScroll()` — lisant toutes la même valeur `y`, ce qui garde la réduction, l\'échelle et le changement de taille de police parfaitement synchronisés image par image.' },
+    code: `onScroll() {
+  const y = this.containerRef.nativeElement.scrollTop
+  this.headerPadY  = lerp(y, 0, 120, 20, 10)
+  this.avatarScale = lerp(y, 0, 120, 1, 0.55)
+  this.titleSize   = lerp(y, 0, 120, 22, 14)
+}`,
+  },
+  {
+    title: 'Add the search bar fade and bind everything',
+    description: 'The search bar\'s opacity uses a shorter 0–80px range than the other properties, fading out faster than the header finishes collapsing — a deliberate mismatch that avoids the search bar looking like a stuck, half-faded element for most of the scroll.',
+    fr: { title: 'Ajouter le fondu de la barre de recherche et tout lier', description: 'L\'opacité de la barre de recherche utilise une plage plus courte de 0–80px que les autres propriétés, s\'estompant plus vite que l\'en-tête ne finit de se réduire — un décalage délibéré qui évite que la barre de recherche paraisse coincée, à moitié estompée pendant la majeure partie du scroll.' },
+    code: `onScroll() {
+  const y = this.containerRef.nativeElement.scrollTop
+  this.headerPadY  = lerp(y, 0, 120, 20, 10)
+  this.avatarScale = lerp(y, 0, 120, 1, 0.55)
+  this.titleSize   = lerp(y, 0, 120, 22, 14)
+  this.searchOp    = lerp(y, 0, 80, 1, 0)
+}`,
+  },
+]
+
+const collapsingHeaderSwiftui: Step[] = [
+  {
+    title: 'Static header with safeAreaInset',
+    description: '`.safeAreaInset(edge: .top)` pins a header above scrollable content without needing manual `position: sticky` math — this is the SwiftUI-idiomatic way to keep a view fixed while a `ScrollView` scrolls underneath it.',
+    fr: { title: 'En-tête statique avec safeAreaInset', description: '`.safeAreaInset(edge: .top)` épingle un en-tête au-dessus du contenu scrollable sans nécessiter de calcul manuel de `position: sticky` — c\'est la façon idiomatique de SwiftUI de garder une vue fixe pendant qu\'une `ScrollView` défile en dessous.' },
+    code: `ScrollView {
+    LazyVStack { /* feed content */ }
+}
+.safeAreaInset(edge: .top) {
+    HStack {
+        Circle().fill(Color(hex: "534AB7")).frame(width: 44, height: 44)
+        Text("Profile")
+    }
+    .padding()
+    .background(.background)
+}`,
+  },
+  {
+    title: 'Read scroll offset with a PreferenceKey',
+    description: 'A `GeometryReader` placed at the very top of the scroll content reports its own position via a custom `PreferenceKey` — as the user scrolls, that position becomes negative, and negating it gives a positive, increasing scroll-offset value with no external library.',
+    fr: { title: 'Lire le décalage de scroll avec un PreferenceKey', description: 'Un `GeometryReader` placé tout en haut du contenu de scroll rapporte sa propre position via un `PreferenceKey` personnalisé — pendant que l\'utilisateur défile, cette position devient négative, et l\'inverser donne une valeur de décalage de scroll positive et croissante sans bibliothèque externe.' },
+    code: `struct ScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
+GeometryReader { geo in
+    Color.clear.preference(key: ScrollOffsetKey.self, value: -geo.frame(in: .named("scroll")).minY)
+}
+.frame(height: 0)`,
+  },
+  {
+    title: 'Store the offset and derive styles',
+    description: '`.onPreferenceChange` writes the offset into `@State`, and a shared `lerp` helper — the same clamp-and-interpolate math used on Angular and Vue — derives the header padding, avatar scale, and title size from that single value.',
+    fr: { title: 'Stocker le décalage et dériver les styles', description: '`.onPreferenceChange` écrit le décalage dans `@State`, et un helper `lerp` partagé — le même calcul de clamp-et-interpolation utilisé sur Angular et Vue — dérive le padding de l\'en-tête, l\'échelle de l\'avatar et la taille du titre depuis cette valeur unique.' },
+    code: `@State private var offset: CGFloat = 0
+
+var headerPadY: CGFloat  { lerp(offset, 0, 120, 20, 10) }
+var avatarScale: CGFloat { lerp(offset, 0, 120, 1, 0.55) }
+var titleSize: CGFloat   { lerp(offset, 0, 120, 22, 14) }
+
+.onPreferenceChange(ScrollOffsetKey.self) { offset = max(0, $0) }`,
+  },
+  {
+    title: 'Add the search bar fade to the header',
+    description: 'A fourth derived value, `searchOp`, uses a shorter 0–80pt range and is applied as `.opacity(searchOp)` inside the `safeAreaInset` header content — completing the multi-property choreography from a single scroll offset, same as every other platform\'s implementation.',
+    fr: { title: 'Ajouter le fondu de la barre de recherche à l\'en-tête', description: 'Une quatrième valeur dérivée, `searchOp`, utilise une plage plus courte de 0–80pt et s\'applique en `.opacity(searchOp)` dans le contenu d\'en-tête du `safeAreaInset` — complétant la chorégraphie multi-propriétés depuis un seul décalage de scroll, comme l\'implémentation de chaque autre plateforme.' },
+    code: `var searchOp: CGFloat { lerp(offset, 0, 80, 1, 0) }
+
+.safeAreaInset(edge: .top) {
+    VStack {
+        // avatar + title row
+        Text("Search posts...").opacity(searchOp)
+    }
+}`,
+  },
+]
+
 const collapsingHeader: StepMap = {
   react:          collapsingHeaderReact,
   nextjs:         collapsingHeaderNextjs,
   vue:            collapsingHeaderVue,
+  angular:        collapsingHeaderAngular,
   'react-native': collapsingHeaderRN,
   flutter:        collapsingHeaderFlutter,
+  swiftui:        collapsingHeaderSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -7972,12 +9361,123 @@ Positioned.fill(child: IgnorePointer(
   },
 ]
 
+const panDismissAngular: Step[] = [
+  {
+    title: 'Connect the gesture handler',
+    description: 'Bind raw `pointerdown`/`pointermove`/`pointerup` events on the card — Angular has no built-in drag directive, so the gesture layer is hand-rolled from DOM pointer events, the same starting point as the Vue implementation.',
+    fr: { title: 'Connecter le gestionnaire de geste', description: 'Lier les événements bruts `pointerdown`/`pointermove`/`pointerup` sur la carte — Angular n\'a pas de directive de drag native, donc la couche de geste est codée à la main depuis les événements pointeur du DOM, le même point de départ que l\'implémentation Vue.' },
+    code: `@Component({
+  selector: 'app-dismissable-card',
+  template: \`
+    <div class="card" [style.transform]="'translateY(' + dy + 'px)'"
+         (pointerdown)="onDown($event)" (pointermove)="onMove($event)" (pointerup)="onUp()">
+      <ng-content />
+    </div>
+  \`,
+})
+export class DismissableCardComponent {
+  dy = 0
+  private startY = 0
+  onDown(e: PointerEvent) { this.startY = e.clientY - this.dy }
+  onMove(e: PointerEvent) { this.dy = e.clientY - this.startY }
+  onUp() {}
+}`,
+  },
+  {
+    title: 'Track position → opacity/scale',
+    description: 'Two getters derive `cardOpacity` and `cardScale` from `dy` — Angular\'s change detection re-evaluates them on every event, keeping the visual state consistent without an explicit computed-value system like Vue\'s.',
+    fr: { title: 'Suivre la position → opacité/échelle', description: 'Deux getters dérivent `cardOpacity` et `cardScale` depuis `dy` — la détection de changement d\'Angular les réévalue à chaque événement, gardant l\'état visuel cohérent sans système de valeur calculée explicite comme celui de Vue.' },
+    code: `get cardOpacity() { return Math.max(0, 1 - this.dy / 180) }
+get cardScale()   { return Math.max(0.88, 1 - (this.dy / 180) * 0.12) }`,
+  },
+  {
+    title: 'Add dismiss threshold',
+    description: 'In `onUp`, compare `dy` against the threshold and either set it past the visible area (triggering removal) or reset it to 0 — the reset relies on a CSS `transition` rule to animate back rather than a spring library.',
+    fr: { title: 'Ajouter le seuil de rejet', description: 'Dans `onUp`, comparer `dy` au seuil et soit le placer au-delà de la zone visible (déclenchant la suppression), soit le remettre à 0 — la remise à zéro s\'appuie sur une règle `transition` CSS pour animer le retour plutôt que sur une bibliothèque de spring.' },
+    code: `onUp() {
+  if (this.dy > 80) {
+    this.dy = 400 // then remove from list after the transition ends
+  } else {
+    this.dy = 0
+  }
+}`,
+  },
+  {
+    title: 'Polish: velocity-aware threshold + backdrop',
+    description: 'Tracking `velocity` between `pointermove` events lets a fast flick dismiss the card even under the distance threshold — the same velocity/distance OR-condition every other platform uses — and a backdrop `div` fades in proportion to `dy` for extra visual weight.',
+    fr: { title: 'Finition : seuil sensible à la vélocité + arrière-plan', description: 'Suivre la `velocity` entre les événements `pointermove` permet à un flick rapide de fermer la carte même sous le seuil de distance — la même condition OU vélocité/distance utilisée par chaque autre plateforme — et un `div` d\'arrière-plan s\'estompe proportionnellement à `dy` pour plus de poids visuel.' },
+    code: `onUp() {
+  if (this.dy > 80 || this.velocity > 0.5) {
+    this.dy = 400
+  } else {
+    this.dy = 0
+  }
+}
+
+// Template: <div class="backdrop" [style.opacity]="Math.min(dy / 150, 0.4)"></div>`,
+  },
+]
+
+const panDismissSwiftui: Step[] = [
+  {
+    title: 'Connect DragGesture',
+    description: 'A `DragGesture().onChanged` stores the vertical translation into `@State private var dy` — SwiftUI\'s built-in gesture recognizer replaces the manual `PanResponder`/pointer-event wiring every other platform needs.',
+    fr: { title: 'Connecter DragGesture', description: 'Un `DragGesture().onChanged` stocke la translation verticale dans `@State private var dy` — le reconnaisseur de geste intégré de SwiftUI remplace le câblage manuel `PanResponder`/événements pointeur nécessaire sur chaque autre plateforme.' },
+    code: `@State private var dy: CGFloat = 0
+
+var body: some View {
+    CardContent()
+        .offset(y: dy)
+        .gesture(
+            DragGesture()
+                .onChanged { value in if value.translation.height > 0 { dy = value.translation.height } }
+        )
+}`,
+  },
+  {
+    title: 'Track position → opacity/scale',
+    description: '`.opacity()` and `.scaleEffect()` both read `dy` directly in the view body — no separate computed property system needed, since SwiftUI re-evaluates the body on every `@State` change.',
+    fr: { title: 'Suivre la position → opacité/échelle', description: '`.opacity()` et `.scaleEffect()` lisent tous deux `dy` directement dans le corps de la vue — aucun système de propriété calculée séparé n\'est nécessaire, puisque SwiftUI réévalue le corps à chaque changement de `@State`.' },
+    code: `.offset(y: dy)
+.opacity(Double(1 - min(dy, 180) / 180))
+.scaleEffect(1 - min(dy, 180) / 180 * 0.12)`,
+  },
+  {
+    title: 'Add dismiss threshold in onEnded',
+    description: '`.onEnded` checks the final translation against the same 80pt threshold as every other platform, using `withAnimation` to either animate off-screen before calling the dismiss callback, or spring back to rest.',
+    fr: { title: 'Ajouter le seuil de rejet dans onEnded', description: '`.onEnded` vérifie la translation finale contre le même seuil de 80pt que chaque autre plateforme, en utilisant `withAnimation` pour soit animer hors écran avant d\'appeler le callback de fermeture, soit revenir au repos avec un spring.' },
+    code: `.onEnded { value in
+    if dy > 80 {
+        withAnimation(.easeIn(duration: 0.22)) { dy = 400 }
+    } else {
+        withAnimation(.spring()) { dy = 0 }
+    }
+}`,
+  },
+  {
+    title: 'Polish: velocity check + backdrop',
+    description: '`value.predictedEndTranslation` gives a velocity-aware endpoint for free, letting a fast flick dismiss even under the distance threshold — combined with a `Color.black` backdrop whose opacity tracks `dy`, this completes the same feature set as every other platform.',
+    fr: { title: 'Finition : vérification de vélocité + arrière-plan', description: '`value.predictedEndTranslation` fournit gratuitement un point final tenant compte de la vélocité, permettant à un flick rapide de fermer même sous le seuil de distance — combiné à un arrière-plan `Color.black` dont l\'opacité suit `dy`, cela complète le même ensemble de fonctionnalités que chaque autre plateforme.' },
+    code: `.onEnded { value in
+    if dy > 80 || value.predictedEndTranslation.height > 500 {
+        withAnimation(.easeIn(duration: 0.22)) { dy = 400 }
+    } else {
+        withAnimation(.spring()) { dy = 0 }
+    }
+}
+
+Color.black.opacity(Double(min(dy, 150) / 150 * 0.4)).ignoresSafeArea()`,
+  },
+]
+
 const panDismiss: StepMap = {
   react:          panDismissReact,
   nextjs:         panDismissNextjs,
   vue:            panDismissVue,
+  angular:        panDismissAngular,
   'react-native': panDismissRN,
   flutter:        panDismissFlutter,
+  swiftui:        panDismissSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -8331,12 +9831,117 @@ Hero(
   },
 ]
 
+const flutterHeroAngular: Step[] = [
+  {
+    title: 'Static grid and detail route',
+    description: 'Build an Angular grid component and a detail route with the Angular Router. As with the Vue baseline, keeping navigation and animation separate now means later steps only add the FLIP layer.',
+    fr: { title: 'Grille statique et route de détail', description: 'Construire un composant grille Angular et une route de détail avec l\'Angular Router. Comme pour la base Vue, garder navigation et animation séparées maintenant signifie que les étapes suivantes n\'ajoutent que la couche FLIP.' },
+    code: `@Component({
+  selector: 'app-gallery',
+  template: \`<div class="grid">
+    <div *ngFor="let p of photos" [id]="'thumb-' + p.id" [style.background]="p.color" (click)="go(p)"></div>
+  </div>\`,
+})
+export class GalleryComponent {
+  photos = [{ id: 'a', color: '#534AB7' }, { id: 'b', color: '#1D9E75' }]
+  constructor(private router: Router) {}
+  go(p: any) { this.router.navigate(['/detail', p.id]) }
+}`,
+  },
+  {
+    title: 'Capture the thumbnail rect before navigating',
+    description: 'Reading `getBoundingClientRect()` on the clicked thumbnail and stashing it in a shared service (or route state) before calling `router.navigate` is what gives the detail component its FLIP "First" position.',
+    fr: { title: 'Capturer le rect de la miniature avant de naviguer', description: 'Lire `getBoundingClientRect()` sur la miniature cliquée et le stocker dans un service partagé (ou l\'état de route) avant d\'appeler `router.navigate` donne au composant de détail sa position FLIP « First ».' },
+    code: `go(p: any, e: MouseEvent) {
+  this.heroState.rect = (e.target as HTMLElement).getBoundingClientRect()
+  this.router.navigate(['/detail', p.id])
+}`,
+  },
+  {
+    title: 'Apply the FLIP animation in ngAfterViewInit',
+    description: 'In the detail component, `ngAfterViewInit` reads the hero element\'s natural (Last) rect, computes the delta against the stashed (First) rect, and animates from the inverted position back to natural layout with a plain CSS transition.',
+    fr: { title: 'Appliquer l\'animation FLIP dans ngAfterViewInit', description: 'Dans le composant de détail, `ngAfterViewInit` lit le rect naturel (Last) de l\'élément héros, calcule le delta par rapport au rect stocké (First), et anime depuis la position inversée jusqu\'au layout naturel avec une simple transition CSS.' },
+    code: `ngAfterViewInit() {
+  const rect = this.heroState.rect
+  if (!rect) return
+  const el = this.heroRef.nativeElement
+  const last = el.getBoundingClientRect()
+  const dx = rect.left - last.left
+  const dy = rect.top - last.top
+  el.style.transition = 'none'
+  el.style.transform = \`translate(\${dx}px, \${dy}px)\`
+  requestAnimationFrame(() => {
+    el.style.transition = 'transform 400ms cubic-bezier(0.22,1,0.36,1)'
+    el.style.transform = ''
+  })
+}`,
+  },
+  {
+    title: 'Tune the timing to feel like a spring',
+    description: 'Swapping the cubic-bezier for an overshoot curve like `cubic-bezier(0.34, 1.56, 0.64, 1)` approximates spring weight without the Angular Animations API\'s velocity-based physics — a pragmatic middle ground for a one-off FLIP transition.',
+    fr: { title: 'Ajuster le timing pour ressembler à un spring', description: 'Remplacer le cubic-bezier par une courbe à dépassement comme `cubic-bezier(0.34, 1.56, 0.64, 1)` approxime le poids d\'un spring sans la physique basée sur la vélocité de l\'API Angular Animations — un compromis pragmatique pour une transition FLIP ponctuelle.' },
+    code: `el.style.transition = 'transform 450ms cubic-bezier(0.34, 1.56, 0.64, 1)'`,
+  },
+]
+
+const flutterHeroSwiftui: Step[] = [
+  {
+    title: 'Static grid, no shared geometry',
+    description: 'Start with a `LazyVGrid` of colored rectangles and a conditionally-shown detail view — no `matchedGeometryEffect` yet. Tapping a thumbnail swaps directly to the detail with no morph.',
+    fr: { title: 'Grille statique, sans géométrie partagée', description: 'Commencer avec un `LazyVGrid` de rectangles colorés et une vue de détail affichée conditionnellement — pas encore de `matchedGeometryEffect`. Taper sur une miniature bascule directement vers le détail sans morphing.' },
+    code: `struct PhotoGallery: View {
+    let photos = [/* ... */]
+    @State private var selected: Photo?
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(), GridItem(), GridItem()]) {
+            ForEach(photos) { photo in
+                RoundedRectangle(cornerRadius: 12).fill(photo.color)
+                    .onTapGesture { selected = photo }
+            }
+        }
+    }
+}`,
+  },
+  {
+    title: 'Add a shared @Namespace',
+    description: 'A single `@Namespace private var heroSpace` groups every `matchedGeometryEffect` call that should participate in the same morph — this is Flutter\'s `tag` concept expressed as a scoped SwiftUI value instead of a string.',
+    fr: { title: 'Ajouter un @Namespace partagé', description: 'Un unique `@Namespace private var heroSpace` regroupe chaque appel `matchedGeometryEffect` devant participer au même morphing — c\'est le concept de `tag` de Flutter exprimé comme une valeur SwiftUI scopée plutôt qu\'une chaîne.' },
+    code: `@Namespace private var heroSpace`,
+  },
+  {
+    title: 'Tag both views with matchedGeometryEffect',
+    description: 'The grid thumbnail and the detail hero both get `.matchedGeometryEffect(id: photo.id, in: heroSpace, isSource: ...)` with the same `id` — exactly mirroring Flutter\'s matching `Hero(tag:)` string on both routes.',
+    fr: { title: 'Marquer les deux vues avec matchedGeometryEffect', description: 'La miniature de la grille et le héros du détail reçoivent tous deux `.matchedGeometryEffect(id: photo.id, in: heroSpace, isSource: ...)` avec le même `id` — reflétant exactement la chaîne `Hero(tag:)` correspondante de Flutter sur les deux routes.' },
+    code: `// Grid
+RoundedRectangle(cornerRadius: 12).fill(photo.color)
+    .matchedGeometryEffect(id: photo.id, in: heroSpace, isSource: selected == nil)
+
+// Detail
+RoundedRectangle(cornerRadius: 16).fill(photo.color)
+    .matchedGeometryEffect(id: photo.id, in: heroSpace, isSource: true)
+    .frame(height: 320)`,
+  },
+  {
+    title: 'Wrap navigation in withAnimation',
+    description: 'Setting `selected` inside `withAnimation(.spring(...))` is the final piece — without it, SwiftUI would swap the matched geometry frames instantly instead of interpolating between them, exactly as every state-driven SwiftUI animation requires.',
+    fr: { title: 'Envelopper la navigation dans withAnimation', description: 'Définir `selected` à l\'intérieur de `withAnimation(.spring(...))` est la dernière pièce — sans cela, SwiftUI échangerait instantanément les frames géométriques appariés au lieu d\'interpoler entre eux, comme l\'exige toute animation SwiftUI pilotée par l\'état.' },
+    code: `.onTapGesture {
+    withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+        selected = photo
+    }
+}`,
+  },
+]
+
 const flutterHero: StepMap = {
   react:          flutterHeroReact,
   nextjs:         flutterHeroNextjs,
   vue:            flutterHeroVue,
+  angular:        flutterHeroAngular,
   'react-native': flutterHeroRN,
   flutter:        flutterHeroFlutter,
+  swiftui:        flutterHeroSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -8661,12 +10266,100 @@ transitionsBuilder: (_, animation, __, child) => FadeTransition(
   },
 ]
 
+const viewTransitionsAngular: Step[] = [
+  {
+    title: 'Baseline navigation without transition',
+    description: 'Use `routerLink` and confirm navigation works normally first. Since the View Transitions API snapshots whatever is currently painted, having clean, working navigation before adding transitions makes debugging much easier.',
+    fr: { title: 'Navigation de base sans transition', description: 'Utiliser `routerLink` et confirmer que la navigation fonctionne normalement d\'abord. Comme l\'API View Transitions capture ce qui est actuellement peint, avoir une navigation propre et fonctionnelle avant d\'ajouter des transitions facilite grandement le débogage.' },
+    code: `@Component({
+  template: \`
+    <nav>
+      <a routerLink="/">Home</a>
+      <a routerLink="/about">About</a>
+    </nav>
+    <router-outlet></router-outlet>
+  \`,
+})
+export class AppComponent {}`,
+  },
+  {
+    title: 'Wrap navigation in startViewTransition',
+    description: 'Since Angular Router has no built-in flag for this (unlike Vue Router 4.4+), the router call itself is wrapped in `document.startViewTransition` inside the click handler that triggers navigation.',
+    fr: { title: 'Envelopper la navigation dans startViewTransition', description: 'Comme l\'Angular Router n\'a pas de flag natif pour cela (contrairement à Vue Router 4.4+), l\'appel du routeur lui-même est enveloppé dans `document.startViewTransition` à l\'intérieur du gestionnaire de clic qui déclenche la navigation.' },
+    code: `navigate(path: string) {
+  const go = () => this.router.navigateByUrl(path)
+  if (!(document as any).startViewTransition) { go(); return }
+  ;(document as any).startViewTransition(go)
+}`,
+  },
+  {
+    title: 'Name the shared element',
+    description: 'Bind `[style.view-transition-name]` dynamically using the item\'s ID, on both the grid card and the detail hero. A unique name per item is what prevents the browser from morphing the wrong pair when multiple cards are in the DOM.',
+    fr: { title: 'Nommer l\'élément partagé', description: 'Lier `[style.view-transition-name]` dynamiquement en utilisant l\'ID de l\'élément, à la fois sur la carte de la grille et le héros de détail. Un nom unique par élément est ce qui empêche le navigateur de morpher la mauvaise paire quand plusieurs cartes sont dans le DOM.' },
+    code: `<!-- Grid card -->
+<img [src]="item.src" [style.view-transition-name]="'hero-' + item.id" />
+
+<!-- Detail hero -->
+<img [src]="item.src" [style.view-transition-name]="'hero-' + item.id" />`,
+  },
+  {
+    title: 'Customize the transition in global CSS',
+    description: 'Overriding `::view-transition-old`/`::view-transition-new` must happen in a global stylesheet (`styles.css`), not a component\'s `styles: [...]` array — Angular\'s view encapsulation would otherwise scope the selector away from the browser-generated pseudo-elements.',
+    fr: { title: 'Personnaliser la transition dans le CSS global', description: 'Surcharger `::view-transition-old`/`::view-transition-new` doit se faire dans une feuille de style globale (`styles.css`), pas dans le tableau `styles: [...]` d\'un composant — l\'encapsulation de vue d\'Angular éloignerait sinon le sélecteur des pseudo-éléments générés par le navigateur.' },
+    code: `/* styles.css — global, not component-scoped */
+::view-transition-old(root) { animation: 280ms ease-in both slide-out-left; }
+::view-transition-new(root) { animation: 350ms ease-out both slide-in-right; }
+::view-transition-image-pair(hero-1) { animation-duration: 400ms; }`,
+  },
+]
+
+const viewTransitionsSwiftui: Step[] = [
+  {
+    title: 'Baseline NavigationStack push',
+    description: 'Start with a plain `NavigationStack` and `NavigationLink` — no shared geometry, just a standard push transition. This confirms the navigation graph before adding a custom transition.',
+    fr: { title: 'Push NavigationStack de base', description: 'Commencer avec un `NavigationStack` et un `NavigationLink` simples — pas de géométrie partagée, juste une transition de push standard. Cela confirme le graphe de navigation avant d\'ajouter une transition personnalisée.' },
+    code: `NavigationStack {
+    List(articles) { article in
+        NavigationLink(value: article) {
+            Text(article.title)
+        }
+    }
+    .navigationDestination(for: Article.self) { article in
+        ArticleDetail(article: article)
+    }
+}`,
+  },
+  {
+    title: 'Declare a shared @Namespace',
+    description: 'Since iOS has no browser-style view-transition-name matching, a `@Namespace` shared between the list and detail views is the nearest built-in mechanism for tagging "this is the same element" across a navigation push.',
+    fr: { title: 'Déclarer un @Namespace partagé', description: 'Comme iOS n\'a pas de correspondance de type view-transition-name façon navigateur, un `@Namespace` partagé entre les vues de liste et de détail est le mécanisme natif le plus proche pour marquer « c\'est le même élément » à travers un push de navigation.' },
+    code: `@Namespace var transition`,
+  },
+  {
+    title: 'Tag the cover image on both screens',
+    description: '`.matchedGeometryEffect(id: "cover-\\(article.id)", in: transition)` on both the card thumbnail and the detail hero plays the same structural role as a matching `view-transition-name` on the web — same id, same namespace, morphs automatically.',
+    fr: { title: 'Marquer l\'image de couverture sur les deux écrans', description: '`.matchedGeometryEffect(id: "cover-\\(article.id)", in: transition)` sur la vignette de carte et le héros de détail joue le même rôle structurel qu\'un `view-transition-name` correspondant sur le web — même id, même namespace, morphing automatique.' },
+    code: `AsyncImage(url: article.coverURL)
+    .matchedGeometryEffect(id: "cover-\\(article.id)", in: transition)`,
+  },
+  {
+    title: 'Pass the namespace down to the destination',
+    description: 'The namespace must be threaded from the list view into `navigationDestination`\'s closure so both the source and destination views reference the identical `@Namespace` instance — a mismatched or re-declared namespace silently breaks the match.',
+    fr: { title: 'Transmettre le namespace à la destination', description: 'Le namespace doit être transmis de la vue liste jusqu\'à la fermeture de `navigationDestination` pour que les vues source et destination référencent la même instance `@Namespace` — un namespace différent ou redéclaré casse silencieusement la correspondance.' },
+    code: `.navigationDestination(for: Article.self) { article in
+    ArticleDetail(article: article, transition: transition)
+}`,
+  },
+]
+
 const viewTransitions: StepMap = {
   react:          viewTransitionsReact,
   nextjs:         viewTransitionsNextjs,
   vue:            viewTransitionsVue,
+  angular:        viewTransitionsAngular,
   'react-native': viewTransitionsRN,
   flutter:        viewTransitionsFlutter,
+  swiftui:        viewTransitionsSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -9027,12 +10720,110 @@ void addItem(Item item) {
   },
 ]
 
+const flipListAngular: Step[] = [
+  {
+    title: 'Static list, no animation trigger',
+    description: 'Render the filtered list with `*ngFor` and `trackBy` — `trackBy` matters immediately here, since without a stable identity function Angular cannot tell which DOM node corresponds to which item across a filter change.',
+    fr: { title: 'Liste statique, sans trigger d\'animation', description: 'Afficher la liste filtrée avec `*ngFor` et `trackBy` — `trackBy` compte immédiatement ici, car sans fonction d\'identité stable, Angular ne peut pas savoir quel nœud DOM correspond à quel élément lors d\'un changement de filtre.' },
+    code: `@Component({
+  selector: 'app-flip-list',
+  template: \`<ul><li *ngFor="let item of visible; trackBy: trackById">{{ item.label }}</li></ul>\`,
+})
+export class FlipListComponent {
+  items = [/* ... */]
+  filter = 'all'
+  get visible() { return this.filter === 'all' ? this.items : this.items.filter(i => i.type === this.filter) }
+  trackById(_: number, item: { id: string }) { return item.id }
+}`,
+  },
+  {
+    title: 'Declare enter/leave animations',
+    description: '`query(\':enter\')` and `query(\':leave\')` inside a single trigger fade and slide items in and out — this is the same building block used across the other Angular Animations examples in this project.',
+    fr: { title: 'Déclarer les animations d\'entrée/sortie', description: '`query(\':enter\')` et `query(\':leave\')` dans un seul trigger font apparaître et disparaître les éléments en fondu et glissement — c\'est le même bloc de construction utilisé dans les autres exemples Angular Animations de ce projet.' },
+    code: `export const flipList = trigger('flipList', [
+  transition('* => *', [
+    query(':leave', [
+      style({ position: 'absolute' }),
+      animate('300ms ease', style({ opacity: 0, transform: 'translateY(-8px)' })),
+    ], { optional: true }),
+    query(':enter', [
+      style({ opacity: 0, transform: 'translateY(8px)' }),
+      animate('300ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0)' })),
+    ], { optional: true }),
+  ]),
+])`,
+  },
+  {
+    title: 'Stagger entering items',
+    description: 'Wrapping the `:enter` animation in `stagger(20, [...])` delays each entering item by an additional 20ms — without this, every newly-visible item pops in simultaneously instead of cascading.',
+    fr: { title: 'Échelonner les éléments entrants', description: 'Envelopper l\'animation `:enter` dans `stagger(20, [...])` retarde chaque élément entrant de 20ms supplémentaires — sans cela, chaque élément nouvellement visible apparaît simultanément au lieu de cascader.' },
+    code: `query(':enter', [
+  style({ opacity: 0, transform: 'translateY(8px)' }),
+  stagger(20, animate('300ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0)' }))),
+], { optional: true })`,
+  },
+  {
+    title: 'Bind the trigger to the visible list length',
+    description: 'Binding `[@flipList]="visible.length"` on the `<ul>` gives Angular a value to diff on every filter or reorder — a naive `*ngIf`-free re-render of the same list still re-triggers the animation because the array reference (and therefore the bound value) changes.',
+    fr: { title: 'Lier le trigger à la longueur de la liste visible', description: 'Lier `[@flipList]="visible.length"` sur le `<ul>` donne à Angular une valeur à comparer à chaque filtre ou réordonnancement — un re-rendu naïf de la même liste sans `*ngIf` redéclenche quand même l\'animation car la référence du tableau (et donc la valeur liée) change.' },
+    code: `<ul [@flipList]="visible.length" class="list">
+  <li *ngFor="let item of visible; trackBy: trackById">{{ item.label }}</li>
+</ul>`,
+  },
+]
+
+const flipListSwiftui: Step[] = [
+  {
+    title: 'Static list of items',
+    description: 'A plain `ForEach` over the filtered array with no `.animation()` modifier yet — items appear and disappear instantly when the filter changes.',
+    fr: { title: 'Liste statique d\'éléments', description: 'Un simple `ForEach` sur le tableau filtré sans encore de modificateur `.animation()` — les éléments apparaissent et disparaissent instantanément au changement de filtre.' },
+    code: `struct FlipList: View {
+    @State private var items = [/* ... */]
+    @State private var filter = "all"
+    var visible: [Item] { filter == "all" ? items : items.filter { $0.type == filter } }
+
+    var body: some View {
+        ForEach(visible) { item in
+            Text(item.label).padding()
+        }
+    }
+}`,
+  },
+  {
+    title: 'Wrap filter changes in withAnimation',
+    description: 'Wrapping the `filter` mutation in `withAnimation` is what activates SwiftUI\'s implicit layout animation for the `ForEach` — without it, items reflow instantly with no transition at all.',
+    fr: { title: 'Envelopper les changements de filtre dans withAnimation', description: 'Envelopper la mutation de `filter` dans `withAnimation` est ce qui active l\'animation de layout implicite de SwiftUI pour le `ForEach` — sans cela, les éléments se repositionnent instantanément sans aucune transition.' },
+    code: `Button("Web") { withAnimation { filter = "web" } }`,
+  },
+  {
+    title: 'Add enter/exit transitions',
+    description: '`.transition(.asymmetric(insertion:removal:))` on each row gives entering and leaving items their own fade/slide behavior, layered on top of the automatic position animation SwiftUI already provides for items that persist across the filter change.',
+    fr: { title: 'Ajouter les transitions d\'entrée/sortie', description: '`.transition(.asymmetric(insertion:removal:))` sur chaque ligne donne aux éléments entrants et sortants leur propre comportement de fondu/glissement, superposé à l\'animation de position automatique que SwiftUI fournit déjà pour les éléments qui persistent au changement de filtre.' },
+    code: `ForEach(visible) { item in
+    Text(item.label)
+        .padding()
+        .transition(.asymmetric(insertion: .opacity, removal: .opacity))
+}`,
+  },
+  {
+    title: 'Attach the animation to the visible array',
+    description: '`.animation(_:value:)` bound to `visible` (which must be `Equatable`) makes every property change on that computed array — filtering, reordering — play the same timing curve, matching the FLIP-style "one source of truth drives the animation" principle from every other platform.',
+    fr: { title: 'Attacher l\'animation au tableau visible', description: '`.animation(_:value:)` liée à `visible` (qui doit être `Equatable`) fait jouer la même courbe de timing à chaque changement de cette propriété calculée — filtrage, réordonnancement — reflétant le principe FLIP « une source unique de vérité pilote l\'animation » de chaque autre plateforme.' },
+    code: `VStack {
+    ForEach(visible) { item in /* ... */ }
+}
+.animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.3), value: visible)`,
+  },
+]
+
 const flipList: StepMap = {
   react:          flipListReact,
   nextjs:         flipListNextjs,
   vue:            flipListVue,
+  angular:        flipListAngular,
   'react-native': flipListRN,
   flutter:        flipListFlutter,
+  swiftui:        flipListSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -9762,12 +11553,129 @@ class _MorphingButtonState extends State<MorphingButton> {
   },
 ]
 
+const morphingButtonAngular: Step[] = [
+  {
+    title: 'Static button',
+    description: 'Start with a plain button element and idle-state styles bound via `[style]` — no state or animation yet. This establishes the visual baseline the morph will build on.',
+    fr: { title: 'Bouton statique', description: 'Commencer avec un simple élément bouton et les styles de l\'état idle liés via `[style]` — pas encore d\'état ni d\'animation. Cela établit la base visuelle sur laquelle le morphing va se construire.' },
+    code: `@Component({
+  selector: 'app-morphing-button',
+  template: \`
+    <div style="display:flex; justify-content:center; padding:40px">
+      <button style="border-radius:999px; border:none; background:#A3E635; color:#0a0a0a;
+                     height:48px; width:160px; font-weight:600; font-size:15px; cursor:pointer">
+        Submit
+      </button>
+    </div>
+  \`,
+})
+export class MorphingButtonComponent {}`,
+  },
+  {
+    title: 'Add component state',
+    description: 'A plain `state` field on the component, driving an async `handleClick` method, replaces Vue\'s `ref` — Angular\'s change detection re-renders the bound template whenever this field changes.',
+    fr: { title: 'Ajouter l\'état du composant', description: 'Un simple champ `state` sur le composant, pilotant une méthode async `handleClick`, remplace le `ref` de Vue — la détection de changement d\'Angular rerend le template lié à chaque modification de ce champ.' },
+    code: `type BtnState = 'idle' | 'loading' | 'success'
+
+export class MorphingButtonComponent {
+  state: BtnState = 'idle'
+
+  async handleClick() {
+    if (this.state !== 'idle') return
+    this.state = 'loading'
+    await new Promise(r => setTimeout(r, 1800))
+    this.state = 'success'
+    setTimeout(() => (this.state = 'idle'), 2200)
+  }
+}`,
+  },
+  {
+    title: 'Bind width and background to state',
+    description: '`[style.width.px]` and `[style.background]` bindings recompute on every state change, and a CSS `transition` on `width`/`background` in the component\'s `styles` array is what actually animates the morph — no Animations API required for a single property change like this.',
+    fr: { title: 'Lier largeur et arrière-plan à l\'état', description: 'Les liaisons `[style.width.px]` et `[style.background]` se recalculent à chaque changement d\'état, et une `transition` CSS sur `width`/`background` dans le tableau `styles` du composant est ce qui anime réellement le morphing — pas besoin de l\'API Animations pour un changement de propriété unique comme celui-ci.' },
+    code: `template: \`
+  <button (click)="handleClick()" class="morph-btn"
+          [style.width.px]="state === 'idle' ? 160 : 48"
+          [style.background]="state === 'success' ? '#22c55e' : '#A3E635'">
+  </button>
+\`,
+styles: [\`
+  .morph-btn { transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.3s; }
+\`]`,
+  },
+  {
+    title: 'Swap inner content with *ngIf',
+    description: 'Three `*ngIf` blocks for label, spinner, and checkmark give the same content-swap behavior as Vue\'s `<Transition mode="out-in">`, though without the fade transition between them — Angular has no framework-level equivalent, so this stays a plain conditional swap.',
+    fr: { title: 'Échanger le contenu interne avec *ngIf', description: 'Trois blocs `*ngIf` pour le label, le spinner et la coche donnent le même comportement d\'échange de contenu que le `<Transition mode="out-in">` de Vue, bien que sans la transition de fondu entre eux — Angular n\'a pas d\'équivalent au niveau du framework, donc cela reste un échange conditionnel simple.' },
+    code: `<span *ngIf="state === 'idle'">Submit</span>
+<svg *ngIf="state === 'loading'" class="spinner">...</svg>
+<svg *ngIf="state === 'success'">...</svg>`,
+  },
+]
+
+const morphingButtonSwiftui: Step[] = [
+  {
+    title: 'Static button',
+    description: 'A plain `Button` with a `Capsule` background and fixed width establishes the idle-state look before any state-driven morph is introduced.',
+    fr: { title: 'Bouton statique', description: 'Un `Button` simple avec un arrière-plan `Capsule` et une largeur fixe établit l\'apparence de l\'état idle avant l\'introduction de tout morphing piloté par l\'état.' },
+    code: `struct MorphingButton: View {
+    var body: some View {
+        Button("Submit") {}
+            .frame(width: 160, height: 48)
+            .background(Color(hex: "A3E635"))
+            .clipShape(Capsule())
+    }
+}`,
+  },
+  {
+    title: 'Add state and the async cycle',
+    description: 'An `enum ButtonState` plus `@State` tracks idle/loading/success, and `handleTap` drives the same timed idle → loading → success → idle cycle as every other platform, using `DispatchQueue.main.asyncAfter` in place of `setTimeout`.',
+    fr: { title: 'Ajouter l\'état et le cycle asynchrone', description: 'Un `enum ButtonState` plus `@State` suit idle/loading/success, et `handleTap` pilote le même cycle chronométré idle → loading → success → idle que chaque autre plateforme, en utilisant `DispatchQueue.main.asyncAfter` à la place de `setTimeout`.' },
+    code: `enum ButtonState { case idle, loading, success }
+
+@State private var state: ButtonState = .idle
+
+func handleTap() {
+    guard state == .idle else { return }
+    state = .loading
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+        state = .success
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) { state = .idle }
+    }
+}`,
+  },
+  {
+    title: 'Animate the frame width implicitly',
+    description: 'Binding `.frame(width:)` to the state and attaching `.animation(.spring(...), value: state)` is all that\'s needed for the width morph — SwiftUI\'s implicit animation system handles the interpolation, no explicit layout API like Framer Motion\'s `layout` prop required.',
+    fr: { title: 'Animer implicitement la largeur du frame', description: 'Lier `.frame(width:)` à l\'état et attacher `.animation(.spring(...), value: state)` suffit pour le morphing de largeur — le système d\'animation implicite de SwiftUI gère l\'interpolation, sans besoin d\'API de layout explicite comme la prop `layout` de Framer Motion.' },
+    code: `.frame(width: state == .idle ? 160 : 48, height: 48)
+.background(state == .success ? Color.green : Color(hex: "A3E635"))
+.clipShape(Capsule())
+.animation(.spring(response: 0.4, dampingFraction: 0.7), value: state)`,
+  },
+  {
+    title: 'Swap content with a switch and ProgressView',
+    description: 'A `switch` over `state` renders the label, a built-in `ProgressView` for loading (no custom spinner SVG needed), or a system checkmark icon — `.disabled(state != .idle)` locks the button against double-taps during the async cycle.',
+    fr: { title: 'Échanger le contenu avec un switch et ProgressView', description: 'Un `switch` sur `state` affiche le label, un `ProgressView` intégré pour le chargement (pas besoin de SVG de spinner personnalisé), ou une icône de coche système — `.disabled(state != .idle)` verrouille le bouton contre les doubles-taps pendant le cycle asynchrone.' },
+    code: `Group {
+    switch state {
+    case .idle: Text("Submit").fontWeight(.semibold)
+    case .loading: ProgressView().tint(.black)
+    case .success: Image(systemName: "checkmark").foregroundStyle(.white)
+    }
+}
+.disabled(state != .idle)`,
+  },
+]
+
 const morphingButton: StepMap = {
   react:          morphingButtonReact,
   nextjs:         morphingButtonNextjs,
   vue:            morphingButtonVue,
+  angular:        morphingButtonAngular,
   'react-native': morphingButtonRN,
   flutter:        morphingButtonFlutter,
+  swiftui:        morphingButtonSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -10473,12 +12381,137 @@ class _DragReorderState extends State<DragReorder> {
   },
 ]
 
+const dragReorderAngular: Step[] = [
+  {
+    title: 'Static list',
+    description: 'Render a plain `*ngFor` list with a drag-handle icon — no drag behavior yet. This establishes the layout before importing any CDK module.',
+    fr: { title: 'Liste statique', description: 'Afficher une liste `*ngFor` simple avec une icône de poignée — pas encore de comportement de drag. Cela établit le layout avant d\'importer un quelconque module du CDK.' },
+    code: `@Component({
+  selector: 'app-drag-reorder',
+  template: \`
+    <ul class="list">
+      <li *ngFor="let item of items" class="row">
+        <span class="handle">⠿</span>
+        <span class="dot" [style.background]="item.color"></span>
+        <span class="label">{{ item.label }}</span>
+      </li>
+    </ul>
+  \`,
+})
+export class DragReorderComponent {
+  items = [
+    { id: '1', label: 'Design system tokens', color: '#534AB7' },
+    { id: '2', label: 'Component architecture', color: '#1D9E75' },
+  ]
+}`,
+  },
+  {
+    title: 'Import DragDropModule and add cdkDropList',
+    description: 'Importing `DragDropModule` from `@angular/cdk/drag-drop` and adding `cdkDropList` to the container plus `cdkDrag` to each row activates the CDK\'s drag detection — no third-party library needed, unlike Vue\'s reliance on `vuedraggable`/SortableJS.',
+    fr: { title: 'Importer DragDropModule et ajouter cdkDropList', description: 'Importer `DragDropModule` depuis `@angular/cdk/drag-drop` et ajouter `cdkDropList` au conteneur plus `cdkDrag` à chaque ligne active la détection de drag du CDK — aucune bibliothèque tierce nécessaire, contrairement à la dépendance de Vue à `vuedraggable`/SortableJS.' },
+    code: `import { DragDropModule } from '@angular/cdk/drag-drop'
+
+@Component({
+  // ...
+  standalone: true,
+  imports: [DragDropModule],
+  template: \`
+    <ul cdkDropList class="list">
+      <li *ngFor="let item of items" cdkDrag class="row">
+        <span cdkDragHandle class="handle">⠿</span>
+        <span class="dot" [style.background]="item.color"></span>
+        <span class="label">{{ item.label }}</span>
+      </li>
+    </ul>
+  \`,
+})
+export class DragReorderComponent { /* ... */ }`,
+  },
+  {
+    title: 'Handle the drop event',
+    description: '`(cdkDropListDropped)` fires with a `CdkDragDrop` event carrying the previous and new index. `moveItemInArray` — a CDK utility, not a manual splice — mutates the array in place to match the new order.',
+    fr: { title: 'Gérer l\'événement de drop', description: '`(cdkDropListDropped)` se déclenche avec un événement `CdkDragDrop` portant l\'index précédent et le nouveau. `moveItemInArray` — un utilitaire du CDK, pas un splice manuel — mute le tableau en place pour correspondre au nouvel ordre.' },
+    code: `import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop'
+
+drop(event: CdkDragDrop<typeof this.items>) {
+  moveItemInArray(this.items, event.previousIndex, event.currentIndex)
+}
+
+// Template: <ul cdkDropList (cdkDropListDropped)="drop($event)">`,
+  },
+  {
+    title: 'Style the drag preview and sibling shift',
+    description: 'The CDK exposes `.cdk-drag-preview` and `.cdk-drag-placeholder` classes for the lifted item and its ghost slot, and a CSS `transition` on `.cdk-drop-list-dragging` siblings animates the shuffle — CSS-only, no JS animation loop required.',
+    fr: { title: 'Styler l\'aperçu de drag et le décalage des voisins', description: 'Le CDK expose les classes `.cdk-drag-preview` et `.cdk-drag-placeholder` pour l\'élément soulevé et son emplacement fantôme, et une `transition` CSS sur les voisins `.cdk-drop-list-dragging` anime le réarrangement — CSS uniquement, aucune boucle d\'animation JS nécessaire.' },
+    code: `.cdk-drag-preview { box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: scale(1.03); }
+.cdk-drag-placeholder { opacity: 0.3; }
+.cdk-drop-list-dragging .row:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0,0,0.2,1);
+}`,
+  },
+]
+
+const dragReorderSwiftui: Step[] = [
+  {
+    title: 'Static List',
+    description: 'A plain `List` with `ForEach` renders the rows with no reordering behavior yet — establishing the layout before enabling `.onMove`.',
+    fr: { title: 'List statique', description: 'Une `List` simple avec `ForEach` affiche les lignes sans encore de comportement de réordonnancement — établissant le layout avant d\'activer `.onMove`.' },
+    code: `struct DragReorder: View {
+    @State private var items = [
+        ReorderItem(id: "1", label: "Design system tokens", color: Color(hex: "534AB7")),
+        ReorderItem(id: "2", label: "Component architecture", color: Color(hex: "1D9E75")),
+    ]
+
+    var body: some View {
+        List {
+            ForEach(items) { item in
+                HStack { Text(item.label) }
+            }
+        }
+    }
+}`,
+  },
+  {
+    title: 'Add .onMove to the ForEach',
+    description: '`.onMove { indices, newOffset in ... }` is `List`\'s built-in reorder hook — attaching it is the entire integration point, unlike the CDK or `vuedraggable` which both need an explicit drop-list wrapper.',
+    fr: { title: 'Ajouter .onMove au ForEach', description: '`.onMove { indices, newOffset in ... }` est le hook de réordonnancement intégré de `List` — l\'attacher est le seul point d\'intégration, contrairement au CDK ou `vuedraggable` qui nécessitent tous deux un wrapper de drop-list explicite.' },
+    code: `ForEach(items) { item in
+    HStack { Text(item.label) }
+}
+.onMove { indices, newOffset in
+    items.move(fromOffsets: indices, toOffset: newOffset)
+}`,
+  },
+  {
+    title: 'Enable drag mode outside of Edit',
+    description: 'By default, `.onMove` only activates reorder handles when the list is in edit mode. Binding `.environment(\\.editMode, .constant(.active))` keeps the drag handles visible permanently, matching the always-draggable behavior of every other platform\'s implementation.',
+    fr: { title: 'Activer le mode drag en dehors de Edit', description: 'Par défaut, `.onMove` n\'active les poignées de réordonnancement qu\'en mode édition. Lier `.environment(\\.editMode, .constant(.active))` garde les poignées de drag visibles en permanence, correspondant au comportement toujours-glissable de l\'implémentation de chaque autre plateforme.' },
+    code: `List {
+    ForEach(items) { item in /* ... */ }
+        .onMove { indices, newOffset in items.move(fromOffsets: indices, toOffset: newOffset) }
+}
+.environment(\\.editMode, .constant(.active))`,
+  },
+  {
+    title: 'Add the color dot and handle icon',
+    description: 'A `Circle` colored per-item and a `line.3.horizontal` SF Symbol complete the row visually, matching the drag-handle-plus-color-dot layout used across every other platform\'s row.',
+    fr: { title: 'Ajouter le point de couleur et l\'icône de poignée', description: 'Un `Circle` coloré par élément et un symbole SF `line.3.horizontal` complètent visuellement la ligne, correspondant au layout poignée-de-drag-plus-point-de-couleur utilisé dans la ligne de chaque autre plateforme.' },
+    code: `HStack(spacing: 12) {
+    Image(systemName: "line.3.horizontal").foregroundStyle(.secondary)
+    Circle().fill(item.color).frame(width: 10, height: 10)
+    Text(item.label)
+}`,
+  },
+]
+
 const dragReorder: StepMap = {
   react:          dragReorderReact,
   nextjs:         dragReorderNextjs,
   vue:            dragReorderVue,
+  angular:        dragReorderAngular,
   'react-native': dragReorderRN,
   flutter:        dragReorderFlutter,
+  swiftui:        dragReorderSwiftui,
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -11104,12 +13137,144 @@ class _CounterCardState extends State<CounterCard> {
   },
 ]
 
+const numberCounterAngular: Step[] = [
+  {
+    title: 'Static counter',
+    description: 'Start with a template showing a hardcoded number in the card layout — establishing the visual shell before adding any animation logic.',
+    fr: { title: 'Compteur statique', description: 'Commencer avec un template affichant un nombre codé en dur dans le layout de carte — établissant la coquille visuelle avant d\'ajouter toute logique d\'animation.' },
+    code: `@Component({
+  selector: 'app-counter',
+  template: \`
+    <div class="card">
+      <div class="number">2,400,000</div>
+      <div class="label">Revenue</div>
+    </div>
+  \`,
+})
+export class CounterComponent {}`,
+  },
+  {
+    title: 'Animate with requestAnimationFrame',
+    description: 'Angular has no built-in tween helper, so a `requestAnimationFrame` loop drives `display` from 0 to `to` over `duration` milliseconds — the loop runs on `ngOnInit`, without waiting for viewport entry yet.',
+    fr: { title: 'Animer avec requestAnimationFrame', description: 'Angular n\'a pas de helper de tween intégré, donc une boucle `requestAnimationFrame` pilote `display` de 0 à `to` sur `duration` millisecondes — la boucle s\'exécute dans `ngOnInit`, sans encore attendre l\'entrée dans le viewport.' },
+    code: `@Input() to = 2400000
+@Input() duration = 1800
+display = '0'
+
+ngOnInit() {
+  const start = performance.now()
+  const step = (now: number) => {
+    const t = Math.min(1, (now - start) / this.duration)
+    this.display = Math.round(t * this.to).toLocaleString()
+    if (t < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}`,
+  },
+  {
+    title: 'Trigger on viewport entry',
+    description: 'Wrapping the animation start in an `IntersectionObserver` callback — disconnected after the first fire — delays the count-up until the card actually scrolls into view, matching the `useInView`/`VisibilityDetector` behavior on every other platform.',
+    fr: { title: 'Déclencher à l\'entrée dans le viewport', description: 'Envelopper le démarrage de l\'animation dans un callback `IntersectionObserver` — déconnecté après le premier déclenchement — retarde le comptage jusqu\'à ce que la carte défile réellement dans la vue, correspondant au comportement `useInView`/`VisibilityDetector` de chaque autre plateforme.' },
+    code: `ngOnInit() {
+  const observer = new IntersectionObserver(([entry]) => {
+    if (!entry.isIntersecting) return
+    observer.disconnect()
+    this.animate()
+  }, { threshold: 0.1 })
+  observer.observe(this.el.nativeElement)
+}`,
+  },
+  {
+    title: 'Add ease-out-cubic and formatting',
+    description: 'Applying `1 - Math.pow(1 - t, 3)` to the linear progress before scaling by `to` gives the same expo-out deceleration used on every other platform, and a regex-based thousands separator plus prefix/suffix inputs complete the formatting.',
+    fr: { title: 'Ajouter l\'ease-out-cubique et le formatage', description: 'Appliquer `1 - Math.pow(1 - t, 3)` à la progression linéaire avant de multiplier par `to` donne la même décélération expo-out utilisée sur chaque autre plateforme, et un séparateur de milliers basé sur une regex plus des inputs préfixe/suffixe complètent le formatage.' },
+    code: `private animate() {
+  const start = performance.now()
+  const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+  const step = (now: number) => {
+    const t = Math.min(1, (now - start) / this.duration)
+    const value = easeOutCubic(t) * this.to
+    this.display = this.prefix + value.toFixed(this.decimals)
+      .replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + this.suffix
+    if (t < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}`,
+  },
+]
+
+const numberCounterSwiftui: Step[] = [
+  {
+    title: 'Static counter card',
+    description: 'A `VStack` with a hardcoded number and label establishes the card layout — no `@State` or timer yet.',
+    fr: { title: 'Carte de compteur statique', description: 'Un `VStack` avec un nombre et un label codés en dur établit le layout de carte — pas encore de `@State` ni de timer.' },
+    code: `struct Counter: View {
+    var body: some View {
+        VStack {
+            Text("2,400,000").font(.system(size: 32, weight: .heavy))
+            Text("Revenue").font(.caption)
+        }
+        .padding(20)
+    }
+}`,
+  },
+  {
+    title: 'Drive the count with a Timer',
+    description: 'A `Timer.scheduledTimer` firing at 60fps updates `@State private var value` on each tick, computing elapsed time against a captured `start` date — SwiftUI\'s closest equivalent to a `requestAnimationFrame` loop.',
+    fr: { title: 'Piloter le compte avec un Timer', description: 'Un `Timer.scheduledTimer` se déclenchant à 60fps met à jour `@State private var value` à chaque tick, en calculant le temps écoulé par rapport à une date `start` capturée — l\'équivalent le plus proche en SwiftUI d\'une boucle `requestAnimationFrame`.' },
+    code: `@State private var value: Double = 0
+
+func animate() {
+    let start = Date()
+    Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { timer in
+        let elapsed = Date().timeIntervalSince(start)
+        let t = min(1, elapsed / 1.8)
+        value = t * 2_400_000
+        if t >= 1 { timer.invalidate() }
+    }
+}`,
+  },
+  {
+    title: 'Trigger once with onAppear',
+    description: 'A `hasAnimated` flag guards `animate()` inside `.onAppear` so the count only plays once — `.onAppear` fires when the view is first laid out, the nearest SwiftUI signal to a viewport-entry event without pulling in a scroll-offset dependency.',
+    fr: { title: 'Déclencher une fois avec onAppear', description: 'Un flag `hasAnimated` protège `animate()` à l\'intérieur d\'`.onAppear` pour que le comptage ne se joue qu\'une fois — `.onAppear` se déclenche à la première disposition de la vue, le signal SwiftUI le plus proche d\'un événement d\'entrée dans le viewport sans dépendance à un décalage de scroll.' },
+    code: `@State private var hasAnimated = false
+
+.onAppear {
+    guard !hasAnimated else { return }
+    hasAnimated = true
+    animate()
+}`,
+  },
+  {
+    title: 'Add ease-out-cubic and formatting',
+    description: 'Applying `1 - pow(1 - t, 3)` before scaling by the target value gives the same deceleration curve as every other platform, and `String(format:)` with a configurable decimal count plus prefix/suffix strings complete the formatted display.',
+    fr: { title: 'Ajouter l\'ease-out-cubique et le formatage', description: 'Appliquer `1 - pow(1 - t, 3)` avant de multiplier par la valeur cible donne la même courbe de décélération que chaque autre plateforme, et `String(format:)` avec un nombre de décimales configurable plus des chaînes préfixe/suffixe complètent l\'affichage formaté.' },
+    code: `func animate() {
+    let start = Date()
+    Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { timer in
+        let elapsed = Date().timeIntervalSince(start)
+        let t = min(1, elapsed / duration)
+        let eased = 1 - pow(1 - t, 3)
+        value = eased * to
+        if t >= 1 { timer.invalidate() }
+    }
+}
+
+var formatted: String {
+    prefix + String(format: "%.\\(decimals)f", value) + suffix
+}`,
+  },
+]
+
 const numberCounter: StepMap = {
   react:          numberCounterReact,
   nextjs:         numberCounterNextjs,
   vue:            numberCounterVue,
+  angular:        numberCounterAngular,
   'react-native': numberCounterRN,
   flutter:        numberCounterFlutter,
+  swiftui:        numberCounterSwiftui,
 }
 
 /* ─────────────────────────────────────────────── */
@@ -11119,6 +13284,10 @@ const scrollHeaderCollapseReact: Step[] = [
   {
     title: 'Static sticky header',
     description: 'Start with a plain `position: sticky` header — no scroll-driven behavior yet. This establishes the layout baseline.',
+    fr: {
+      title: 'En-tête sticky statique',
+      description: 'Commencer avec un en-tête `position: sticky` simple — pas encore de comportement piloté par le scroll. Cela établit la base du layout.',
+    },
     code: `<header style={{ position: 'sticky', top: 0, height: 88, padding: '0 24px' }}>
   <h1>Dashboard</h1>
   <p>Last updated 2 minutes ago</p>
@@ -11127,6 +13296,10 @@ const scrollHeaderCollapseReact: Step[] = [
   {
     title: 'Track scroll with useScroll',
     description: '`useScroll()` returns a `MotionValue` for scroll offset that updates without triggering React re-renders — the foundation for scroll-linked styling.',
+    fr: {
+      title: 'Suivre le scroll avec useScroll',
+      description: '`useScroll()` renvoie une `MotionValue` pour le décalage de scroll qui se met à jour sans déclencher de re-renders React — la base du style piloté par le scroll.',
+    },
     code: `import { useScroll } from 'framer-motion'
 
 const { scrollY } = useScroll()`,
@@ -11134,6 +13307,10 @@ const { scrollY } = useScroll()`,
   {
     title: 'Derive height and opacity with useTransform',
     description: 'Map the scroll `MotionValue` to a height range and a subtitle opacity range. Both update on the compositor thread as the user scrolls.',
+    fr: {
+      title: 'Dériver hauteur et opacité avec useTransform',
+      description: 'Mapper la `MotionValue` de scroll vers une plage de hauteur et une plage d\'opacité du sous-titre. Les deux se mettent à jour sur le thread du compositeur pendant le défilement.',
+    },
     code: `const height  = useTransform(scrollY, [0, 120], [88, 56])
 const subOpac = useTransform(scrollY, [0, 80], [1, 0])
 
@@ -11145,6 +13322,10 @@ const subOpac = useTransform(scrollY, [0, 80], [1, 0])
   {
     title: 'Add blur and background fade',
     description: 'Layer in a `backdrop-filter` blur and background opacity, both derived from the same scroll value, for a frosted-glass collapse effect.',
+    fr: {
+      title: 'Ajouter le flou et le fondu d\'arrière-plan',
+      description: 'Superposer un flou `backdrop-filter` et une opacité d\'arrière-plan, tous deux dérivés de la même valeur de scroll, pour un effet de réduction en verre dépoli.',
+    },
     code: `const blur = useTransform(scrollY, [0, 120], [0, 12])
 const bg   = useTransform(scrollY, [0, 120], ['rgba(255,255,255,0)', 'rgba(255,255,255,0.75)'])
 
@@ -11162,18 +13343,30 @@ const scrollHeaderCollapseNextjs: Step[] = [
   {
     title: 'Mark the component client-side',
     description: '`useScroll` reads `window` scroll position, which only exists in the browser — add `\'use client\'` at the top of the file.',
+    fr: {
+      title: 'Marquer le composant côté client',
+      description: '`useScroll` lit la position de scroll de `window`, qui n\'existe que dans le navigateur — ajouter `\'use client\'` en haut du fichier.',
+    },
     code: `'use client'
 import { motion, useScroll, useTransform } from 'framer-motion'`,
   },
   {
     title: 'Track scroll and derive height',
     description: 'Same `useScroll` + `useTransform` pattern as React — Next.js App Router components work identically once marked client-side.',
+    fr: {
+      title: 'Suivre le scroll et dériver la hauteur',
+      description: 'Même pattern `useScroll` + `useTransform` qu\'en React — les composants App Router de Next.js fonctionnent à l\'identique une fois marqués côté client.',
+    },
     code: `const { scrollY } = useScroll()
 const height = useTransform(scrollY, [0, 120], [88, 56])`,
   },
   {
     title: 'Add dark-theme background and blur',
     description: 'Interpolate an RGBA background string and a blur radius together, matching a dark app shell.',
+    fr: {
+      title: 'Ajouter l\'arrière-plan sombre et le flou',
+      description: 'Interpoler ensemble une chaîne d\'arrière-plan RGBA et un rayon de flou, en accord avec une coquille d\'application sombre.',
+    },
     code: `const bg     = useTransform(scrollY, [0, 120], ['rgba(10,10,10,0)', 'rgba(10,10,10,0.8)'])
 const blurPx = useTransform(scrollY, [0, 120], [0, 12])
 
@@ -11183,9 +13376,92 @@ const blurPx = useTransform(scrollY, [0, 120], [0, 12])
   },
 ]
 
+const scrollHeaderCollapseAngular: Step[] = [
+  {
+    title: 'Static header, no scroll tracking',
+    description: 'Render the header at its full 88px height with no scroll listener yet — this is the visual baseline the collapse will animate from.',
+    fr: { title: 'En-tête statique, sans suivi du scroll', description: 'Afficher l\'en-tête à sa hauteur complète de 88px sans encore d\'écouteur de scroll — c\'est la base visuelle depuis laquelle la réduction va animer.' },
+    code: `@Component({
+  selector: 'app-collapsing-header',
+  template: \`<header class="header" style="height: 88px">
+    <h1>Dashboard</h1>
+    <p>Last updated 2 minutes ago</p>
+  </header>\`,
+})
+export class CollapsingHeaderComponent {}`,
+  },
+  {
+    title: 'Bind a window scroll listener',
+    description: '`@HostListener(\'window:scroll\')` recomputes derived values on every scroll tick — Angular has no `useScroll`-style motion-value primitive, so this is the direct equivalent of reading `scrollY` in React.',
+    fr: { title: 'Lier un écouteur de scroll sur window', description: '`@HostListener(\'window:scroll\')` recalcule les valeurs dérivées à chaque tick de scroll — Angular n\'a pas de primitive de type motion-value comme `useScroll`, donc c\'est l\'équivalent direct de la lecture de `scrollY` en React.' },
+    code: `height = 88
+
+@HostListener('window:scroll')
+onScroll() {
+  const y = window.scrollY
+  this.height = Math.max(56, 88 - y * (32 / 120))
+}`,
+  },
+  {
+    title: 'Add blur and background fade',
+    description: 'The same `lerp` helper used elsewhere derives a blur radius and background opacity from `scrollY`, both bound via `[style.backdrop-filter]` and `[style.background]`.',
+    fr: { title: 'Ajouter le flou et le fondu d\'arrière-plan', description: 'Le même helper `lerp` utilisé ailleurs dérive un rayon de flou et une opacité d\'arrière-plan depuis `scrollY`, tous deux liés via `[style.backdrop-filter]` et `[style.background]`.' },
+    code: `blur = 0
+bgOpacity = 0
+
+@HostListener('window:scroll')
+onScroll() {
+  const y = window.scrollY
+  this.height    = lerp(y, 0, 120, 88, 56)
+  this.blur      = lerp(y, 0, 120, 0, 12)
+  this.bgOpacity = lerp(y, 0, 120, 0, 0.75)
+}`,
+  },
+]
+
+const scrollHeaderCollapseSwiftui: Step[] = [
+  {
+    title: 'Static NavigationStack with large title',
+    description: 'Start with a `NavigationStack` and `.navigationBarTitleDisplayMode(.large)` — iOS renders the large title and automatically shrinks it into the compact nav bar on scroll, with zero custom scroll code.',
+    fr: { title: 'NavigationStack statique avec grand titre', description: 'Commencer avec un `NavigationStack` et `.navigationBarTitleDisplayMode(.large)` — iOS affiche le grand titre et le réduit automatiquement dans la barre de nav compacte au scroll, sans aucun code de scroll personnalisé.' },
+    code: `NavigationStack {
+    List { /* content */ }
+        .navigationTitle("Dashboard")
+        .navigationBarTitleDisplayMode(.large)
+}`,
+  },
+  {
+    title: 'Understand why this differs from the web pattern',
+    description: 'Unlike the continuous `useTransform` mapping on the web, the large-title collapse is a discrete system animation — there\'s no intermediate blur or subtitle-fade state to tune, because UIKit/SwiftUI own the entire transition internally.',
+    fr: { title: 'Comprendre pourquoi cela diffère du pattern web', description: 'Contrairement au mapping continu `useTransform` sur le web, la réduction du grand titre est une animation système discrète — il n\'y a pas d\'état intermédiaire de flou ou de fondu de sous-titre à ajuster, car UIKit/SwiftUI possèdent toute la transition en interne.' },
+    code: `// No scroll listener, no MotionValue, no useTransform —
+// the system large title collapse is opaque and non-configurable
+// beyond navigationBarTitleDisplayMode and toolbar customization.`,
+  },
+  {
+    title: 'Add a custom subtitle in the toolbar',
+    description: 'A `ToolbarItem(placement: .principal)` can host custom subtitle content that appears only in the compact nav bar state — the closest built-in hook for something like the web version\'s fading subtitle.',
+    fr: { title: 'Ajouter un sous-titre personnalisé dans la toolbar', description: 'Un `ToolbarItem(placement: .principal)` peut héberger un contenu de sous-titre personnalisé qui n\'apparaît que dans l\'état compact de la barre de nav — le point d\'accroche intégré le plus proche pour quelque chose comme le sous-titre en fondu de la version web.' },
+    code: `.toolbar {
+    ToolbarItem(placement: .principal) {
+        Text("2 min ago").font(.caption).foregroundStyle(.secondary)
+    }
+}`,
+  },
+  {
+    title: 'For full control, build a custom header instead',
+    description: 'When the system large-title behavior isn\'t enough (e.g. matching the exact blur/opacity choreography from the web version), fall back to the manual `GeometryReader` + `PreferenceKey` scroll-offset technique from the Collapsing Header animation, applied to a custom `safeAreaInset` header.',
+    fr: { title: 'Pour un contrôle total, construire un en-tête personnalisé', description: 'Quand le comportement système du grand titre ne suffit pas (ex. pour reproduire exactement la chorégraphie de flou/opacité de la version web), revenir à la technique manuelle `GeometryReader` + `PreferenceKey` de décalage de scroll de l\'animation Collapsing Header, appliquée à un en-tête `safeAreaInset` personnalisé.' },
+    code: `// See the Collapsing Header animation's SwiftUI implementation
+// for the full GeometryReader + PreferenceKey + safeAreaInset pattern.`,
+  },
+]
+
 const scrollHeaderCollapse: StepMap = {
-  react:  scrollHeaderCollapseReact,
-  nextjs: scrollHeaderCollapseNextjs,
+  react:   scrollHeaderCollapseReact,
+  nextjs:  scrollHeaderCollapseNextjs,
+  angular: scrollHeaderCollapseAngular,
+  swiftui: scrollHeaderCollapseSwiftui,
 }
 
 /* ─────────────────────────────────────────────── */
@@ -11195,11 +13471,19 @@ const magneticButtonReact: Step[] = [
   {
     title: 'Plain button',
     description: 'Start with a normal button — no motion values yet.',
+    fr: {
+      title: 'Bouton simple',
+      description: 'Commencer avec un bouton normal — pas encore de motion values.',
+    },
     code: `<button className="magnetic-btn">Get started</button>`,
   },
   {
     title: 'Track mouse position on the button',
     description: 'Compute the cursor\'s offset from the button\'s own center using `getBoundingClientRect()` inside `onMouseMove`.',
+    fr: {
+      title: 'Suivre la position de la souris sur le bouton',
+      description: 'Calculer le décalage du curseur par rapport au centre du bouton avec `getBoundingClientRect()` dans `onMouseMove`.',
+    },
     code: `function handleMouseMove(e) {
   const rect = ref.current.getBoundingClientRect()
   const relX = e.clientX - (rect.left + rect.width / 2)
@@ -11209,6 +13493,10 @@ const magneticButtonReact: Step[] = [
   {
     title: 'Drive position with useSpring',
     description: 'Feed the scaled offset into a `useSpring` motion value so the button eases toward the cursor instead of snapping.',
+    fr: {
+      title: 'Piloter la position avec useSpring',
+      description: 'Injecter le décalage réduit dans une motion value `useSpring` pour que le bouton glisse vers le curseur au lieu de s\'y téléporter.',
+    },
     code: `const x = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
 const y = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
 
@@ -11220,6 +13508,10 @@ y.set(relY * 0.35)
   {
     title: 'Reset on mouse leave',
     description: 'When the cursor leaves the button, set the spring targets back to zero — the same spring animates it back to rest.',
+    fr: {
+      title: 'Réinitialiser à la sortie de la souris',
+      description: 'Quand le curseur quitte le bouton, remettre les cibles du spring à zéro — le même spring l\'anime de retour au repos.',
+    },
     code: `function handleMouseLeave() {
   x.set(0)
   y.set(0)
@@ -11233,6 +13525,10 @@ const magneticButtonNextjs: Step[] = [
   {
     title: 'Mark client-side',
     description: '`mousemove` events and refs require the browser — add `\'use client\'`.',
+    fr: {
+      title: 'Marquer côté client',
+      description: 'Les événements `mousemove` et les refs nécessitent le navigateur — ajouter `\'use client\'`.',
+    },
     code: `'use client'
 import { motion, useSpring } from 'framer-motion'
 import { useRef } from 'react'`,
@@ -11240,12 +13536,20 @@ import { useRef } from 'react'`,
   {
     title: 'Set up spring motion values',
     description: 'Two independent springs for x and y, tuned soft so the pull feels magnetic rather than mechanical.',
+    fr: {
+      title: 'Configurer les motion values de spring',
+      description: 'Deux springs indépendants pour x et y, réglés en douceur pour que la traction paraisse magnétique plutôt que mécanique.',
+    },
     code: `const x = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })
 const y = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })`,
   },
   {
     title: 'Wire up move and leave handlers',
     description: 'Scale the cursor offset down to ~35% so the button moves a fraction of the actual pointer displacement.',
+    fr: {
+      title: 'Brancher les gestionnaires move et leave',
+      description: 'Réduire le décalage du curseur à ~35% pour que le bouton se déplace d\'une fraction du déplacement réel du pointeur.',
+    },
     code: `<motion.button
   ref={ref}
   style={{ x, y }}
@@ -11261,9 +13565,107 @@ const y = useSpring(0, { stiffness: 150, damping: 15, mass: 0.1 })`,
   },
 ]
 
+const magneticButtonAngular: Step[] = [
+  {
+    title: 'Plain button',
+    description: 'Start with a plain `<button>` component and no listeners — this is the interaction baseline.',
+    fr: { title: 'Bouton simple', description: 'Commencer avec un `<button>` simple sans écouteurs — c\'est la base d\'interaction.' },
+    code: `@Component({
+  selector: 'app-magnetic-button',
+  template: \`<button class="magnetic-btn"><ng-content /></button>\`,
+})
+export class MagneticButtonComponent {}`,
+  },
+  {
+    title: 'Bind mousemove and compute the offset',
+    description: 'A `@HostListener(\'mousemove\')` reads the host element\'s `getBoundingClientRect()` and computes the cursor offset from center — the same math as every other web platform here, since it\'s plain DOM geometry.',
+    fr: { title: 'Lier mousemove et calculer le décalage', description: 'Un `@HostListener(\'mousemove\')` lit le `getBoundingClientRect()` de l\'élément hôte et calcule le décalage du curseur par rapport au centre — le même calcul que sur chaque autre plateforme web ici, puisque c\'est de la géométrie DOM simple.' },
+    code: `@HostListener('mousemove', ['$event'])
+onMouseMove(e: MouseEvent) {
+  const rect = this.el.nativeElement.getBoundingClientRect()
+  this.x = (e.clientX - (rect.left + rect.width / 2)) * 0.35
+  this.y = (e.clientY - (rect.top + rect.height / 2)) * 0.35
+}`,
+  },
+  {
+    title: 'Bind the offset to a transform',
+    description: '`[style.transform]` reads `x`/`y` directly — no motion-value system needed since Angular\'s change detection already re-renders the binding on every mousemove event.',
+    fr: { title: 'Lier le décalage à un transform', description: '`[style.transform]` lit `x`/`y` directement — aucun système de motion-value nécessaire puisque la détection de changement d\'Angular rerend déjà la liaison à chaque événement mousemove.' },
+    code: `<button class="magnetic-btn" [style.transform]="'translate(' + x + 'px, ' + y + 'px)'">
+  <ng-content />
+</button>`,
+  },
+  {
+    title: 'Add spring-like easing and reset on leave',
+    description: 'A CSS `transition` with an overshoot cubic-bezier curve approximates the spring feel — `mouseleave` resets `x`/`y` to 0, and since the transition rule stays active, the button eases back to rest instead of snapping.',
+    fr: { title: 'Ajouter un easing façon spring et réinitialiser à la sortie', description: 'Une `transition` CSS avec une courbe cubic-bezier à dépassement approxime la sensation de spring — `mouseleave` remet `x`/`y` à 0, et comme la règle de transition reste active, le bouton revient au repos en douceur plutôt que de sauter.' },
+    code: `.magnetic-btn { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@HostListener('mouseleave')
+onMouseLeave() { this.x = 0; this.y = 0 }`,
+  },
+]
+
+const magneticButtonSwiftui: Step[] = [
+  {
+    title: 'Plain button',
+    description: 'Start with a plain `Button` and no hover handling — touch has no hover signal, so this pattern only applies on iPadOS with a trackpad or Apple Pencil.',
+    fr: { title: 'Bouton simple', description: 'Commencer avec un `Button` simple sans gestion du survol — le tactile n\'a pas de signal de survol, donc ce pattern ne s\'applique que sur iPadOS avec un trackpad ou l\'Apple Pencil.' },
+    code: `struct MagneticButton<Content: View>: View {
+    @ViewBuilder let content: Content
+    var body: some View {
+        Button(action: {}) { content }
+    }
+}`,
+  },
+  {
+    title: 'Track hover with onContinuousHover',
+    description: '`.onContinuousHover` is the nearest iOS equivalent to `mousemove` — it reports a `.active(location)` phase with pointer coordinates relative to the view while a trackpad cursor or Pencil hovers over it.',
+    fr: { title: 'Suivre le survol avec onContinuousHover', description: '`.onContinuousHover` est l\'équivalent iOS le plus proche de `mousemove` — il rapporte une phase `.active(location)` avec les coordonnées du pointeur relatives à la vue pendant qu\'un curseur trackpad ou le Pencil la survole.' },
+    code: `@State private var offset: CGSize = .zero
+
+.onContinuousHover { phase in
+    switch phase {
+    case .active(let location):
+        let dx = location.x - 22
+        let dy = location.y - 22
+        offset = CGSize(width: dx * 0.35, height: dy * 0.35)
+    case .ended:
+        offset = .zero
+    }
+}`,
+  },
+  {
+    title: 'Apply the offset',
+    description: '`.offset(offset)` moves the button content by the computed amount — the same 35% scale-down used on every other platform keeps the pull subtle rather than a full 1:1 drag.',
+    fr: { title: 'Appliquer le décalage', description: '`.offset(offset)` déplace le contenu du bouton de la quantité calculée — le même facteur de réduction à 35% utilisé sur chaque autre plateforme garde la traction subtile plutôt qu\'un drag 1:1 complet.' },
+    code: `Button(action: {}) { content }
+    .offset(offset)`,
+  },
+  {
+    title: 'Animate with withAnimation on both phases',
+    description: 'Wrapping both the `.active` update and the `.ended` reset in `withAnimation(.spring(...))` gives the same eased pull-and-release feel as the CSS spring approximations used on Angular and the raw `useSpring` on React.',
+    fr: { title: 'Animer avec withAnimation sur les deux phases', description: 'Envelopper à la fois la mise à jour `.active` et la réinitialisation `.ended` dans `withAnimation(.spring(...))` donne la même sensation de traction et relâchement en douceur que les approximations de spring CSS utilisées sur Angular et le `useSpring` brut sur React.' },
+    code: `.onContinuousHover { phase in
+    switch phase {
+    case .active(let location):
+        let dx = location.x - 22
+        let dy = location.y - 22
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            offset = CGSize(width: dx * 0.35, height: dy * 0.35)
+        }
+    case .ended:
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { offset = .zero }
+    }
+}`,
+  },
+]
+
 const magneticButton: StepMap = {
-  react:  magneticButtonReact,
-  nextjs: magneticButtonNextjs,
+  react:   magneticButtonReact,
+  nextjs:  magneticButtonNextjs,
+  angular: magneticButtonAngular,
+  swiftui: magneticButtonSwiftui,
 }
 
 /* ─────────────────────────────────────────────── */
@@ -11273,6 +13675,10 @@ const swipeToDeleteRN: Step[] = [
   {
     title: 'Static row',
     description: 'Start with a plain list row — no gesture handling yet.',
+    fr: {
+      title: 'Ligne statique',
+      description: 'Commencer avec une ligne de liste simple — pas encore de gestion de geste.',
+    },
     code: `<View style={styles.row}>
   <Text style={styles.title}>{item.title}</Text>
 </View>`,
@@ -11280,6 +13686,10 @@ const swipeToDeleteRN: Step[] = [
   {
     title: 'Add a horizontal pan gesture',
     description: 'Restrict the gesture to horizontal drags with `activeOffsetX`, so vertical list scrolling still works undisturbed.',
+    fr: {
+      title: 'Ajouter un geste de pan horizontal',
+      description: 'Restreindre le geste aux glissements horizontaux avec `activeOffsetX`, pour que le défilement vertical de la liste continue de fonctionner sans perturbation.',
+    },
     code: `const translateX = useSharedValue(0)
 
 const pan = Gesture.Pan()
@@ -11291,6 +13701,10 @@ const pan = Gesture.Pan()
   {
     title: 'Reveal delete background and translate the row',
     description: 'An absolutely-positioned red background sits behind the row; the row itself translates on top of it as the gesture updates.',
+    fr: {
+      title: 'Révéler le fond de suppression et translater la ligne',
+      description: 'Un fond rouge en position absolue se place derrière la ligne ; la ligne elle-même se translate par-dessus au fur et à mesure que le geste évolue.',
+    },
     code: `const rowStyle = useAnimatedStyle(() => ({
   transform: [{ translateX: translateX.value }],
 }))
@@ -11305,6 +13719,10 @@ const pan = Gesture.Pan()
   {
     title: 'Threshold check and commit the delete',
     description: 'On release, compare the offset to a threshold. Past it, animate off-screen and collapse height, then call `onDelete` via `runOnJS` only once the collapse finishes.',
+    fr: {
+      title: 'Vérification du seuil et validation de la suppression',
+      description: 'Au relâchement, comparer le décalage à un seuil. Au-delà, animer hors écran et effondrer la hauteur, puis appeler `onDelete` via `runOnJS` seulement une fois l\'effondrement terminé.',
+    },
     code: `.onEnd(() => {
   if (translateX.value < SWIPE_THRESHOLD) {
     translateX.value = withTiming(-400, { duration: 200 })
@@ -11318,8 +13736,111 @@ const pan = Gesture.Pan()
   },
 ]
 
+const swipeToDeleteAngular: Step[] = [
+  {
+    title: 'Static row',
+    description: 'Start with a plain row rendering `item.title` — no pointer bindings yet. This is the layout baseline the swipe interaction will attach to.',
+    fr: { title: 'Ligne statique', description: 'Commencer avec une ligne simple affichant `item.title` — pas encore de liaisons pointeur. C\'est la base de layout à laquelle l\'interaction de swipe va s\'attacher.' },
+    code: `@Component({
+  selector: 'app-swipeable-row',
+  template: \`<div class="row">{{ item.title }}</div>\`,
+})
+export class SwipeableRowComponent {
+  @Input() item!: { id: string; title: string }
+}`,
+  },
+  {
+    title: 'Track horizontal drag with pointer events',
+    description: '`pointerdown`/`pointermove` compute `translateX` from the delta between the current pointer position and the position captured at drag start — the same raw-pointer technique used for Pan Dismiss and Gesture Feedback on Angular, since there is no built-in gesture library.',
+    fr: { title: 'Suivre le glissement horizontal avec les événements pointeur', description: '`pointerdown`/`pointermove` calculent `translateX` depuis le delta entre la position actuelle du pointeur et la position capturée au début du glissement — la même technique de pointeur brut utilisée pour Pan Dismiss et Gesture Feedback sur Angular, puisqu\'il n\'y a pas de bibliothèque de gestes intégrée.' },
+    code: `translateX = 0
+private startX = 0
+private dragging = false
+
+onDown(e: PointerEvent) { this.dragging = true; this.startX = e.clientX - this.translateX }
+onMove(e: PointerEvent) {
+  if (!this.dragging) return
+  this.translateX = Math.min(0, e.clientX - this.startX)
+}`,
+  },
+  {
+    title: 'Reveal the delete background',
+    description: 'An absolutely-positioned red `div` sits behind the row at full opacity from the first pixel of drag — matching the "no fade-in" tip from the concept, since a proportional fade reads as laggy rather than responsive.',
+    fr: { title: 'Révéler le fond de suppression', description: 'Un `div` rouge en position absolue se place derrière la ligne à pleine opacité dès le premier pixel de glissement — correspondant au conseil « pas de fondu » du concept, car un fondu proportionnel se lit comme lent plutôt que réactif.' },
+    code: `<div class="row-wrapper">
+  <div class="delete-bg"><span>Delete</span></div>
+  <div class="row" [style.transform]="'translateX(' + translateX + 'px)'"
+       (pointerdown)="onDown($event)" (pointermove)="onMove($event)" (pointerup)="onUp()">
+    {{ item.title }}
+  </div>
+</div>`,
+  },
+  {
+    title: 'Threshold check and emit the delete',
+    description: 'On `pointerup`, comparing `translateX` to a -100px threshold either commits to deletion (collapsing height, then emitting after the CSS transition via `setTimeout`) or resets to 0 — mirroring the React Native version\'s completion-callback discipline without `runOnJS`.',
+    fr: { title: 'Vérification du seuil et émission de la suppression', description: 'Sur `pointerup`, comparer `translateX` à un seuil de -100px valide soit la suppression (effondrant la hauteur, puis émettant après la transition CSS via `setTimeout`), soit revient à 0 — reflétant la discipline de callback de complétion de la version React Native sans `runOnJS`.' },
+    code: `onUp() {
+  this.dragging = false
+  if (this.translateX < -100) {
+    this.translateX = -400
+    this.rowHeight = 0
+    setTimeout(() => this.deleted.emit(this.item.id), 200)
+  } else {
+    this.translateX = 0
+  }
+}`,
+  },
+]
+
+const swipeToDeleteSwiftui: Step[] = [
+  {
+    title: 'Static List row',
+    description: 'A plain `List` with `ForEach` rendering rows — no swipe behavior yet. `List` is the required container, since `.swipeActions` only attaches to rows inside one.',
+    fr: { title: 'Ligne de List statique', description: 'Une `List` simple avec `ForEach` affichant des lignes — pas encore de comportement de swipe. `List` est le conteneur requis, puisque `.swipeActions` ne s\'attache qu\'aux lignes à l\'intérieur d\'une telle liste.' },
+    code: `List {
+    ForEach(items, id: \\.id) { item in
+        Text(item.title)
+    }
+}`,
+  },
+  {
+    title: 'Add .swipeActions with a destructive button',
+    description: '`.swipeActions(edge: .trailing)` attaches a trailing swipe action set to the row — `Button(role: .destructive)` automatically styles the action red, matching the delete-background color every other platform hand-codes.',
+    fr: { title: 'Ajouter .swipeActions avec un bouton destructif', description: '`.swipeActions(edge: .trailing)` attache un ensemble d\'actions de swipe en fin de ligne — `Button(role: .destructive)` colore automatiquement l\'action en rouge, correspondant à la couleur de fond de suppression codée à la main sur chaque autre plateforme.' },
+    code: `Text(item.title)
+    .swipeActions(edge: .trailing) {
+        Button(role: .destructive) {
+            // delete action
+        } label: {
+            Label("Delete", systemImage: "trash")
+        }
+    }`,
+  },
+  {
+    title: 'Remove the item with animation',
+    description: 'Wrapping the array mutation in `withAnimation` gives the row a collapse-and-remove transition — `List` already handles the swipe distance threshold and spring release internally, so this is the only animation code needed at all.',
+    fr: { title: 'Supprimer l\'élément avec animation', description: 'Envelopper la mutation du tableau dans `withAnimation` donne à la ligne une transition d\'effondrement-et-suppression — `List` gère déjà en interne le seuil de distance du swipe et le relâchement en spring, donc c\'est le seul code d\'animation nécessaire.' },
+    code: `Button(role: .destructive) {
+    withAnimation {
+        items.removeAll { $0.id == item.id }
+    }
+} label: {
+    Label("Delete", systemImage: "trash")
+}`,
+  },
+  {
+    title: 'Compare the effort to the manual platforms',
+    description: 'Where React Native needs a `GestureDetector`, shared values, a threshold check, and `runOnJS`, and Angular needs raw pointer math, SwiftUI\'s entire implementation is the `.swipeActions` modifier — a case where the platform\'s built-in list component simply owns the whole pattern.',
+    fr: { title: 'Comparer l\'effort aux plateformes manuelles', description: 'Là où React Native a besoin d\'un `GestureDetector`, de shared values, d\'une vérification de seuil et de `runOnJS`, et Angular a besoin de calculs de pointeur bruts, l\'implémentation entière de SwiftUI est le modificateur `.swipeActions` — un cas où le composant de liste natif de la plateforme possède simplement tout le pattern.' },
+    code: `// No GestureDetector, no shared values, no threshold constant,
+// no runOnJS — .swipeActions on a List row is the complete implementation.`,
+  },
+]
+
 const swipeToDelete: StepMap = {
   'react-native': swipeToDeleteRN,
+  angular:        swipeToDeleteAngular,
+  swiftui:        swipeToDeleteSwiftui,
 }
 
 /* ─────────────────────────────────────────────── */
@@ -11329,6 +13850,10 @@ const bottomSheetSnapRN: Step[] = [
   {
     title: 'Static sheet at one fixed position',
     description: 'Start with the sheet pinned at a single translateY offset — no gesture yet.',
+    fr: {
+      title: 'Feuille statique à une position fixe',
+      description: 'Commencer avec la feuille épinglée à un seul décalage `translateY` — pas encore de geste.',
+    },
     code: `const translateY = useSharedValue(SCREEN_HEIGHT * 0.9)
 
 <Animated.View style={[styles.sheet, { transform: [{ translateY: translateY.value }] }]}>
@@ -11338,6 +13863,10 @@ const bottomSheetSnapRN: Step[] = [
   {
     title: 'Define snap points',
     description: 'Express peek, half, and full states as translateY offsets derived from screen height.',
+    fr: {
+      title: 'Définir les points d\'ancrage',
+      description: 'Exprimer les états aperçu, mi-hauteur et plein écran comme des décalages `translateY` dérivés de la hauteur d\'écran.',
+    },
     code: `const SNAP_POINTS = [
   SCREEN_HEIGHT * 0.9,  // peek
   SCREEN_HEIGHT * 0.4,  // half
@@ -11347,6 +13876,10 @@ const bottomSheetSnapRN: Step[] = [
   {
     title: 'Drag freely, clamped to the snap range',
     description: 'During the pan, translate 1:1 with the finger but clamp so the sheet never passes the topmost or bottommost snap point.',
+    fr: {
+      title: 'Glisser librement, limité à la plage d\'ancrage',
+      description: 'Pendant le pan, translater 1:1 avec le doigt mais limiter pour que la feuille ne dépasse jamais le point d\'ancrage le plus haut ou le plus bas.',
+    },
     code: `const pan = Gesture.Pan()
   .onStart(() => { startY.value = translateY.value })
   .onUpdate((e) => {
@@ -11357,6 +13890,10 @@ const bottomSheetSnapRN: Step[] = [
   {
     title: 'Snap to nearest point using velocity',
     description: 'On release, project the position slightly forward using velocity, then pick whichever snap point is closest to that projected value — this makes fast flicks feel intentional.',
+    fr: {
+      title: 'S\'ancrer au point le plus proche selon la vélocité',
+      description: 'Au relâchement, projeter légèrement la position vers l\'avant selon la vélocité, puis choisir le point d\'ancrage le plus proche de cette valeur projetée — cela rend les flicks rapides intentionnels.',
+    },
     code: `function nearestSnap(y, velocityY) {
   'worklet'
   const projected = y + velocityY * 0.15
@@ -11372,8 +13909,93 @@ const bottomSheetSnapRN: Step[] = [
   },
 ]
 
+const bottomSheetSnapAngular: Step[] = [
+  {
+    title: 'Static sheet at one fixed position',
+    description: 'Start with the sheet fixed at the peek height via a `translateY` bound from a component field — no pointer handling yet.',
+    fr: { title: 'Feuille statique à une position fixe', description: 'Commencer avec la feuille fixée à la hauteur d\'aperçu via un `translateY` lié à un champ du composant — pas encore de gestion du pointeur.' },
+    code: `@Component({
+  selector: 'app-bottom-sheet',
+  template: \`<div class="sheet" [style.transform]="'translateY(' + translateY + 'px)'"><ng-content /></div>\`,
+})
+export class BottomSheetComponent {
+  translateY = window.innerHeight * 0.9
+}`,
+  },
+  {
+    title: 'Define snap points as viewport fractions',
+    description: 'Expressing peek/half/full as fractions of `window.innerHeight` rather than fixed pixels keeps the sheet correctly proportioned across device sizes — the same approach as `SCREEN_HEIGHT`-relative snap points on React Native.',
+    fr: { title: 'Définir les points d\'ancrage comme fractions du viewport', description: 'Exprimer aperçu/mi-hauteur/plein écran comme des fractions de `window.innerHeight` plutôt qu\'en pixels fixes garde la feuille correctement proportionnée sur toutes les tailles d\'appareil — la même approche que les points d\'ancrage relatifs à `SCREEN_HEIGHT` sur React Native.' },
+    code: `const SNAP_POINTS = [0.9, 0.4, 0.08] // peek, half, full`,
+  },
+  {
+    title: 'Drag with document-level pointer listeners',
+    description: '`@HostListener(\'document:pointermove\')` and `document:pointerup` (rather than binding directly on the sheet element) ensure the drag keeps tracking even if the pointer moves faster than the sheet and briefly leaves its bounding box.',
+    fr: { title: 'Glisser avec des écouteurs pointeur au niveau du document', description: '`@HostListener(\'document:pointermove\')` et `document:pointerup` (plutôt qu\'une liaison directe sur l\'élément feuille) assurent que le glissement continue d\'être suivi même si le pointeur bouge plus vite que la feuille et quitte brièvement sa boîte englobante.' },
+    code: `@HostListener('document:pointermove', ['$event'])
+onMove(e: PointerEvent) {
+  if (!this.dragging) return
+  const min = window.innerHeight * 0.08
+  const max = window.innerHeight * 0.9
+  this.translateY = Math.max(min, Math.min(max, e.clientY - this.startY))
+}`,
+  },
+  {
+    title: 'Track velocity manually and snap on release',
+    description: 'Since there\'s no gesture library to supply velocity, it\'s computed by hand as the pixel delta divided by the time delta between consecutive `pointermove` events, then used to project the release position forward before picking the nearest snap point.',
+    fr: { title: 'Suivre la vélocité manuellement et s\'ancrer au relâchement', description: 'Comme il n\'y a pas de bibliothèque de gestes pour fournir la vélocité, elle est calculée à la main comme le delta de pixels divisé par le delta de temps entre les événements `pointermove` consécutifs, puis utilisée pour projeter la position de relâchement avant de choisir le point d\'ancrage le plus proche.' },
+    code: `@HostListener('document:pointerup')
+onUp() {
+  this.dragging = false
+  const projected = this.translateY + this.velocity * 150
+  const points = SNAP_POINTS.map(f => window.innerHeight * f)
+  this.translateY = points.reduce((closest, p) =>
+    Math.abs(p - projected) < Math.abs(closest - projected) ? p : closest)
+}`,
+  },
+]
+
+const bottomSheetSnapSwiftui: Step[] = [
+  {
+    title: 'Basic .sheet presentation',
+    description: 'Start with a plain `.sheet(isPresented:)` — by default this presents at a single fixed size with no snap points.',
+    fr: { title: 'Présentation .sheet basique', description: 'Commencer avec un `.sheet(isPresented:)` simple — par défaut, cela présente à une taille fixe unique sans points d\'ancrage.' },
+    code: `@State private var showSheet = true
+
+.sheet(isPresented: $showSheet) {
+    SearchResultsSheet()
+}`,
+  },
+  {
+    title: 'Add presentationDetents for snap points',
+    description: '`.presentationDetents([.height(80), .medium, .large])` is the entire snap-point system — three detents map directly to peek/half/full, with no manual `translateY` or clamp math anywhere in this implementation.',
+    fr: { title: 'Ajouter presentationDetents pour les points d\'ancrage', description: '`.presentationDetents([.height(80), .medium, .large])` est tout le système de points d\'ancrage — trois detents correspondent directement à aperçu/mi-hauteur/plein écran, sans aucun `translateY` ni calcul de clamp manuel dans cette implémentation.' },
+    code: `.sheet(isPresented: $showSheet) {
+    SearchResultsSheet()
+        .presentationDetents([.height(80), .medium, .large])
+}`,
+  },
+  {
+    title: 'Show the drag indicator',
+    description: '`.presentationDragIndicator(.visible)` renders the system\'s pill-shaped handle at the top of the sheet — the same visual affordance every other platform draws manually as a small rounded rectangle.',
+    fr: { title: 'Afficher l\'indicateur de glissement', description: '`.presentationDragIndicator(.visible)` affiche la poignée en forme de pilule du système en haut de la feuille — la même affordance visuelle que chaque autre plateforme dessine manuellement comme un petit rectangle arrondi.' },
+    code: `.presentationDetents([.height(80), .medium, .large])
+.presentationDragIndicator(.visible)`,
+  },
+  {
+    title: 'Prevent accidental full dismissal',
+    description: '`.interactiveDismissDisabled()` stops a downward swipe past the smallest detent from dismissing the sheet entirely — for a persistent surface like a maps results sheet, staying pinned at the peek detent is the expected floor, not dismissal.',
+    fr: { title: 'Empêcher la fermeture accidentelle complète', description: '`.interactiveDismissDisabled()` empêche un swipe vers le bas au-delà du plus petit detent de fermer complètement la feuille — pour une surface persistante comme une feuille de résultats de carte, rester épinglé au detent d\'aperçu est le plancher attendu, pas la fermeture.' },
+    code: `.presentationDetents([.height(80), .medium, .large])
+.presentationDragIndicator(.visible)
+.interactiveDismissDisabled()`,
+  },
+]
+
 const bottomSheetSnap: StepMap = {
   'react-native': bottomSheetSnapRN,
+  angular:        bottomSheetSnapAngular,
+  swiftui:        bottomSheetSnapSwiftui,
 }
 
 /* ─────────────────────────────────────────────── */
@@ -11383,6 +14005,10 @@ const implicitAnimationFlutter: Step[] = [
   {
     title: 'Plain Container, no animation',
     description: 'Start with a static `Container` — changing its properties would jump instantly with no transition.',
+    fr: {
+      title: 'Container simple, sans animation',
+      description: 'Commencer avec un `Container` statique — changer ses propriétés sauterait instantanément sans transition.',
+    },
     code: `Container(
   width: 160,
   height: 90,
@@ -11392,6 +14018,10 @@ const implicitAnimationFlutter: Step[] = [
   {
     title: 'Swap in AnimatedContainer',
     description: 'Replace `Container` with `AnimatedContainer` and add a `duration` and `curve`. No other code changes yet — the widget is a drop-in replacement.',
+    fr: {
+      title: 'Remplacer par AnimatedContainer',
+      description: 'Remplacer `Container` par `AnimatedContainer` et ajouter une `duration` et une `curve`. Aucun autre changement de code pour l\'instant — le widget est un remplacement direct.',
+    },
     code: `AnimatedContainer(
   duration: const Duration(milliseconds: 350),
   curve: Curves.easeOutCubic,
@@ -11403,6 +14033,10 @@ const implicitAnimationFlutter: Step[] = [
   {
     title: 'Read properties from state',
     description: 'Drive width, height, color, and radius from a boolean in `State` instead of hardcoding them — this is what makes the widget actually animate.',
+    fr: {
+      title: 'Lire les propriétés depuis l\'état',
+      description: 'Piloter largeur, hauteur, couleur et rayon depuis un booléen dans `State` plutôt que de les coder en dur — c\'est ce qui fait réellement animer le widget.',
+    },
     code: `bool _expanded = false;
 
 AnimatedContainer(
@@ -11419,6 +14053,10 @@ AnimatedContainer(
   {
     title: 'Toggle with setState and animate text style too',
     description: 'Wrap in `GestureDetector` to toggle `_expanded` via `setState`, and add `AnimatedDefaultTextStyle` so the label\'s size and color tween in lockstep.',
+    fr: {
+      title: 'Basculer avec setState et animer aussi le style du texte',
+      description: 'Envelopper dans `GestureDetector` pour basculer `_expanded` via `setState`, et ajouter `AnimatedDefaultTextStyle` pour que la taille et la couleur du label s\'interpolent en synchronisation.',
+    },
     code: `GestureDetector(
   onTap: () => setState(() => _expanded = !_expanded),
   child: AnimatedContainer(
@@ -11436,8 +14074,101 @@ AnimatedContainer(
   },
 ]
 
+const implicitAnimationAngular: Step[] = [
+  {
+    title: 'Plain card, no animation',
+    description: 'Start with a static card and a boolean-driven CSS class toggle — no `transition` rule yet, so changing `expanded` would jump instantly.',
+    fr: { title: 'Carte simple, sans animation', description: 'Commencer avec une carte statique et un basculement de classe CSS piloté par un booléen — pas encore de règle `transition`, donc changer `expanded` sauterait instantanément.' },
+    code: `@Component({
+  selector: 'app-expanding-card',
+  template: \`<div class="card" [class.expanded]="expanded" (click)="expanded = !expanded">Tap to expand</div>\`,
+  styles: [\`
+    .card { width: 160px; height: 90px; background: #E9E4FB; border-radius: 12px; }
+    .card.expanded { width: 320px; height: 200px; background: #7C3AED; border-radius: 24px; }
+  \`],
+})
+export class ExpandingCardComponent {
+  expanded = false
+}`,
+  },
+  {
+    title: 'Add a single transition rule',
+    description: 'One `transition` declaration on `.card` covering `width`, `height`, `background`, and `border-radius` is the entire animation layer — this is Angular\'s closest analog to declaring `duration`/`curve` once on `AnimatedContainer`.',
+    fr: { title: 'Ajouter une seule règle de transition', description: 'Une seule déclaration `transition` sur `.card` couvrant `width`, `height`, `background` et `border-radius` constitue toute la couche d\'animation — c\'est l\'analogue le plus proche en Angular de déclarer `duration`/`curve` une fois sur `AnimatedContainer`.' },
+    code: `.card {
+  width: 160px; height: 90px; background: #E9E4FB; border-radius: 12px;
+  transition: width 350ms cubic-bezier(0.22,1,0.36,1), height 350ms cubic-bezier(0.22,1,0.36,1),
+              background 350ms, border-radius 350ms;
+}`,
+  },
+  {
+    title: 'Animate padding and text style together',
+    description: 'Adding `padding` and text `color`/`font-size` transitions to the same rule set keeps every dependent property in lockstep — the CSS equivalent of nesting `AnimatedDefaultTextStyle` inside `AnimatedContainer` with matching durations.',
+    fr: { title: 'Animer le padding et le style du texte ensemble', description: 'Ajouter des transitions sur `padding` et `color`/`font-size` du texte au même jeu de règles garde chaque propriété dépendante synchronisée — l\'équivalent CSS d\'imbriquer `AnimatedDefaultTextStyle` dans `AnimatedContainer` avec des durées correspondantes.' },
+    code: `.card { padding: 12px; transition: padding 350ms, /* ...previous properties */; }
+.card span { color: #3a2e6e; font-size: 14px; transition: color 350ms, font-size 350ms; }
+.card.expanded { padding: 24px; }
+.card.expanded span { color: #fff; font-size: 20px; }`,
+  },
+  {
+    title: 'Toggle state on click',
+    description: '`(click)="expanded = !expanded"` flips the bound field, Angular\'s change detection applies the `.expanded` class, and the browser\'s CSS engine — not Angular — performs the interpolation, same division of labor as Flutter\'s `setState` handing off to the widget\'s internal tween.',
+    fr: { title: 'Basculer l\'état au clic', description: '`(click)="expanded = !expanded"` inverse le champ lié, la détection de changement d\'Angular applique la classe `.expanded`, et c\'est le moteur CSS du navigateur — pas Angular — qui effectue l\'interpolation, la même répartition du travail que le `setState` de Flutter qui délègue au tween interne du widget.' },
+    code: `<div class="card" [class.expanded]="expanded" (click)="expanded = !expanded">
+  Tap to expand
+</div>`,
+  },
+]
+
+const implicitAnimationSwiftui: Step[] = [
+  {
+    title: 'Plain card, no animation',
+    description: 'Start with a `VStack` card whose frame, padding, and background all read directly from `expanded` — no `.animation()` modifier yet, so toggling jumps instantly.',
+    fr: { title: 'Carte simple, sans animation', description: 'Commencer avec une carte `VStack` dont le frame, le padding et l\'arrière-plan lisent directement `expanded` — pas encore de modificateur `.animation()`, donc le basculement saute instantanément.' },
+    code: `struct ExpandingCard: View {
+    @State private var expanded = false
+
+    var body: some View {
+        Text("Tap to expand")
+            .padding(expanded ? 24 : 12)
+            .frame(width: expanded ? 320 : 160, height: expanded ? 200 : 90)
+            .background(expanded ? Color(hex: "7C3AED") : Color(hex: "E9E4FB"))
+            .onTapGesture { expanded.toggle() }
+    }
+}`,
+  },
+  {
+    title: 'Attach .animation(_:value:)',
+    description: 'A single `.animation(.timingCurve(...), value: expanded)` at the end of the modifier chain is the whole animation layer — SwiftUI watches `expanded` and interpolates every dependent modifier above it, mirroring `AnimatedContainer`\'s one `duration`/`curve` pair.',
+    fr: { title: 'Attacher .animation(_:value:)', description: 'Un seul `.animation(.timingCurve(...), value: expanded)` à la fin de la chaîne de modificateurs constitue toute la couche d\'animation — SwiftUI surveille `expanded` et interpole chaque modificateur dépendant au-dessus, reflétant la paire unique `duration`/`curve` d\'`AnimatedContainer`.' },
+    code: `.background(expanded ? Color(hex: "7C3AED") : Color(hex: "E9E4FB"))
+.animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.35), value: expanded)`,
+  },
+  {
+    title: 'Add corner radius and text style',
+    description: '`.clipShape(RoundedRectangle(cornerRadius:))` and a state-driven font size/color on the `Text` both fall under the same `.animation` modifier automatically — no separate `AnimatedDefaultTextStyle`-equivalent widget needed, since one modifier covers the whole subtree.',
+    fr: { title: 'Ajouter le rayon de bordure et le style du texte', description: '`.clipShape(RoundedRectangle(cornerRadius:))` et une taille de police/couleur pilotée par l\'état sur le `Text` tombent tous deux automatiquement sous le même modificateur `.animation` — aucun widget équivalent à `AnimatedDefaultTextStyle` séparé n\'est nécessaire, puisqu\'un seul modificateur couvre tout le sous-arbre.' },
+    code: `Text("Tap to expand")
+    .font(.system(size: expanded ? 20 : 14, weight: .semibold))
+    .foregroundStyle(expanded ? .white : Color(hex: "3a2e6e"))
+    .padding(expanded ? 24 : 12)
+    .frame(width: expanded ? 320 : 160, height: expanded ? 200 : 90)
+    .background(expanded ? Color(hex: "7C3AED") : Color(hex: "E9E4FB"))
+    .clipShape(RoundedRectangle(cornerRadius: expanded ? 24 : 12))
+    .animation(.timingCurve(0.22, 1, 0.36, 1, duration: 0.35), value: expanded)`,
+  },
+  {
+    title: 'Toggle with onTapGesture',
+    description: '`.onTapGesture { expanded.toggle() }` is the only trigger code needed — same as Flutter\'s `setState` call, mutating the bound value is the entire API surface, with the actual tweening handled entirely by the framework underneath.',
+    fr: { title: 'Basculer avec onTapGesture', description: '`.onTapGesture { expanded.toggle() }` est le seul code déclencheur nécessaire — comme l\'appel `setState` de Flutter, muter la valeur liée est toute la surface d\'API, le tweening réel étant entièrement géré par le framework en dessous.' },
+    code: `.onTapGesture { expanded.toggle() }`,
+  },
+]
+
 const implicitAnimation: StepMap = {
   flutter: implicitAnimationFlutter,
+  angular: implicitAnimationAngular,
+  swiftui: implicitAnimationSwiftui,
 }
 
 /* ─────────────────────────────────────────────── */
@@ -11447,6 +14178,10 @@ const staggeredListFlutterSteps: Step[] = [
   {
     title: 'Plain ListView, no animation',
     description: 'Start with a normal `ListView.builder` — every row appears instantly.',
+    fr: {
+      title: 'ListView simple, sans animation',
+      description: 'Commencer avec un `ListView.builder` normal — chaque ligne apparaît instantanément.',
+    },
     code: `ListView.builder(
   itemCount: items.length,
   itemBuilder: (context, i) => ListTile(title: Text(items[i])),
@@ -11455,6 +14190,10 @@ const staggeredListFlutterSteps: Step[] = [
   {
     title: 'Add one shared AnimationController',
     description: 'Create a single controller in the parent `State`, long enough to cover the whole cascade, and start it once in `initState`.',
+    fr: {
+      title: 'Ajouter un AnimationController partagé',
+      description: 'Créer un unique contrôleur dans le `State` parent, assez long pour couvrir toute la cascade, et le démarrer une fois dans `initState`.',
+    },
     code: `late final AnimationController _controller;
 
 @override
@@ -11466,6 +14205,10 @@ void initState() {
   {
     title: 'Derive a per-row Interval',
     description: 'Each row computes its own slice of the shared timeline using `Interval`, so every row\'s CurvedAnimation is locked to the same controller.',
+    fr: {
+      title: 'Dériver un Interval par ligne',
+      description: 'Chaque ligne calcule sa propre tranche de la timeline partagée avec `Interval`, pour que la `CurvedAnimation` de chaque ligne soit verrouillée sur le même contrôleur.',
+    },
     code: `Animation<double> _intervalFor(int index) {
   final stagger = 1 / items.length;
   final start = index * stagger * 0.6;
@@ -11476,6 +14219,10 @@ void initState() {
   {
     title: 'Drive opacity and translate per row',
     description: 'Wrap each `ListTile` in an `AnimatedBuilder` that reads its own interval-based animation to fade and slide it into place.',
+    fr: {
+      title: 'Piloter opacité et translation par ligne',
+      description: 'Envelopper chaque `ListTile` dans un `AnimatedBuilder` qui lit sa propre animation basée sur l\'interval pour la faire apparaître en fondu et glisser en place.',
+    },
     code: `itemBuilder: (context, i) {
   final animation = _intervalFor(i);
   return AnimatedBuilder(
@@ -11490,8 +14237,108 @@ void initState() {
   },
 ]
 
+const staggeredListAngular: Step[] = [
+  {
+    title: 'Plain list, no animation',
+    description: 'Render items with `*ngFor` and no trigger bound yet — every row appears instantly when `items` is populated.',
+    fr: { title: 'Liste simple, sans animation', description: 'Afficher les éléments avec `*ngFor` sans encore de trigger lié — chaque ligne apparaît instantanément quand `items` est peuplé.' },
+    code: `@Component({
+  selector: 'app-staggered-list',
+  template: \`<ul><li *ngFor="let item of items">{{ item }}</li></ul>\`,
+})
+export class StaggeredListComponent {
+  items: string[] = []
+  ngOnInit() { this.items = ['Notifications', 'Dark mode', 'Language']; }
+}`,
+  },
+  {
+    title: 'Declare an :enter animation',
+    description: 'A `trigger` with `query(\':enter\', [...])` targets newly-added DOM nodes — this fires once when `items` first populates, giving every row a fade+slide entrance before staggering is added.',
+    fr: { title: 'Déclarer une animation :enter', description: 'Un `trigger` avec `query(\':enter\', [...])` cible les nœuds DOM nouvellement ajoutés — cela se déclenche une fois quand `items` se peuple pour la première fois, donnant à chaque ligne une entrée en fondu+glissement avant l\'ajout de l\'échelonnement.' },
+    code: `export const staggeredList = trigger('staggeredList', [
+  transition('* => *', [
+    query(':enter', [
+      style({ opacity: 0, transform: 'translateY(24px)' }),
+      animate('400ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0)' })),
+    ], { optional: true }),
+  ]),
+])`,
+  },
+  {
+    title: 'Wrap the entrance in stagger()',
+    description: 'Wrapping the `animate(...)` call in `stagger(50, [...])` delays each entering row by an additional 50ms — this single function call replaces Flutter\'s manual per-index `Interval` math entirely.',
+    fr: { title: 'Envelopper l\'entrée dans stagger()', description: 'Envelopper l\'appel `animate(...)` dans `stagger(50, [...])` retarde chaque ligne entrante de 50ms supplémentaires — cet unique appel de fonction remplace entièrement le calcul manuel `Interval` par index de Flutter.' },
+    code: `query(':enter', [
+  style({ opacity: 0, transform: 'translateY(24px)' }),
+  stagger(50, animate('400ms cubic-bezier(0.22,1,0.36,1)', style({ opacity: 1, transform: 'translateY(0)' }))),
+], { optional: true })`,
+  },
+  {
+    title: 'Bind the trigger to list length',
+    description: '`[@staggeredList]="items.length"` on the `<ul>` gives Angular a value to diff against on every population — since `items` starts empty and is set once, this fires the whole `:enter` cascade exactly once, matching Flutter\'s single `controller.forward()` call.',
+    fr: { title: 'Lier le trigger à la longueur de la liste', description: '`[@staggeredList]="items.length"` sur le `<ul>` donne à Angular une valeur à comparer à chaque peuplement — comme `items` démarre vide et est défini une fois, cela déclenche toute la cascade `:enter` exactement une fois, correspondant à l\'appel unique `controller.forward()` de Flutter.' },
+    code: `<ul [@staggeredList]="items.length">
+  <li *ngFor="let item of items">{{ item }}</li>
+</ul>`,
+  },
+]
+
+const staggeredListSwiftui: Step[] = [
+  {
+    title: 'Plain list, no animation',
+    description: 'A `List` with `ForEach` over the items array — no opacity/offset state or `.animation()` yet.',
+    fr: { title: 'Liste simple, sans animation', description: 'Une `List` avec `ForEach` sur le tableau d\'éléments — pas encore d\'état opacity/offset ni de `.animation()`.' },
+    code: `struct StaggeredList: View {
+    let items: [String]
+    var body: some View {
+        List {
+            ForEach(items, id: \\.self) { item in
+                Text(item)
+            }
+        }
+    }
+}`,
+  },
+  {
+    title: 'Add an appeared flag driving opacity and offset',
+    description: 'A single `@State private var appeared` bound to each row\'s `.opacity()` and `.offset(y:)` gives every row the same fade+slide-in shape as one boolean flip — the entrance visuals before any staggering is introduced.',
+    fr: { title: 'Ajouter un flag appeared pilotant opacité et décalage', description: 'Un seul `@State private var appeared` lié à `.opacity()` et `.offset(y:)` de chaque ligne donne à chaque ligne la même forme d\'entrée en fondu+glissement au basculement d\'un seul booléen — les visuels d\'entrée avant l\'introduction de tout échelonnement.' },
+    code: `@State private var appeared = false
+
+Text(item)
+    .opacity(appeared ? 1 : 0)
+    .offset(y: appeared ? 0 : 24)
+    .onAppear { appeared = true }`,
+  },
+  {
+    title: 'Give each row its own per-index delay',
+    description: 'Switching to `ForEach(Array(items.enumerated()), id: \\.offset)` exposes each row\'s `index`, which feeds a `.delay(Double(index) * 0.05)` on that row\'s own `.animation()` — every row owns an independent timeline rather than sharing one clock.',
+    fr: { title: 'Donner à chaque ligne son propre délai par index', description: 'Passer à `ForEach(Array(items.enumerated()), id: \\.offset)` expose l\'`index` de chaque ligne, qui alimente un `.delay(Double(index) * 0.05)` sur le `.animation()` propre à cette ligne — chaque ligne possède une timeline indépendante plutôt que de partager une horloge unique.' },
+    code: `ForEach(Array(items.enumerated()), id: \\.offset) { index, item in
+    Text(item)
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 24)
+        .animation(
+            .timingCurve(0.22, 1, 0.36, 1, duration: 0.4).delay(Double(index) * 0.05),
+            value: appeared
+        )
+}`,
+  },
+  {
+    title: 'Trigger once with onAppear',
+    description: '`.onAppear { appeared = true }` on the `List` flips the shared flag exactly once when the view first lays out — since every row\'s `.animation()` reads the same `appeared` value but applies its own `.delay`, one state change cascades into a full staggered reveal.',
+    fr: { title: 'Déclencher une fois avec onAppear', description: '`.onAppear { appeared = true }` sur la `List` inverse le flag partagé exactement une fois à la première disposition de la vue — comme le `.animation()` de chaque ligne lit la même valeur `appeared` mais applique son propre `.delay`, un seul changement d\'état se propage en une révélation échelonnée complète.' },
+    code: `List {
+    ForEach(Array(items.enumerated()), id: \\.offset) { index, item in /* ... */ }
+}
+.onAppear { appeared = true }`,
+  },
+]
+
 const staggeredListFlutter: StepMap = {
   flutter: staggeredListFlutterSteps,
+  angular: staggeredListAngular,
+  swiftui: staggeredListSwiftui,
 }
 
 export const ALL_STEPS: Record<string, StepMap> = {

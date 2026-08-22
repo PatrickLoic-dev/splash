@@ -78,10 +78,39 @@ export function ReactNativeLogo({ size = 28 }: { size?: number }) {
   )
 }
 
+export function AngularLogo({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 250 250" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#DD0031" d="M125 0L0 45l19 154 106 51 106-51 19-154z"/>
+      <path fill="#C3002F" d="M125 0v250l106-51 19-154z"/>
+      <path fill="#fff" d="M125 30.5L46.5 194h29.5l15.5-38.5h67l15.5 38.5h29.5zM125 82l25 61h-50z"/>
+    </svg>
+  )
+}
+
+export function SwiftUILogo({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="swiftui-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FA9A31"/>
+          <stop offset="50%" stopColor="#F9633B"/>
+          <stop offset="100%" stopColor="#E0146C"/>
+        </linearGradient>
+      </defs>
+      <circle cx="64" cy="64" r="60" fill="url(#swiftui-grad)"/>
+      <path d="M35 78c18 14 46 18 62 6-4 10-16 22-34 22-24 0-40-16-40-38 0-3 0-6 1-9 3 7 6 13 11 19z" fill="#fff"/>
+      <path d="M93 50C75 36 47 32 31 44c4-10 16-22 34-22 24 0 40 16 40 38 0 3 0 6-1 9-3-7-6-13-11-19z" fill="#fff"/>
+    </svg>
+  )
+}
+
 export const PLATFORM_LOGOS: Record<string, React.FC<{ size?: number }>> = {
   react:          ReactLogo,
   nextjs:         NextjsLogo,
   vue:            VueLogo,
+  angular:        AngularLogo,
   'react-native': ReactNativeLogo,
   flutter:        FlutterLogo,
+  swiftui:        SwiftUILogo,
 }
